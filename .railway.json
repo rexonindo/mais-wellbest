@@ -1,0 +1,19 @@
+{
+  "build": {
+    "commands": [
+      "composer install --no-dev --optimize-autoloader"
+    ]
+  },
+  "start": "php -S 0.0.0.0:$PORT -t public",
+  "env": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "false",
+    "APP_KEY": "base64:pc0FJjbZV4h+E9T9En8cZIV/CCiqoqNjLpfCQQvLNTw=",
+    "DB_CONNECTION": "mysql",
+    "DB_HOST": "127.0.0.1",
+    "DB_PORT": "3306",
+    "DB_DATABASE": "mais_wellbest",
+    "DB_USERNAME": "root",
+    "DB_PASSWORD": "Stxidb13"
+  }
+}

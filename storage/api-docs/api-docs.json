@@ -1,0 +1,2626 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "MAIS Wellbest API Documentation",
+        "description": "Standard OpenAPI documentation for the MAIS Wellbest application.",
+        "contact": {
+            "email": "admin@rexonindo.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:8000/api/v1",
+            "description": "MAIS Wellbest API Server"
+        }
+    ],
+    "paths": {
+        "/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Authenticate user and get token",
+                "description": "Login with email and password to receive an API token.",
+                "operationId": "loginUser",
+                "requestBody": {
+                    "description": "User credentials",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "test@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Test User"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "format": "email",
+                                                    "example": "test@example.com"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|aBcDeFgHiJkLmNoPqRsTuVwXyZ"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Log out the current user",
+                "description": "Revokes the current user's API token.",
+                "operationId": "logoutUser",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Successfully logged out"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/departments": {
+            "get": {
+                "tags": [
+                    "Master Data - Departments"
+                ],
+                "summary": "Get list of departments",
+                "description": "Returns a paginated list of departments.",
+                "operationId": "getDepartmentsList",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Department"
+                                            }
+                                        },
+                                        "links": {
+                                            "$ref": "#/components/schemas/PaginationLinks"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/PaginationMeta"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data - Departments"
+                ],
+                "summary": "Create a new department",
+                "description": "Stores a new department and returns the created department data.",
+                "operationId": "storeDepartment",
+                "requestBody": {
+                    "description": "Department data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DepartmentStoreRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Department created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Department"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/departments/{id}": {
+            "get": {
+                "tags": [
+                    "Master Data - Departments"
+                ],
+                "summary": "Get department information",
+                "description": "Returns department data by ID.",
+                "operationId": "getDepartmentById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Department ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Department"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Master Data - Departments"
+                ],
+                "summary": "Update existing department",
+                "description": "Updates an existing department and returns the updated department data.",
+                "operationId": "updateDepartment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Department ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Department data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DepartmentStoreRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Department updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Department"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Master Data - Departments"
+                ],
+                "summary": "Delete existing department",
+                "description": "Deletes a department record and returns no content.",
+                "operationId": "deleteDepartment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Department ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/employees": {
+            "get": {
+                "tags": [
+                    "Master Data - Employees"
+                ],
+                "summary": "Get list of employees",
+                "description": "Returns a paginated list of employees.",
+                "operationId": "getEmployeesList",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Employee"
+                                            }
+                                        },
+                                        "links": {
+                                            "$ref": "#/components/schemas/PaginationLinks"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/PaginationMeta"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data - Employees"
+                ],
+                "summary": "Create a new employee",
+                "description": "Stores a new employee and returns the created employee data.",
+                "operationId": "storeEmployee",
+                "requestBody": {
+                    "description": "Employee data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreEmployeeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Employee created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Employee"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/employees/{id}": {
+            "get": {
+                "tags": [
+                    "Master Data - Employees"
+                ],
+                "summary": "Get employee information",
+                "description": "Returns employee data by ID.",
+                "operationId": "getEmployeeById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Employee ID (the auto-incrementing one, not emp_id string)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Employee"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Master Data - Employees"
+                ],
+                "summary": "Update existing employee",
+                "description": "Updates an existing employee and returns the updated employee data.",
+                "operationId": "updateEmployee",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Employee ID (the auto-incrementing one, not emp_id string)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Employee data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreEmployeeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Employee updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Employee"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Master Data - Employees"
+                ],
+                "summary": "Delete existing employee",
+                "description": "Deletes an employee record and returns no content.",
+                "operationId": "deleteEmployee",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Employee ID (the auto-incrementing one, not emp_id string)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/items": {
+            "get": {
+                "tags": [
+                    "Master Data - Items"
+                ],
+                "summary": "Get list of items",
+                "description": "Returns a paginated list of items.",
+                "operationId": "getItemsList",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Item"
+                                            }
+                                        },
+                                        "links": {
+                                            "$ref": "#/components/schemas/PaginationLinks"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/PaginationMeta"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data - Items"
+                ],
+                "summary": "Create a new item",
+                "description": "Stores a new item and returns the created item data.",
+                "operationId": "storeItem",
+                "requestBody": {
+                    "description": "Item data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreItemRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Item created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Item"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/items/{id}": {
+            "get": {
+                "tags": [
+                    "Master Data - Items"
+                ],
+                "summary": "Get item information",
+                "description": "Returns item data by ID.",
+                "operationId": "getItemById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Item"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Master Data - Items"
+                ],
+                "summary": "Update existing item",
+                "description": "Updates an existing item and returns the updated item data.",
+                "operationId": "updateItem",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Item data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreItemRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Item updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Item"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Master Data - Items"
+                ],
+                "summary": "Delete existing item",
+                "description": "Deletes an item record and returns no content.",
+                "operationId": "deleteItem",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/machines": {
+            "get": {
+                "tags": [
+                    "Master Data - Machines"
+                ],
+                "summary": "Get list of machines",
+                "description": "Returns a paginated list of machines.",
+                "operationId": "getMachinesList",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Machine"
+                                            }
+                                        },
+                                        "links": {
+                                            "$ref": "#/components/schemas/PaginationLinks"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/PaginationMeta"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data - Machines"
+                ],
+                "summary": "Create a new machine",
+                "description": "Stores a new machine and returns the created machine data.",
+                "operationId": "storeMachine",
+                "requestBody": {
+                    "description": "Machine data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreMachineRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Machine created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Machine"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/machines/{id}": {
+            "get": {
+                "tags": [
+                    "Master Data - Machines"
+                ],
+                "summary": "Get machine information",
+                "description": "Returns machine data by ID.",
+                "operationId": "getMachineById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Machine ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Machine"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Master Data - Machines"
+                ],
+                "summary": "Update existing machine",
+                "description": "Updates an existing machine and returns the updated machine data.",
+                "operationId": "updateMachine",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Machine ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Machine data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreMachineRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Machine updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Machine"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Master Data - Machines"
+                ],
+                "summary": "Delete existing machine",
+                "description": "Deletes a machine record and returns no content.",
+                "operationId": "deleteMachine",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Machine ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/processes": {
+            "get": {
+                "tags": [
+                    "Master Data - Processes"
+                ],
+                "summary": "Get list of processes",
+                "description": "Returns a paginated list of processes.",
+                "operationId": "getProcessesList",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Process"
+                                            }
+                                        },
+                                        "links": {
+                                            "$ref": "#/components/schemas/PaginationLinks"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/PaginationMeta"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data - Processes"
+                ],
+                "summary": "Create a new process",
+                "description": "Stores a new process and returns the created process data.",
+                "operationId": "storeProcess",
+                "requestBody": {
+                    "description": "Process data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreProcessRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Process created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Process"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/processes/{id}": {
+            "get": {
+                "tags": [
+                    "Master Data - Processes"
+                ],
+                "summary": "Get process information",
+                "description": "Returns process data by ID.",
+                "operationId": "getProcessById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Process ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Process"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Master Data - Processes"
+                ],
+                "summary": "Update existing process",
+                "description": "Updates an existing process and returns the updated process data.",
+                "operationId": "updateProcess",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Process ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Process data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreProcessRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Process updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Process"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Master Data - Processes"
+                ],
+                "summary": "Delete existing process",
+                "description": "Deletes a process record and returns no content.",
+                "operationId": "deleteProcess",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Process ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/product-routes": {
+            "get": {
+                "tags": [
+                    "Master Data - Product Routes"
+                ],
+                "summary": "Get list of product routes",
+                "description": "Returns a paginated list of product routes.",
+                "operationId": "getProductRoutesList",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ProductRoute"
+                                            }
+                                        },
+                                        "links": {
+                                            "$ref": "#/components/schemas/PaginationLinks"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/PaginationMeta"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data - Product Routes"
+                ],
+                "summary": "Create a new product route",
+                "description": "Stores a new product route and returns the created product route data.",
+                "operationId": "storeProductRoute",
+                "requestBody": {
+                    "description": "Product route data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreProductRouteRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Product route created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductRoute"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/product-routes/{id}": {
+            "get": {
+                "tags": [
+                    "Master Data - Product Routes"
+                ],
+                "summary": "Get product route information",
+                "description": "Returns product route data by ID.",
+                "operationId": "getProductRouteById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product Route ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductRoute"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Master Data - Product Routes"
+                ],
+                "summary": "Update existing product route",
+                "description": "Updates an existing product route and returns the updated product route data.",
+                "operationId": "updateProductRoute",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product Route ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Product route data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreProductRouteRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product route updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductRoute"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Master Data - Product Routes"
+                ],
+                "summary": "Delete existing product route",
+                "description": "Deletes a product route record and returns no content.",
+                "operationId": "deleteProductRoute",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product Route ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/shifts": {
+            "get": {
+                "tags": [
+                    "Master Data - Shifts"
+                ],
+                "summary": "Get list of shifts",
+                "description": "Returns a paginated list of shifts.",
+                "operationId": "getShiftsList",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Shift"
+                                            }
+                                        },
+                                        "links": {
+                                            "$ref": "#/components/schemas/PaginationLinks"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/PaginationMeta"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Master Data - Shifts"
+                ],
+                "summary": "Create a new shift",
+                "description": "Stores a new shift and returns the created shift data.",
+                "operationId": "storeShift",
+                "requestBody": {
+                    "description": "Shift data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreShiftRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Shift created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shift"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/shifts/{id}": {
+            "get": {
+                "tags": [
+                    "Master Data - Shifts"
+                ],
+                "summary": "Get shift information",
+                "description": "Returns shift data by ID.",
+                "operationId": "getShiftById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Shift ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shift"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Master Data - Shifts"
+                ],
+                "summary": "Update existing shift",
+                "description": "Updates an existing shift and returns the updated shift data.",
+                "operationId": "updateShift",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Shift ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Shift data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreShiftRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Shift updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shift"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Master Data - Shifts"
+                ],
+                "summary": "Delete existing shift",
+                "description": "Deletes a shift record and returns no content.",
+                "operationId": "deleteShift",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Shift ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/work-orders": {
+            "get": {
+                "tags": [
+                    "Transactions - Work Orders"
+                ],
+                "summary": "Get list of work orders",
+                "description": "Returns a paginated list of work orders. Can be filtered by status.",
+                "operationId": "getWorkOrdersList",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by active status ('Planned', 'In Progress').",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WorkOrder"
+                                            }
+                                        },
+                                        "links": {
+                                            "$ref": "#/components/schemas/PaginationLinks"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/PaginationMeta"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Transactions - Work Orders"
+                ],
+                "summary": "Create a new work order",
+                "description": "Stores a new work order and returns the created work order data.",
+                "operationId": "storeWorkOrder",
+                "requestBody": {
+                    "description": "Work order data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreWorkOrderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Work order created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkOrder"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/work-orders/{id}": {
+            "get": {
+                "tags": [
+                    "Transactions - Work Orders"
+                ],
+                "summary": "Get work order information",
+                "description": "Returns work order data by ID.",
+                "operationId": "getWorkOrderById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Work Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkOrder"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Transactions - Work Orders"
+                ],
+                "summary": "Update existing work order",
+                "description": "Updates an existing work order and returns the updated work order data.",
+                "operationId": "updateWorkOrder",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Work Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Work order data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreWorkOrderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Work order updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkOrder"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Transactions - Work Orders"
+                ],
+                "summary": "Delete existing work order",
+                "description": "Deletes a work order record and returns no content.",
+                "operationId": "deleteWorkOrder",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Work Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/work-orders/{work_order}/valid-processes": {
+            "get": {
+                "tags": [
+                    "Transactions - Work Orders"
+                ],
+                "summary": "Get valid processes for a Work Order",
+                "description": "Helper endpoint to get a list of valid processes for a given Work Order, based on its item type.",
+                "operationId": "getValidProcessesForWo",
+                "parameters": [
+                    {
+                        "name": "work_order",
+                        "in": "path",
+                        "description": "The `wo_no` of the work order.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A list of valid processes.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Process"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Work Order not found."
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "PaginationLinks": {
+                "title": "Pagination Links",
+                "properties": {
+                    "first": {
+                        "type": "string",
+                        "example": "http://localhost/api/v1/departments?page=1"
+                    },
+                    "last": {
+                        "type": "string",
+                        "example": "http://localhost/api/v1/departments?page=5"
+                    },
+                    "prev": {
+                        "type": "string",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "next": {
+                        "type": "string",
+                        "example": "http://localhost/api/v1/departments?page=2",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PaginationMeta": {
+                "title": "Pagination Meta",
+                "properties": {
+                    "current_page": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "from": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "last_page": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "path": {
+                        "type": "string",
+                        "example": "http://localhost/api/v1/departments"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "example": 15
+                    },
+                    "to": {
+                        "type": "integer",
+                        "example": 15
+                    },
+                    "total": {
+                        "type": "integer",
+                        "example": 75
+                    }
+                },
+                "type": "object"
+            },
+            "Department": {
+                "title": "Department",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "departmentCode": {
+                        "type": "string",
+                        "example": "PROD"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Production"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Main production department",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "DepartmentStoreRequest": {
+                "title": "Department Store Request",
+                "required": [
+                    "dept_cd",
+                    "dept_nm"
+                ],
+                "properties": {
+                    "dept_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "QC"
+                    },
+                    "dept_nm": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "example": "Quality Control"
+                    },
+                    "descrp": {
+                        "type": "string",
+                        "example": "Department for quality checks",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Employee": {
+                "title": "Employee",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "employeeId": {
+                        "type": "string",
+                        "example": "EMP-001"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "gender": {
+                        "type": "string",
+                        "enum": [
+                            "L",
+                            "P"
+                        ],
+                        "example": "L"
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "123 Main St",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "08123456789",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com",
+                        "nullable": true
+                    },
+                    "hireDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2023-01-15"
+                    },
+                    "department": {
+                        "$ref": "#/components/schemas/Department"
+                    },
+                    "shift": {
+                        "$ref": "#/components/schemas/Shift"
+                    }
+                },
+                "type": "object"
+            },
+            "StoreEmployeeRequest": {
+                "title": "Store Employee Request",
+                "required": [
+                    "emp_id",
+                    "emp_nm",
+                    "dept_cd",
+                    "shift_cd",
+                    "gender",
+                    "hire_dt"
+                ],
+                "properties": {
+                    "emp_id": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "EMP-002"
+                    },
+                    "emp_nm": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "example": "Jane Smith"
+                    },
+                    "dept_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "PROD"
+                    },
+                    "shift_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "SHIFT-1"
+                    },
+                    "gender": {
+                        "type": "string",
+                        "enum": [
+                            "L",
+                            "P"
+                        ],
+                        "example": "P"
+                    },
+                    "addr": {
+                        "type": "string",
+                        "example": "456 Oak Ave",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "08987654321",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 100,
+                        "example": "jane.smith@example.com",
+                        "nullable": true
+                    },
+                    "hire_dt": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-02-20"
+                    }
+                },
+                "type": "object"
+            },
+            "Item": {
+                "title": "Item",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "itemCode": {
+                        "type": "string",
+                        "example": "FG-001"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Finished Good 1"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Main finished good",
+                        "nullable": true
+                    },
+                    "itemType": {
+                        "type": "string",
+                        "example": "FINISH GOOD"
+                    },
+                    "uom": {
+                        "type": "string",
+                        "example": "PCS"
+                    }
+                },
+                "type": "object"
+            },
+            "StoreItemRequest": {
+                "title": "Store Item Request",
+                "required": [
+                    "itm_cd",
+                    "itm_nm",
+                    "itm_tp",
+                    "uom"
+                ],
+                "properties": {
+                    "itm_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "RM-001"
+                    },
+                    "itm_nm": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "example": "Raw Material 1"
+                    },
+                    "descrp": {
+                        "type": "string",
+                        "example": "Main raw material",
+                        "nullable": true
+                    },
+                    "itm_tp": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "RAW MATERIAL"
+                    },
+                    "uom": {
+                        "type": "string",
+                        "maxLength": 10,
+                        "example": "KG"
+                    }
+                },
+                "type": "object"
+            },
+            "Machine": {
+                "title": "Machine",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "machineCode": {
+                        "type": "string",
+                        "example": "MC-001"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Mesin Bubut A"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Mesin bubut otomatis",
+                        "nullable": true
+                    },
+                    "department": {
+                        "$ref": "#/components/schemas/Department"
+                    }
+                },
+                "type": "object"
+            },
+            "StoreMachineRequest": {
+                "title": "Store Machine Request",
+                "required": [
+                    "mchn_cd",
+                    "mchn_nm",
+                    "dept_cd"
+                ],
+                "properties": {
+                    "mchn_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "MC-002"
+                    },
+                    "mchn_nm": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "example": "Mesin CNC B"
+                    },
+                    "descrp": {
+                        "type": "string",
+                        "example": "Mesin CNC 5-axis",
+                        "nullable": true
+                    },
+                    "dept_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "PROD"
+                    }
+                },
+                "type": "object"
+            },
+            "Process": {
+                "title": "Process",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "processCode": {
+                        "type": "string",
+                        "example": "PROC-01"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Cutting"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Process of cutting raw materials",
+                        "nullable": true
+                    },
+                    "department": {
+                        "$ref": "#/components/schemas/Department"
+                    }
+                },
+                "type": "object"
+            },
+            "StoreProcessRequest": {
+                "title": "Store Process Request",
+                "required": [
+                    "proc_cd",
+                    "proc_nm",
+                    "dept_cd"
+                ],
+                "properties": {
+                    "proc_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "PROC-02"
+                    },
+                    "proc_nm": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "example": "Assembling"
+                    },
+                    "descrp": {
+                        "type": "string",
+                        "example": "Process of assembling parts",
+                        "nullable": true
+                    },
+                    "dept_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "PROD"
+                    }
+                },
+                "type": "object"
+            },
+            "ProductRoute": {
+                "title": "Product Route",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "itemType": {
+                        "type": "string",
+                        "example": "FINISH GOOD"
+                    },
+                    "sequence": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "process": {
+                        "$ref": "#/components/schemas/Process"
+                    }
+                },
+                "type": "object"
+            },
+            "StoreProductRouteRequest": {
+                "title": "Store Product Route Request",
+                "required": [
+                    "itm_tp",
+                    "proc_cd",
+                    "seq"
+                ],
+                "properties": {
+                    "itm_tp": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "RAW MATERIAL"
+                    },
+                    "proc_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "PROC-01"
+                    },
+                    "seq": {
+                        "type": "integer",
+                        "example": 20
+                    }
+                },
+                "type": "object"
+            },
+            "Shift": {
+                "title": "Shift",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "shiftCode": {
+                        "type": "string",
+                        "example": "SHIFT-1"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Shift 1"
+                    },
+                    "startTime": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "07:00:00"
+                    },
+                    "endTime": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "15:00:00"
+                    }
+                },
+                "type": "object"
+            },
+            "StoreShiftRequest": {
+                "title": "Store Shift Request",
+                "required": [
+                    "shift_cd",
+                    "shift_nm",
+                    "start_time",
+                    "end_time"
+                ],
+                "properties": {
+                    "shift_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "SHIFT-3"
+                    },
+                    "shift_nm": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "example": "Shift 3"
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "23:00:00"
+                    },
+                    "end_time": {
+                        "type": "string",
+                        "format": "time",
+                        "example": "07:00:00"
+                    }
+                },
+                "type": "object"
+            },
+            "WorkOrder": {
+                "title": "Work Order",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "workOrderNumber": {
+                        "type": "string",
+                        "example": "WO-2025-001"
+                    },
+                    "orderDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-10-26"
+                    },
+                    "planDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-10-27"
+                    },
+                    "planQty": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 100.5
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "Planned",
+                            "In Progress",
+                            "Completed",
+                            "Cancelled"
+                        ],
+                        "example": "Planned"
+                    },
+                    "item": {
+                        "$ref": "#/components/schemas/Item"
+                    }
+                },
+                "type": "object"
+            },
+            "StoreWorkOrderRequest": {
+                "title": "Store Work Order Request",
+                "required": [
+                    "wo_no",
+                    "itm_cd",
+                    "ord_dt",
+                    "plan_dt",
+                    "plan_qty"
+                ],
+                "properties": {
+                    "wo_no": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "WO-2025-002"
+                    },
+                    "itm_cd": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "example": "FG-001"
+                    },
+                    "ord_dt": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-10-28"
+                    },
+                    "plan_dt": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-10-29"
+                    },
+                    "plan_qty": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 250
+                    },
+                    "stats": {
+                        "type": "string",
+                        "enum": [
+                            "Planned",
+                            "In Progress",
+                            "Completed",
+                            "Cancelled"
+                        ],
+                        "example": "Planned"
+                    },
+                    "rmks": {
+                        "type": "string",
+                        "example": "Urgent order",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Enter token in format (Bearer <token>)",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "API Endpoints for user authentication"
+        },
+        {
+            "name": "Master Data - Departments",
+            "description": "API Endpoints for Departments"
+        },
+        {
+            "name": "Master Data - Shifts",
+            "description": "API Endpoints for Shifts"
+        },
+        {
+            "name": "Master Data - Machines",
+            "description": "API Endpoints for Machines"
+        },
+        {
+            "name": "Master Data - Employees",
+            "description": "API Endpoints for Employees"
+        },
+        {
+            "name": "Master Data - Items",
+            "description": "API Endpoints for Items"
+        },
+        {
+            "name": "Master Data - Processes",
+            "description": "API Endpoints for Processes"
+        },
+        {
+            "name": "Master Data - Product Routes",
+            "description": "API Endpoints for Product Routes"
+        },
+        {
+            "name": "Transactions - Work Orders",
+            "description": "API Endpoints for Work Orders"
+        }
+    ]
+}
