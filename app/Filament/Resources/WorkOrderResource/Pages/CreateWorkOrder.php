@@ -11,7 +11,13 @@ use Illuminate\Support\Facades\Log;
 class CreateWorkOrder extends CreateRecord
 {
     protected static string $resource = WorkOrderResource::class;
+    protected static ?string $title = 'Work Order <List>';  
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }    
+      
     protected function afterCreate(): void
     {
         $this->record->refresh();
@@ -37,8 +43,4 @@ class CreateWorkOrder extends CreateRecord
 */            
     }
 
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
-    }    
 }

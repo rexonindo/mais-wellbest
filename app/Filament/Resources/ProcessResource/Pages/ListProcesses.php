@@ -9,7 +9,8 @@ use Filament\Resources\Pages\ListRecords;
 class ListProcesses extends ListRecords
 {
     protected static string $resource = ProcessResource::class;
-    protected static ?string $title = 'Process List';
+    protected static ?string $title = 'Process <List>';
+
     protected function getHeaderActions(): array
     {
         return [

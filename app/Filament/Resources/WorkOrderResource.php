@@ -65,6 +65,23 @@ class WorkOrderResource extends BaseResource
                     ->readOnly(),          
             Forms\Components\DatePicker::make('start_dt')->label('Start Date'),
             Forms\Components\DatePicker::make('end_dt')->label('End Date'),
+            Forms\Components\Select::make('tool_cd')
+                ->label('Tooling Code')
+                ->options(function (callable $get) {
+                    $itmCd = $get('itm_cd');
+                    if (!$itmCd) {
+                        return [];
+                    }
+
+                    return \App\Models\ToolingCavity::where('itm_cd', $itmCd)
+                        ->orderBy('tool_cd')
+                        ->pluck('tool_cd', 'tool_cd')
+                        ->toArray();
+                })
+                ->reactive()
+                ->required()
+                ->placeholder('Select Tooling')
+                ->searchable(),            
             Forms\Components\Select::make('stats')
                 ->options([
                     'Planned' => 'Planned',
@@ -107,6 +124,7 @@ class WorkOrderResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('start_dt')->label('Start Date'),
                 Tables\Columns\TextColumn::make('end_dt')->label('End Date'),
+                Tables\Columns\TextColumn::make('tool_cd')->label('Tooling Code'),
                 Tables\Columns\BadgeColumn::make('stats')
                     ->colors([
                         'primary' => 'Planned',
@@ -117,11 +135,14 @@ class WorkOrderResource extends BaseResource
             ])
             ->filters([])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                //Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
 
     }

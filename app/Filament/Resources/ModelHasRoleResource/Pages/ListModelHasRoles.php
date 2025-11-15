@@ -9,6 +9,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListModelHasRoles extends ListRecords
 {
     protected static string $resource = ModelHasRoleResource::class;
+    protected static ?string $title = 'Model Has Role <List>';    
 
     protected function getHeaderActions(): array
     {

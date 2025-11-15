@@ -54,7 +54,10 @@ class ProcessResource extends BaseResource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('proc_cd')->label('Process Code')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('proc_nm')->label('Process Name')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('proc_nm')
+                    ->label('Process Name')
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('department.dept_nm')->label('Department'),
                 Tables\Columns\TextColumn::make('std_time')->label('Std Time (min)'),
             ])
@@ -62,11 +65,14 @@ class ProcessResource extends BaseResource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                //Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 

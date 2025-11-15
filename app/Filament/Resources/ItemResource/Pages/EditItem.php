@@ -9,6 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditItem extends EditRecord
 {
     protected static string $resource = ItemResource::class;
+    protected static ?string $title = 'Part Number <Edit>';    
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }    
 
     protected function getHeaderActions(): array
     {

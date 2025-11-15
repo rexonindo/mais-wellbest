@@ -9,7 +9,8 @@ use Filament\Resources\Pages\ListRecords;
 class ListDepartments extends ListRecords
 {
     protected static string $resource = DepartmentResource::class;
-    protected static ?string $title = 'Department List';
+    protected static ?string $title = 'Department <List>';
+
     protected function getHeaderActions(): array
     {
         return [

@@ -8,6 +8,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditCustomer extends EditRecord
 {
     protected static string $resource = CustomerResource::class;
+    protected static ?string $title = 'Customer <Edit>';    
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }    
 
     protected function mutateFormDataBeforeSave(array $data): array
     {

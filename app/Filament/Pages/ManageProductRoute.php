@@ -82,7 +82,22 @@ class ManageProductRoute extends BasePage implements HasTable
         return [
             Tables\Columns\TextColumn::make('itm_type')->label('P/N Type')->searchable(),
             Tables\Columns\TextColumn::make('seq_no')->label('Seq No')->searchable(),
-            Tables\Columns\TextColumn::make('process.proc_nm')->label('Process'),
+            Tables\Columns\TextColumn::make('process.proc_nm')
+                ->label('Process')
+                ->formatStateUsing(function ($state, $record) {
+                    // Ensure relation exists
+                    if (!$record->process) {
+                        return null;
+                    }
+
+                    $procName = $record->process->proc_nm ?? '';
+                    $procId = $record->process->proc_id ?? $record->process->proc_cd ?? $record->process->id ?? '';
+
+                    return $procId ? "{$procName} ({$procId})" : $procName;
+                })
+                ->searchable(),
+
+
         ];
     }
 }

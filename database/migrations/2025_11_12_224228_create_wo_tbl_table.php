@@ -21,6 +21,7 @@ return new class extends Migration
             $table->float('plan_qty_pnl')->nullable();
             $table->date('start_dt')->nullable();
             $table->date('end_dt')->nullable();
+            $table->string('tool_cd', 50)->nullable();
             $table->enum('stats', ['Planned', 'In Progress', 'Completed', 'Cancelled'])->nullable()->default('Planned');
             $table->timestamps();
             $table->string('created_by', 50)->nullable();

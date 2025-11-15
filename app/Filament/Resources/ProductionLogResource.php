@@ -7,6 +7,7 @@ use App\Filament\Resources\ProductionLogResource\RelationManagers;
 use App\Filament\BaseResource;
 use App\Models\ProductionLog;
 use App\Models\WorkOrder; 
+use App\Models\WorkOrderProcess; 
 use App\Models\Item; 
 use App\Models\Machine; 
 use App\Models\Employee; 
@@ -35,10 +36,19 @@ class ProductionLogResource extends BaseResource
             ->schema([
                 Forms\Components\Select::make('wo_no')
                     ->label('Work Order No')                    
-                    ->options(fn () => WorkOrder::orderBy('wo_no')->pluck('wo_no', 'wo_no')->toArray())
+                    ->options(function () {
+                        return \App\Models\WorkOrder::query()
+                            ->whereIn('wo_no', function ($query) {
+                                $query->select('wo_no')
+                                      ->from('wo_proc_tbl'); 
+                            })
+                            ->orderBy('wo_no')
+                            ->pluck('wo_no', 'wo_no')
+                            ->toArray();
+                    })
                     ->searchable()
                     ->reactive()
-                    ->afterStateHydrated(function ($state, callable $set) {
+                    ->afterStateHydrated(function ($state, callable $set, callable $get) {
                         // ✅ Run when editing (form loads existing record)
                         $workOrder = \App\Models\WorkOrder::where('wo_no', $state)->first();
                         if ($workOrder) {
@@ -51,11 +61,20 @@ class ProductionLogResource extends BaseResource
                                 $set('itm_cd', $workOrder->itm_cd);
                                 $set('itm_nm', $workOrder->itm_cd);
                             }
-
-                            $set('in_qty', $workOrder->plan_qty ?? null);
                         }
+                        $procCd = $get('proc_cd'); 
+                        $query = \App\Models\WorkOrderProcess::where('wo_no', $state);
+                        if ($procCd) {
+                            $query->where('proc_cd', $procCd);
+                        }
+                        $workOrderProcess = $query->first();
+                        if ($workOrderProcess) {
+                            $set('in_qty', $workOrderProcess->shoot_qty ?? null);
+                        } else {
+                            $set('in_qty', null);
+                        }                         
                     })                    
-                    ->afterStateUpdated(function ($state, callable $set) {
+                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
                         $workOrder = \App\Models\WorkOrder::where('wo_no', $state)->first();
                         if ($workOrder) {
                             $item = \App\Models\Item::where('itm_cd', $workOrder->itm_cd)->first();
@@ -67,13 +86,23 @@ class ProductionLogResource extends BaseResource
                                 $set('itm_cd', $workOrder->itm_cd);
                                 $set('itm_nm', $workOrder->itm_cd);
                             }
-
-                            $set('in_qty', $workOrder->plan_qty ?? null);
                         } else {
                             $set('itm_cd', null);
                             $set('itm_nm', null);
                             $set('in_qty', null);
                         }
+                        $procCd = $get('proc_cd'); 
+                        $query = \App\Models\WorkOrderProcess::where('wo_no', $state);
+                        if ($procCd) {
+                            $query->where('proc_cd', $procCd);
+                        }
+                        $workOrderProcess = $query->first();
+                        if ($workOrderProcess) {
+                            $set('in_qty', $workOrderProcess->shoot_qty ?? null);
+                        } else {
+                            $set('in_qty', null);
+                        }    
+
                     })
                     ->required(),
 
@@ -89,26 +118,17 @@ class ProductionLogResource extends BaseResource
                 Forms\Components\Select::make('proc_cd')
                     ->label('Process')
                     ->options(function (callable $get) {
-                        // Get the selected Work Order No
                         $woNo = $get('wo_no');
-                        if (!$woNo) {
-                            return [];
-                        }
+                        if (!$woNo) return [];
 
-                        // Find the related work order and item type
                         $workOrder = \App\Models\WorkOrder::where('wo_no', $woNo)->first();
-                        if (!$workOrder) {
-                            return [];
-                        }
+                        if (!$workOrder) return [];
 
                         $item = \App\Models\Item::where('itm_cd', $workOrder->itm_cd)->first();
-                        if (!$item) {
-                            return [];
-                        }
+                        if (!$item) return [];
 
-                        // Lookup processes from prdroute_tbl
                         return \DB::table('prdroute_tbl')
-                            ->join('proc_tbl', 'prdroute_tbl.proc_cd', '=', 'proc_tbl.proc_cd') // join to get proc_nm
+                            ->join('proc_tbl', 'prdroute_tbl.proc_cd', '=', 'proc_tbl.proc_cd')
                             ->where('prdroute_tbl.itm_type', $item->itm_type)
                             ->orderBy('prdroute_tbl.seq_no')
                             ->get()
@@ -117,7 +137,39 @@ class ProductionLogResource extends BaseResource
                     })
                     ->searchable()
                     ->reactive()
+                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        // ✅ Correct way:
+                        $woNo = $get('wo_no');
+                        $procCd = $state; // selected process code
+
+                        if (! $woNo || ! $procCd) {
+                            $set('in_qty', null);
+                            return;
+                        }
+
+                        $workOrderProcess = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
+                            ->where('proc_cd', $procCd)
+                            ->first();
+
+                        $set('in_qty', $workOrderProcess?->shoot_qty ?? null);
+                    })
+                    ->afterStateHydrated(function ($state, callable $set, callable $get) {
+                        $woNo = $get('wo_no');
+                        $procCd = $state;
+
+                        if (! $woNo || ! $procCd) {
+                            $set('in_qty', null);
+                            return;
+                        }
+
+                        $workOrderProcess = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
+                            ->where('proc_cd', $procCd)
+                            ->first();
+
+                        $set('in_qty', $workOrderProcess?->shoot_qty ?? null);
+                    })
                     ->required(),
+
 
                 Forms\Components\Select::make('mchn_cd')
                     ->label('Machine')
@@ -191,13 +243,13 @@ class ProductionLogResource extends BaseResource
                     ->required(),
 
                 Forms\Components\TextInput::make('in_qty')
-                    ->label('Qty Input')
+                    ->label('Qty Input (Shoot)')
                     ->numeric(),
                 Forms\Components\TextInput::make('out_qty')
-                    ->label('Qty Output')
+                    ->label('Qty Output (Shoot)')
                     ->numeric(),
                 Forms\Components\TextInput::make('ng_qty')
-                    ->label('Qty NG')
+                    ->label('Qty NG (Shoot)')
                     ->numeric()
                     ->default(0),
                 Forms\Components\Textarea::make('rmks')
@@ -239,24 +291,26 @@ class ProductionLogResource extends BaseResource
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('in_qty')
-                    ->label('In Qty')
+                    ->label('In Qty (Shoot)')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),    
                 Tables\Columns\TextColumn::make('out_qty')
-                    ->label('Out Qty')
+                    ->label('Out Qty (Shoot)')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),    
                 Tables\Columns\TextColumn::make('ng_qty')
-                    ->label('NG Qty')
+                    ->label('NG Qty (Shoot)')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),    
             ])
             ->filters(self::getTableFilters())
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                //Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

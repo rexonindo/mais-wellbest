@@ -9,7 +9,8 @@ use Filament\Resources\Pages\ListRecords;
 class ListMachines extends ListRecords
 {
     protected static string $resource = MachineResource::class;
-    protected static ?string $title = 'Machine List';
+    protected static ?string $title = 'Machine <List>';
+
     protected function getHeaderActions(): array
     {
         return [

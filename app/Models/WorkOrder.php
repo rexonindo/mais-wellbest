@@ -25,6 +25,7 @@ class WorkOrder extends Model
         'start_dt',
         'end_dt',
         'stats',
+        'tool_cd',
     ];
 
     protected static function boot()

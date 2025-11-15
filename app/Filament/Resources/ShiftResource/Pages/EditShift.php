@@ -9,6 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditShift extends EditRecord
 {
     protected static string $resource = ShiftResource::class;
+    protected static ?string $title = 'Shift <Edit>';      
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }    
 
     protected function getHeaderActions(): array
     {

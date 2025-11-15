@@ -9,6 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditRole extends EditRecord
 {
     protected static string $resource = RoleResource::class;
+    protected static ?string $title = 'Role <Edit>';    
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }    
 
     protected function getHeaderActions(): array
     {

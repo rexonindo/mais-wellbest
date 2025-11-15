@@ -7,10 +7,17 @@ use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use App\Models\WorkOrder;
 use App\Models\Item;
+use Illuminate\Support\Facades\DB;
 
 class EditProductionLog extends EditRecord
 {
     protected static string $resource = ProductionLogResource::class;
+    protected static ?string $title = 'Production Log <Edit>';    
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }    
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
@@ -27,8 +34,24 @@ class EditProductionLog extends EditRecord
                     $data['itm_nm'] = $workOrder->itm_cd;
                 }
 
-                $data['in_qty'] = $data['in_qty'] ?? $workOrder->plan_qty;
             }
+            if (!empty($data['proc_cd'])) {
+                $shootQty = DB::table('wo_proc_tbl')
+                    ->where('wo_no', $data['wo_no'])
+                    ->where('proc_cd', $data['proc_cd'])
+                    ->value('shoot_qty');
+
+                if ($shootQty !== null) {
+                    $data['in_qty'] = $shootQty;
+                } else {
+                    // fallback to plan_qty from work order if shoot_qty not found
+                    $data['in_qty'] = $data['in_qty'] ?? $workOrder->plan_qty ?? 0;
+                }
+            } else {
+                // fallback if proc_cd missing
+                $data['in_qty'] = $data['in_qty'] ?? $workOrder->plan_qty ?? 0;
+            }
+
         }
 
         return $data;

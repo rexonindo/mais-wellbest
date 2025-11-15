@@ -111,12 +111,25 @@ class ItemResource extends BaseResource
                     ->label('Standard Rate')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('cavity')
+                    ->label('Cavity'),    
+                Tables\Columns\TextColumn::make('customer.cust_nm')
+                    ->label('Customer Name')
+                    ->formatStateUsing(function ($state, $record) {
+                        return $record->customer
+                            ? "{$record->customer->cust_nm} ({$record->customer->cust_cd})"
+                            : null;
+                    })                    
+                    ->searchable(),                    
+
             ])
             ->filters([
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                //Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

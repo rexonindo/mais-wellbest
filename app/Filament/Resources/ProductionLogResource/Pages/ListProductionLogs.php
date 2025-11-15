@@ -9,7 +9,8 @@ use Filament\Resources\Pages\ListRecords;
 class ListProductionLogs extends ListRecords
 {
     protected static string $resource = ProductionLogResource::class;
-    protected static ?string $title = 'Production Log';
+    protected static ?string $title = 'Production Log <List>';
+    
     protected function getHeaderActions(): array
     {
         return [

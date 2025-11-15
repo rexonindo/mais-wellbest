@@ -54,4 +54,8 @@ class Item extends Model
     {
         return "{$this->itm_cd} - {$this->itm_nm}";
     }
+
+    public function customer() {
+        return $this->belongsTo(Customer::class, 'cust_cd', 'cust_cd');
+    }
 }

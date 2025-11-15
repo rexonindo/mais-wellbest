@@ -9,6 +9,7 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateDepartment extends CreateRecord
 {
     protected static string $resource = DepartmentResource::class;
+    protected static ?string $title = 'Department <Create>';    
     
     protected function getRedirectUrl(): string
     {

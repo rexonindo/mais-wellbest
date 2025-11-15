@@ -38,7 +38,13 @@ class ProductRouteResource extends BaseResource
                     ->numeric(),
                 Forms\Components\Select::make('proc_cd')
                     ->label('Process')
-                    ->options(fn () => Process::orderBy('proc_nm')->pluck('proc_nm', 'proc_cd')->toArray())
+                    // ->options(fn () => Process::orderBy('proc_nm')->pluck('proc_nm', 'proc_cd')->toArray())
+                    ->options(
+                        fn () => \App\Models\Process::orderBy('proc_nm')
+                            ->get()
+                            ->mapWithKeys(fn ($p) => [$p->proc_cd => "{$p->proc_nm} ({$p->proc_cd})"])
+                            ->toArray()
+                    )                    
                     ->searchable()
                     ->nullable(),                    
 
@@ -57,12 +63,19 @@ class ProductRouteResource extends BaseResource
                     ->numeric(),
                 Tables\Columns\TextColumn::make('process.proc_nm')
                     ->label('Process Name')
+                    ->formatStateUsing(function ($state, $record) {
+                        return $record->process
+                            ? "{$record->process->proc_nm} ({$record->process->proc_cd})"
+                            : null;
+                    })                    
                     ->searchable(),
             ])
             ->defaultSort('itm_type')
             ->filters(self::getTableFilters())
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                //Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

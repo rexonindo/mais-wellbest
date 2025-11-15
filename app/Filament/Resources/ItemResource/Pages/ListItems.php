@@ -9,7 +9,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListItems extends ListRecords
 {
     protected static string $resource = ItemResource::class;
-    protected static ?string $title = 'Product List';
+    protected static ?string $title = 'Part Number <List>';
     protected function getHeaderActions(): array
     {
         return [

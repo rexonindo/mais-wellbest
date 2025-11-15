@@ -9,7 +9,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListUsers extends ListRecords
 {
     protected static string $resource = UserResource::class;
-
+    protected static ?string $title = 'User <List>';
     protected function getHeaderActions(): array
     {
         return [
