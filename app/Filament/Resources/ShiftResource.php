@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ShiftResource\Pages;
-use App\Filament\BaseResource;
 use App\Models\Shift;
 use Filament\Forms;
 use Filament\Forms\Form;

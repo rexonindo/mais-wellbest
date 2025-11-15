@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\UserResource\Pages;
-use App\Filament\BaseResource;
 use App\Models\User;
 use App\Helpers\RoleAccess;
 use Filament\Facades\Filament;

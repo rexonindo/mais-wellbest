@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\CustomerResource\Pages;
 use App\Filament\Resources\CustomerResource\RelationManagers;
-use App\Filament\BaseResource;
 use App\Models\Customer;
 use Filament\Forms;
 use Filament\Forms\Form;

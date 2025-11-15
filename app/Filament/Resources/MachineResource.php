@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\MachineResource\Pages;
-use App\Filament\BaseResource;
 use App\Models\Machine;
 use App\Models\Department;
 use Filament\Forms;

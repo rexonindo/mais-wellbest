@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament;
+namespace App\Filament\Resources;
 
 use Filament\Resources\Resource;
 use App\Helpers\RoleAccess;

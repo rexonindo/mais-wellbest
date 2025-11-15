@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ModelHasRoleResource\Pages;
-use App\Filament\BaseResource;
 use App\Models\ModelHasRole;
 use App\Models\Role;
 use App\Models\User;

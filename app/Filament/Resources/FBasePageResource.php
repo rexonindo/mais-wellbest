@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Filament;
+namespace App\Filament\Resources;
 
 use Filament\Pages\Page;
 use Filament\Facades\Filament;
 use App\Helpers\RoleAccess;
 
-abstract class FBasePage extends Page
+abstract class FBasePageResource extends Page
 {
     /*
     public static function canAccess(): bool

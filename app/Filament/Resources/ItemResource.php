@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ItemResource\Pages;
 use App\Filament\Resources\ItemResource\RelationManagers;
-use App\Filament\BaseResource;
 use App\Models\Item;
 use App\Models\ProductRoute;
 use App\Models\Customer;
