@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\BasePage;
+use App\Filament\FilamentBasePage;
 use App\Models\ProductRoute;
 use App\Models\Process;
 use Filament\Forms;
@@ -15,7 +15,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Notifications\Notification;
 
 // class ManageProductRoute extends Page implements Forms\Contracts\HasForms, Tables\Contracts\HasTable
-class ManageProductRoute extends BasePage implements HasTable
+class ManageProductRoute extends FilamentBasePage implements HasTable
 {
     use Forms\Concerns\InteractsWithForms;
     use Tables\Concerns\InteractsWithTable;

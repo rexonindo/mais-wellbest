@@ -6,7 +6,7 @@ use Filament\Pages\Page;
 use Filament\Facades\Filament;
 use App\Helpers\RoleAccess;
 
-abstract class BasePage extends Page
+abstract class FilamentBasePage extends Page
 {
     /*
     public static function canAccess(): bool
