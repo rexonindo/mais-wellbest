@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\FilamentBasePage;
+use App\Filament\FBasePage;
 use App\Models\WOProgress;
 use Filament\Pages\Page;
 use Filament\Tables;
@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Facades\Excel; // for Excel export
 use Barryvdh\DomPDF\Facade\Pdf;     // for PDF export
 
 // class WOProgressReport extends Page implements HasTable
-class WOProgressReport extends FilamentBasePage implements HasTable
+class WOProgressReport extends FBasePage implements HasTable
 {
     use Tables\Concerns\InteractsWithTable;
     
