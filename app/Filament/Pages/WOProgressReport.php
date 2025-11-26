@@ -32,22 +32,14 @@ class WOProgressReport extends FBasePageResource implements HasTable
             ->query(function () {
                 return WOProgress::query()
                     ->select(
-                        'A.wo_no', 'A.itm_cd', 'B.itm_type',
-                        'C.seq_no', 'C.proc_cd', 'D.proc_nm',
-                        'E.in_qty', 'E.ng_qty', 'E.out_qty', 'E.mchn_cd', 'F.emp_nm'
+                        'wo_no', 'itm_cd', 'itm_type', 'seq_no', 'proc_cd', 'proc_nm',
+                        'start_time', 'end_time', 'wo_qty', 'cav',
+                        'in_qty', 'rwk_qty', 'ng_qty', 'out_qty', 'mchn_cd', 'emp_nm'
                     )
-                    ->from('wo_tbl as A')
-                    ->leftJoin('itm_tbl as B', 'A.itm_cd', '=', 'B.itm_cd')
-                    ->leftJoin('prdroute_tbl as C', 'B.itm_type', '=', 'C.itm_type')
-                    ->leftJoin('proc_tbl as D', 'C.proc_cd', '=', 'D.proc_cd')
-                    ->leftJoin('prdlog_tbl as E', function ($join) {
-                        $join->on('A.wo_no', '=', 'E.wo_no')
-                            ->on('A.itm_cd', '=', 'E.itm_cd')
-                            ->on('C.proc_cd', '=', 'E.proc_cd');
-                    })
-                    ->leftJoin('empl_tbl as F', 'E.emp_id', '=', 'F.emp_id')
-                    ->orderBy('A.wo_no')
-                    ->orderBy('C.seq_no');
+                    ->from('wo_progress_view')
+                    ->orderBy('wo_no')
+                    ->orderBy('seq_no')
+                    ->orderBy('end_time');
             })
 
             ->columns([
@@ -57,47 +49,65 @@ class WOProgressReport extends FBasePageResource implements HasTable
                         return $query->where('A.wo_no', 'like', "%{$search}%");
                     }),
                 Tables\Columns\TextColumn::make('itm_cd')
-                    ->label('Product Code')
+                    ->label('Part No')
                     ->searchable(query: function ($query, $search) {
                         return $query->where('A.itm_cd', 'like', "%{$search}%");
                     }),
                 Tables\Columns\TextColumn::make('itm_type')
-                    ->label('Product Type')
+                    ->label('Part Type')
                     ->searchable(query: function ($query, $search) {
-                        return $query->where('B.itm_type', 'like', "%{$search}%");
+                        return $query->where('itm_type', 'like', "%{$search}%");
                     }),                    
-                Tables\Columns\TextColumn::make('seq_no')->label('Seq No'),
-                Tables\Columns\TextColumn::make('proc_cd')->label('Proc Code'),
+                Tables\Columns\TextColumn::make('seq_no')
+                    ->label('Seq No'),
+                Tables\Columns\TextColumn::make('proc_cd')
+                    ->label('Process Code'),
                 Tables\Columns\TextColumn::make('proc_nm')
-                    ->label('Proc Name')
+                    ->label('Process Name')
                     ->searchable(query: function ($query, $search) {
-                        return $query->where('D.proc_nm', 'like', "%{$search}%");
-                    }),                    
-                Tables\Columns\TextColumn::make('in_qty')
-                    ->label('In Qty')
+                        return $query->where('proc_nm', 'like', "%{$search}%");
+                    }),
+                Tables\Columns\TextColumn::make('wo_qty')
+                    ->label('WO Qty')
                     ->numeric()
                     ->alignEnd()
-                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                       
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),
+                Tables\Columns\TextColumn::make('cav')
+                    ->label('Cavity')
+                    ->numeric()
+                    ->alignEnd(),    
+                Tables\Columns\TextColumn::make('in_qty')
+                    ->label('IN Qty')
+                    ->numeric()
+                    ->alignEnd()
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),
+                Tables\Columns\TextColumn::make('rwk_qty')
+                    ->label('Rework Qty')
+                    ->numeric()
+                    ->alignEnd()
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                                                  
                 Tables\Columns\TextColumn::make('ng_qty')
                     ->label('NG Qty')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                       
                 Tables\Columns\TextColumn::make('out_qty')
-                    ->label('Out Qty')
+                    ->label('OUT Qty')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),
                 Tables\Columns\TextColumn::make('mchn_cd')
                     ->label('Machine')
                     ->searchable(query: function ($query, $search) {
-                        return $query->where('E.mchn_cd', 'like', "%{$search}%");
+                        return $query->where('mchn_cd', 'like', "%{$search}%");
                     }),                 
                 Tables\Columns\TextColumn::make('emp_nm')
-                    ->label('Employee')
+                    ->label('Operator')
                     ->searchable(query: function ($query, $search) {
-                        return $query->where('F.emp_nm', 'like', "%{$search}%");
-                    }),                     
+                        return $query->where('emp_nm', 'like', "%{$search}%");
+                    }),  
+                Tables\Columns\TextColumn::make('start_time')->label('Start Time'),
+                Tables\Columns\TextColumn::make('end_time')->label('End Time'),                                         
             ])
 
             ->filters($this->getTableFilters())
@@ -144,15 +154,15 @@ class WOProgressReport extends FBasePageResource implements HasTable
             Tables\Filters\Filter::make('itm_cd')
                 ->form([
                     Forms\Components\TextInput::make('itm_cd')
-                        ->label('Product Code')
-                        ->placeholder('Enter Product Code'),
+                        ->label('Part No')
+                        ->placeholder('Enter Part No'),
                 ])
                 ->query(function ($query, array $data) {
                     return $query
                         ->when($data['itm_cd'], fn($q, $value) => $q->where('A.itm_cd', 'like', "%{$value}%"));
                 })
                 ->indicateUsing(function (array $data): ?string {
-                    return $data['itm_cd'] ? "Product Code: {$data['itm_cd']}" : null;
+                    return $data['itm_cd'] ? "Part No: {$data['itm_cd']}" : null;
                 }),                  
         ];
     }    
@@ -163,7 +173,7 @@ class WOProgressReport extends FBasePageResource implements HasTable
 
         $filename = 'WOProgressReport_' . now()->format('Ymd_His') . '.xlsx';
 
-        return Excel::download(new \App\Exports\ArrayExport($data), $filename);
+        return Excel::download(new \App\Exports\WOProgressReportExcel($data), $filename);
     }
 
     protected function exportPdf()
@@ -181,30 +191,27 @@ class WOProgressReport extends FBasePageResource implements HasTable
 
     public function getTableQuery()
     {
-        return DB::table('wo_tbl as A')
-            ->leftJoin('itm_tbl as B', 'A.itm_cd', '=', 'B.itm_cd')
-            ->leftJoin('prdroute_tbl as C', 'B.itm_type', '=', 'C.itm_type')
-            ->leftJoin('proc_tbl as D', 'C.proc_cd', '=', 'D.proc_cd')
-            ->leftJoin('prdlog_tbl as E', function ($join) {
-                $join->on('A.wo_no', '=', 'E.wo_no')
-                    ->on('A.itm_cd', '=', 'E.itm_cd')
-                    ->on('C.proc_cd', '=', 'E.proc_cd');
-            })
-            ->leftJoin('empl_tbl as F', 'E.emp_id', '=', 'F.emp_id')
+        return DB::table('wo_progress_view')
             ->select([
-                'A.wo_no as wo_no',
-                'A.itm_cd as itm_cd',
-                'B.itm_type as itm_type',
-                'C.seq_no as seq_no',
-                'C.proc_cd as proc_cd',
-                'D.proc_nm as proc_nm',
-                'E.in_qty as in_qty',
-                'E.ng_qty as ng_qty',
-                'E.out_qty as out_qty',
-                'E.mchn_cd as mchn_cd',
-                'F.emp_nm as emp_nm',
+                'wo_no',
+                'itm_cd', 
+                'itm_type', 
+                'seq_no', 
+                'proc_cd', 
+                'proc_nm',
+                'wo_qty', 
+                'cav',
+                'in_qty', 
+                'rwk_qty', 
+                'ng_qty', 
+                'out_qty', 
+                'mchn_cd', 
+                'emp_nm',
+                'start_time', 
+                'end_time',                 
             ])
-            ->orderBy('A.wo_no')
-            ->orderBy('C.seq_no');
+            ->orderBy('wo_no')
+            ->orderBy('seq_no')
+            ->orderBy('end_time');
     }    
 }

@@ -30,7 +30,7 @@ class WellbestPanelProvider extends PanelProvider
             ->path('wellbest')
             ->login()
             ->sidebarCollapsibleOnDesktop()
-            ->brandName('Mais - Wellbest')
+            ->brandName('MAIS - Wellbest')
             ->colors([
                 'primary' => Color::Amber,
             ])

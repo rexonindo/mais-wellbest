@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ProductionLogResource\Pages;
 
 use App\Filament\Resources\ProductionLogResource;
 use Filament\Actions;
+use Filament\Facades\Filament;
 use Filament\Resources\Pages\EditRecord;
 use App\Models\WorkOrder;
 use App\Models\Item;
@@ -17,6 +18,12 @@ class EditProductionLog extends EditRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }    
+
+    public static function canAccess(array $parameters = []): bool
+    {
+        $user = Filament::auth()->user();
+        return $user->hasRole('admin');
     }    
 
     protected function mutateFormDataBeforeFill(array $data): array

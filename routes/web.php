@@ -7,10 +7,6 @@ Route::get('/', function () {
     return redirect('/wellbest/login');
 });
 
-Route::get('/login', function () {
-    return 'Login page placeholder';
-})->name('login');
-
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

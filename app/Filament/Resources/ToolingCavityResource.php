@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\ToolingCavityResource\Pages;
 use App\Filament\Resources\ProductRouteResource\RelationManagers;
 use App\Models\ToolingCavity;
@@ -13,12 +14,13 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class ToolingCavityResource extends Resource
+class ToolingCavityResource extends BaseResource
 {
     protected static ?string $model = ToolingCavity::class;
     protected static ?string $navigationGroup = 'Process & Flow';
     protected static ?string $navigationLabel = 'Tooling Cavity';
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
+    protected static ?string $title = 'Tooling Cavity';    
     protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form

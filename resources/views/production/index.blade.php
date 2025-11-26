@@ -25,7 +25,7 @@
                         <input type="text" name="machine_code" class="form-control">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Product Code</label>
+                        <label class="form-label">Part No</label>
                         <input type="text" name="product_code" class="form-control" required>
                     </div>
 

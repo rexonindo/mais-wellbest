@@ -16,8 +16,8 @@
             <tr>
                 <th>WO No</th>
                 <th>Request Date</th>
-                <th>Product Code</th>
-                <th>Product Type</th>
+                <th>Part No</th>
+                <th>Part Type</th>
                 <th>Proc Code</th>
                 <th>Proc Name</th>
                 <th>End Time</th>

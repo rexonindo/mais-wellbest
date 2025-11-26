@@ -138,5 +138,17 @@ return [
         ],
     ],
 
+    'panels' => [
+        'wellbest' => [
+            'id' => 'wellbest',
+            'auth' => [
+                'guard' => 'web',     // or your custom guard
+                'pages' => [
+                    'login' => \Filament\Pages\Auth\Login::class,
+                ],
+            ],
+        ],
+    ],
+
 ];
 

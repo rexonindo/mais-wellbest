@@ -28,16 +28,21 @@ class ArrayExport implements FromArray, WithHeadings, WithTitle, WithEvents
     {
         return [
             'WO No',
-            'Item Code',
-            'Item Type',
+            'Part No',
+            'Part Type',
             'Seq No',
             'Process Code',
             'Process Name',
-            'Input Qty',
+            'WO Qty',
+            'Cavity',
+            'IN Qty',
+            'Rework Qty',
             'NG Qty',
-            'Output Qty',
+            'OUT Qty',
             'Machine Code',
             'Employee Name',
+            'Start',
+            'Finish',
         ];
     }
 
@@ -54,7 +59,7 @@ class ArrayExport implements FromArray, WithHeadings, WithTitle, WithEvents
 
                 // Insert title at the top
                 $sheet->insertNewRowBefore(1, 2);
-                $sheet->mergeCells('A1:K1');
+                $sheet->mergeCells('A1:P1');
                 $sheet->setCellValue('A1', $this->reportTitle);
 
                 // Style the title
@@ -62,8 +67,8 @@ class ArrayExport implements FromArray, WithHeadings, WithTitle, WithEvents
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
 
                 // Style header row
-                $sheet->getStyle('A3:K3')->getFont()->setBold(true);
-                $sheet->getStyle('A3:K3')->getAlignment()->setHorizontal('center');
+                $sheet->getStyle('A3:P3')->getFont()->setBold(true);
+                $sheet->getStyle('A3:P3')->getAlignment()->setHorizontal('center');
             },
         ];
     }

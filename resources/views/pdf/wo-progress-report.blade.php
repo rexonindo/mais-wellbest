@@ -15,16 +15,21 @@
         <thead>
             <tr>
                 <th>WO No</th>
-                <th>Item Code</th>
-                <th>Item Type</th>
+                <th>Part No</th>
+                <th>Part Type</th>
                 <th>Seq No</th>
-                <th>Proc Code</th>
-                <th>Proc Name</th>
-                <th>In Qty</th>
+                <th>Process Code</th>
+                <th>Process Name</th>
+                <th>WO Qty</th>
+                <th>Cavity</th>
+                <th>IN Qty</th>
+                <th>Rework Qty</th>
                 <th>NG Qty</th>
-                <th>Out Qty</th>
+                <th>OUT Qty</th>
                 <th>Machine</th>
                 <th>Employee</th>
+                <th>Start</th>
+                <th>Finish</th>                
             </tr>
         </thead>
         <tbody>
@@ -36,11 +41,16 @@
                     <td>{{ $row->seq_no }}</td>
                     <td>{{ $row->proc_cd }}</td>
                     <td>{{ $row->proc_nm }}</td>
+                    <td>{{ $row->wo_qty }}</td>
+                    <td>{{ $row->cav }}</td>
                     <td>{{ $row->in_qty }}</td>
+                    <td>{{ $row->rwk_qty }}</td>
                     <td>{{ $row->ng_qty }}</td>
                     <td>{{ $row->out_qty }}</td>
                     <td>{{ $row->mchn_cd }}</td>
                     <td>{{ $row->emp_nm }}</td>
+                    <td>{{ $row->start_time }}</td>
+                    <td>{{ $row->end_time }}</td>                    
                 </tr>
             @endforeach
         </tbody>

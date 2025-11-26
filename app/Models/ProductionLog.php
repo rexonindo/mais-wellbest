@@ -25,6 +25,7 @@ class ProductionLog extends Model
         'in_qty',
         'out_qty',
         'ng_qty',
+        'rwk_qty',
         'rmks'
     ];
 

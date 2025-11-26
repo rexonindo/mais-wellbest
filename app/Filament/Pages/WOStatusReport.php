@@ -32,14 +32,13 @@ class WOStatusReport extends FBasePageResource implements HasTable
             ->query(function () {
                 return WOStatus::query()
                     ->select(
-                        'wo_no', 'req_dt', 'itm_cd', 'itm_type', 
+                        'wo_no', 'cust_nm', 'req_dt', 'itm_cd', 'itm_type', 
                         'proc_cd', 'proc_nm', 
                         'end_time', 'plan_qty', 'out_qty', 'os_qty',
                         'mchn_cd', 'emp_nm' 
                     )
                     ->from('wo_status_view')
-                    ->orderBy('wo_no')
-                    ->orderBy('req_dt');
+                    ->orderBy('wo_no');
             })
 
             ->columns([
@@ -48,31 +47,36 @@ class WOStatusReport extends FBasePageResource implements HasTable
                     ->searchable(query: function ($query, $search) {
                         return $query->where('wo_no', 'like', "%{$search}%");
                     }),
+                Tables\Columns\TextColumn::make('cust_nm')
+                    ->label('Customer Name')
+                    ->searchable(query: function ($query, $search) {
+                        return $query->where('cust_nm', 'like', "%{$search}%");
+                    }),                    
                 Tables\Columns\TextColumn::make('req_dt')->label('Req Date'),    
                 Tables\Columns\TextColumn::make('itm_cd')
-                    ->label('Product Code')
+                    ->label('Part No')
                     ->searchable(query: function ($query, $search) {
                         return $query->where('itm_cd', 'like', "%{$search}%");
                     }),
                 Tables\Columns\TextColumn::make('itm_type')
-                    ->label('Product Type')
+                    ->label('Part Type')
                     ->searchable(query: function ($query, $search) {
                         return $query->where('itm_type', 'like', "%{$search}%");
                     }),                    
                 Tables\Columns\TextColumn::make('proc_cd')->label('Proc Code'),
                 Tables\Columns\TextColumn::make('proc_nm')
-                    ->label('Proc Name')
+                    ->label('Process Name')
                     ->searchable(query: function ($query, $search) {
                         return $query->where('proc_nm', 'like', "%{$search}%");
                     }),                    
                 Tables\Columns\TextColumn::make('end_time')->label('End Time'),  
                 Tables\Columns\TextColumn::make('plan_qty')
-                    ->label('Plan Qty')
+                    ->label('WO Qty')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),   
                 Tables\Columns\TextColumn::make('out_qty')
-                    ->label('Out Qty')
+                    ->label('OUT Qty')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                          
@@ -87,7 +91,7 @@ class WOStatusReport extends FBasePageResource implements HasTable
                         return $query->where('mchn_cd', 'like', "%{$search}%");
                     }),                 
                 Tables\Columns\TextColumn::make('emp_nm')
-                    ->label('Employee')
+                    ->label('Operator')
                     ->searchable(query: function ($query, $search) {
                         return $query->where('emp_nm', 'like', "%{$search}%");
                     }),                     
@@ -135,15 +139,15 @@ class WOStatusReport extends FBasePageResource implements HasTable
             Tables\Filters\Filter::make('itm_cd')
                 ->form([
                     Forms\Components\TextInput::make('itm_cd')
-                        ->label('Product Code')
-                        ->placeholder('Enter Product Code'),
+                        ->label('Part No')
+                        ->placeholder('Enter Part No'),
                 ])
                 ->query(function ($query, array $data) {
                     return $query
                         ->when($data['itm_cd'], fn($q, $value) => $q->where('itm_cd', 'like', "%{$value}%"));
                 })
                 ->indicateUsing(function (array $data): ?string {
-                    return $data['itm_cd'] ? "Product Code: {$data['itm_cd']}" : null;
+                    return $data['itm_cd'] ? "Part No: {$data['itm_cd']}" : null;
                 }),                  
         ];
     }    
@@ -154,7 +158,7 @@ class WOStatusReport extends FBasePageResource implements HasTable
 
         $filename = 'WOStatusReport_' . now()->format('Ymd_His') . '.xlsx';
 
-        return Excel::download(new \App\Exports\WOStatusArrayExport($data), $filename);
+        return Excel::download(new \App\Exports\WOStatusReportExport($data), $filename);
     }
 
     protected function exportPdf()
@@ -187,7 +191,6 @@ class WOStatusReport extends FBasePageResource implements HasTable
                 'mchn_cd', 
                 'emp_nm', 
             ])
-            ->orderBy('wo_no')
-            ->orderBy('req_dt');
+            ->orderBy('wo_no');
     }    
 }
