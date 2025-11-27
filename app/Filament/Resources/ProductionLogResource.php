@@ -199,7 +199,17 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\Select::make('mchn_cd')
                     ->label('Machine')
-                    ->options(fn () => Machine::orderBy('mchn_nm')->pluck('mchn_nm', 'mchn_cd')->toArray())
+                   //  ->options(fn () => Machine::orderBy('mchn_nm')->pluck('mchn_nm', 'mchn_cd')->toArray())
+
+                    ->options(function () {
+                        return Machine::orderBy('dsc')
+                        ->get()
+                        ->mapWithKeys(fn ($mchn) => [
+                            $mchn->mchn_cd => "{$mchn->dsc} - {$mchn->mchn_nm}",
+                        ])
+                        ->toArray();
+                    })
+
                     ->searchable(),                    
 
                 Forms\Components\Group::make()
