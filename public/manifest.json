@@ -1,0 +1,43 @@
+{
+    "name": "MAIS-Wellbest",
+    "short_name": "MAIS",
+    "start_url": "/",
+    "display": "standalone",
+    "orientation": "portrait",    
+    "background_color": "#ffffff",
+    "theme_color": "#1a73e8",
+    "icons": [
+        {
+        "src": "/icons/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+        },
+        {
+        "src": "/icons/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Operator Menu",
+            "short_name": "Operator",
+            "url": "/operator",
+            "icons": [{ "src": "/icons/op-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Start Production",
+            "short_name": "Start",
+            "url": "/production/start",
+            "icons": [{ "src": "/icons/start-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Rework",
+            "short_name": "Rework",
+            "url": "/production/rework",
+            "icons": [{ "src": "/icons/rework-192.png", "sizes": "192x192" }]
+        }
+    ]
+
+
+}

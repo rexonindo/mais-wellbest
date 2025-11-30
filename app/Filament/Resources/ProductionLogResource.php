@@ -19,7 +19,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
-
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -468,13 +467,12 @@ class ProductionLogResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
-        $user = Filament::auth()->user();
-
         $query = parent::getEloquentQuery()
             ->orderBy('wo_no')
             ->orderBy('itm_cd')
             ->orderBy('start_time');
 
+        // $user = Filament::auth()->user();
         $user = auth()->user();
 
         // Admin role can see ALL data

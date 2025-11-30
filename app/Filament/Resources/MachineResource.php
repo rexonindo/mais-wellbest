@@ -80,7 +80,11 @@ class MachineResource extends BaseResource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                //Tables\Actions\DeleteAction::make(),
+                Tables\Actions\Action::make('printLabel')
+                    ->label('Print Label')
+                    ->icon('heroicon-o-printer')
+                    ->url(fn (Machine $record) => route('machine.print-label', $record))
+                    ->openUrlInNewTab(),      
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

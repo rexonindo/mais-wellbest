@@ -13,6 +13,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Navigation\NavigationBuilder;
 use Filament\Navigation\NavigationItem;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class WorkOrderResource extends BaseResource
 {
@@ -133,11 +135,15 @@ class WorkOrderResource extends BaseResource
                         'danger' => 'Cancelled',
                     ]),
             ])
-            ->filters([])
+            ->filters([])         
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                //Tables\Actions\DeleteAction::make(),
+                Tables\Actions\Action::make('printLabel')
+                    ->label('Print Label')
+                    ->icon('heroicon-o-printer')
+                    ->url(fn (WorkOrder $record) => route('workorder.print-label', $record))
+                    ->openUrlInNewTab(),                
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -145,6 +151,12 @@ class WorkOrderResource extends BaseResource
                 ]),
             ]);
 
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->orderBy('updated_at', 'desc');
     }
 
     public static function getPages(): array

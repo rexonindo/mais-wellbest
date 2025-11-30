@@ -46,12 +46,12 @@ class WOProgressReport extends FBasePageResource implements HasTable
                 Tables\Columns\TextColumn::make('wo_no')
                     ->label('WO No')
                     ->searchable(query: function ($query, $search) {
-                        return $query->where('A.wo_no', 'like', "%{$search}%");
+                        return $query->where('wo_no', 'like', "%{$search}%");
                     }),
                 Tables\Columns\TextColumn::make('itm_cd')
                     ->label('Part No')
                     ->searchable(query: function ($query, $search) {
-                        return $query->where('A.itm_cd', 'like', "%{$search}%");
+                        return $query->where('itm_cd', 'like', "%{$search}%");
                     }),
                 Tables\Columns\TextColumn::make('itm_type')
                     ->label('Part Type')
@@ -146,7 +146,7 @@ class WOProgressReport extends FBasePageResource implements HasTable
                 ])
                 ->query(function ($query, array $data) {
                     return $query
-                        ->when($data['wo_no'], fn($q, $value) => $q->where('A.wo_no', 'like', "%{$value}%"));
+                        ->when($data['wo_no'], fn($q, $value) => $q->where('wo_no', 'like', "%{$value}%"));
                 })
                 ->indicateUsing(function (array $data): ?string {
                     return $data['wo_no'] ? "WO No: {$data['wo_no']}" : null;
@@ -159,7 +159,7 @@ class WOProgressReport extends FBasePageResource implements HasTable
                 ])
                 ->query(function ($query, array $data) {
                     return $query
-                        ->when($data['itm_cd'], fn($q, $value) => $q->where('A.itm_cd', 'like', "%{$value}%"));
+                        ->when($data['itm_cd'], fn($q, $value) => $q->where('itm_cd', 'like', "%{$value}%"));
                 })
                 ->indicateUsing(function (array $data): ?string {
                     return $data['itm_cd'] ? "Part No: {$data['itm_cd']}" : null;

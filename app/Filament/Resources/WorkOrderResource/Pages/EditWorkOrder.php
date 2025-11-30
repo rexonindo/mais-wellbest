@@ -51,8 +51,6 @@ class EditWorkOrder extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-
-
             Actions\Action::make('generateProcess')
                 ->label('Generate Process')
                 ->icon('heroicon-o-cog')

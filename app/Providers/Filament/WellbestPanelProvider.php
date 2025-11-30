@@ -11,8 +11,12 @@ use Filament\Facades\Filament;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\Widgets;
+use Filament\Support\Colors\Color;
+
+use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Assets\Js;
+
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -28,6 +32,28 @@ class WellbestPanelProvider extends PanelProvider
             ->default()
             ->id('wellbest')
             ->path('wellbest')
+
+            // --- INSERT PWA FILES HERE ---
+            // 1. Include manifest
+            ->renderHook(
+                'panels::head.end',
+                fn (): string => <<<HTML
+                    <link rel="manifest" href="/manifest.json">
+                    <meta name="theme-color" content="#1a73e8">
+                    <script type="module" src="/build/assets/pwa.js"></script>
+                HTML
+            )
+            // 2. Load pwa.js
+            ->bootUsing(function () {
+                FilamentAsset::register([
+                    \Filament\Support\Assets\Js::make(
+                        'pwa-js',
+                        asset('build/assets/pwa-DwUm5zTl.js') // ← USE YOUR HASHED FILE
+                    ),
+                ], 'wellbest-pwa');
+            })
+            // ---------------------------------
+
             ->login()
             ->sidebarCollapsibleOnDesktop()
             ->brandName('MAIS - Wellbest')
@@ -99,6 +125,6 @@ class WellbestPanelProvider extends PanelProvider
 
     public function boot(): void
     {
-        // no parent::boot()
+        // No parent::boot() required
     }
 }

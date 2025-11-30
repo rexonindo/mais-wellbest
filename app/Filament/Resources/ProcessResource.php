@@ -52,6 +52,15 @@ class ProcessResource extends BaseResource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->headerActions([
+                Tables\Actions\Action::make('printAllLabels')
+                    ->label('Print All Labels')
+                    ->icon('heroicon-o-printer')
+                    ->url(fn () => route('process.print-multiple-labels', [
+                        'ids' => Process::pluck('id')->implode(','),
+                    ]))
+                    ->openUrlInNewTab(),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('proc_cd')->label('Process Code')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('proc_nm')
@@ -67,11 +76,25 @@ class ProcessResource extends BaseResource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                //Tables\Actions\DeleteAction::make(),
+                Tables\Actions\Action::make('printLabel')
+                    ->label('Print Label')
+                    ->icon('heroicon-o-printer')
+                    ->url(fn (Process $record) => route('process.print-label', $record))
+                    ->openUrlInNewTab(),      
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('printLabels')
+                        ->label('Print Labels')
+                        ->icon('heroicon-o-printer')
+                        ->action(function (array $records) {
+                            // $records is a collection of selected Process models
+                            // You can redirect to a route that generates PDFs for multiple processes
+                            $ids = $records->pluck('id')->implode(',');
+                            return redirect()->route('process.print-multiple-labels', ['ids' => $ids]);
+                        })
+                        ->requiresConfirmation(),
                 ]),
             ]);
     }
