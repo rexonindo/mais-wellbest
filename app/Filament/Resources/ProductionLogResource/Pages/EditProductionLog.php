@@ -2,18 +2,20 @@
 
 namespace App\Filament\Resources\ProductionLogResource\Pages;
 
+use App\Models\WorkOrder;
+use App\Models\Item;
 use App\Filament\Resources\ProductionLogResource;
 use Filament\Actions;
 use Filament\Facades\Filament;
 use Filament\Resources\Pages\EditRecord;
-use App\Models\WorkOrder;
-use App\Models\Item;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class EditProductionLog extends EditRecord
 {
     protected static string $resource = ProductionLogResource::class;
-    protected static ?string $title = 'Production Log <Edit>';    
+    protected static ?string $title = 'Production Log <Edit>';
 
     protected function getRedirectUrl(): string
     {
@@ -23,12 +25,43 @@ class EditProductionLog extends EditRecord
     public static function canAccess(array $parameters = []): bool
     {
         $user = Filament::auth()->user();
-        return $user->hasRole('admin');
+        return $user->hasAnyRole(['admin', 'production']);
     }    
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\DeleteAction::make()
+                ->before(function () {
+
+                    $prdlogId = $this->record->id;
+
+                    // Check if prdng_tbl has any detail for this production log
+                    $count = DB::table('prdng_tbl')
+                        ->where('id_prd', $prdlogId)
+                        ->count();
+
+                    if ($count > 0) {
+
+                        // Show error notification
+                        Notification::make()
+                            ->danger()
+                            ->title('Cannot delete Production Log')
+                            ->body("There are NG Detail records linked to this Production Log.")
+                            ->send();
+
+                        // Stop deletion
+                        throw ValidationException::withMessages([
+                            'delete' => 'Cannot delete because NG Detail exists.',
+                        ]);
+                    }
+                }),
+        ];
+    }
+
+/*
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        // ✅ When editing, fill itm_nm based on existing wo_no
         if (!empty($data['wo_no'])) {
             $workOrder = WorkOrder::where('wo_no', $data['wo_no'])->first();
             if ($workOrder) {
@@ -40,7 +73,6 @@ class EditProductionLog extends EditRecord
                     $data['itm_cd'] = $workOrder->itm_cd;
                     $data['itm_nm'] = $workOrder->itm_cd;
                 }
-
             }
             if (!empty($data['proc_cd'])) {
                 $shootQty = DB::table('wo_proc_tbl')
@@ -51,25 +83,69 @@ class EditProductionLog extends EditRecord
                 if ($shootQty !== null) {
                     $data['in_qty'] = $shootQty;
                 } else {
-                    // fallback to plan_qty from work order if shoot_qty not found
                     $data['in_qty'] = $data['in_qty'] ?? $workOrder->plan_qty ?? 0;
                 }
             } else {
-                // fallback if proc_cd missing
                 $data['in_qty'] = $data['in_qty'] ?? $workOrder->plan_qty ?? 0;
             }
-
         }
-
         return $data;
     }
-
-    protected function getHeaderActions(): array
+*/
+    protected function beforeSave(): void
     {
-        return [
-            Actions\DeleteAction::make(),
-        ];
-    }
+        $record = $this->record;
+        $data   = $this->data; // form data user submitted
 
+        $AvailQty = ($data['avail_qty'] ?? 0);
+        $InQty = ($data['in_qty'] ?? 0);
+        if ($InQty > $AvailQty) {
+            Notification::make()
+                ->danger()
+                ->title('Input Qty cannot larger than Available Qty')
+                ->body("
+                    Input Qty: {$InQty}<br>
+                    Available Qty: {$AvailQty}
+                ")
+                ->send();
+            throw ValidationException::withMessages([
+                'in_qty' => "Data cannot be saved.",
+            ]);
+        }   
+
+        $RsltQty = ($data['out_qty'] ?? 0) + ($data['ng_qty'] ?? 0) + ($data['rwk_qty'] ?? 0);
+        if ($RsltQty > $InQty) {
+            Notification::make()
+                ->danger()
+                ->title('Total Output, NG and Rework quantity cannot larger than input qty')
+                ->body("
+                    Input Qty: {$InQty}<br>
+                    Total Out + NG + Rework Qty: {$RsltQty}
+                ")
+                ->send();
+            throw ValidationException::withMessages([
+                'in_qty' => "Data cannot be saved.",
+            ]);
+        }   
+
+        // sum NG detail
+        $sumNg = \DB::table('prdng_tbl')
+            ->where('id_prd', $record->id)
+            ->sum('ng_qty');
+
+        if ($data['ng_qty'] < $sumNg) {
+            Notification::make()
+                ->danger()
+                ->title('NG Quantity less than detail NG')
+                ->body("
+                    Input NG Qty: {$data['ng_qty']}<br>
+                    Total Detail NG: {$sumNg}
+                ")
+                ->send();
+            throw ValidationException::withMessages([
+                'ng_qty' => "NG Qty ({$data['ng_qty']}) cannot be less than total NG Details ({$sumNg}).",
+            ]);
+        }
+    }
 
 }

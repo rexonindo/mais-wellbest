@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
-class Machine extends Model
+class NG extends Model
 {
     use HasFactory;
 
-    protected $table = 'mchn_tbl';
+    protected $table = 'ng_tbl';
     protected $primaryKey = 'id';
     public $timestamps = true; // Enabled timestamps (created_at / updated_at)
         
@@ -18,12 +18,9 @@ class Machine extends Model
     protected $keyType = 'int';
 
     protected $fillable = [
-        'mchn_cd',
-        'mchn_nm',
-        'dept_cd',
-        'uom',
+        'ng_nm',
         'dsc',
-        'stats',
+        'location',
     ];
 
     protected static function boot()

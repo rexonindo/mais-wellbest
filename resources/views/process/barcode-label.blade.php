@@ -45,7 +45,8 @@
                     </div>
                     <div class="text">
                         <p>Process Code: {{ $process->proc_cd }}</p>
-                        <p>Name: {{ $process->proc_nm }}</p>
+                        <p>{{ $process->proc_nm }}</p>
+                        <p>Dept: {{ $process->dept_cd }}</p>
                     </div>
                 </div>
             </td>

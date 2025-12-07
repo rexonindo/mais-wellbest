@@ -26,6 +26,9 @@ Route::get('/machine-master/{machine}/print-label', [MachineLabelController::cla
 Route::get('/process-master/print-multiple-labels', [ProcessLabelController::class, 'printMultipleLabels'])
     ->name('process.print-multiple-labels');
 
+Route::get('/machine-master/print-multiple-labels', [MachineLabelController::class, 'printMultipleLabels'])
+    ->name('machine.print-multiple-labels');    
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

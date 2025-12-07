@@ -36,18 +36,18 @@
     </style>
 </head>
 <body>
-@foreach($processes as $process)
+@foreach($machines as $machine)
     <table class="label" style="page-break-after: always;">
         <tr>
             <td style="padding:0; position:relative;">
                 <div style="position:absolute; top:13; left:13;">
                     <div class="barcode" style="margin-bottom:5pt;">
-                        <img src="data:image/png;base64,{{ $process->barcode }}">
+                        <img src="data:image/png;base64,{{ $machine->barcode }}">
                     </div>
                     <div class="text">
-                        <p>Process Code: {{ $process->proc_cd }}</p>
-                        <p>{{ $process->proc_nm }}</p>
-                        <p>Dept: {{ $process->dept_cd }}</p>
+                        <p>Machine Code: {{ $machine->mchn_cd }}</p>
+                        <p>{{ $machine->dsc }}</p>
+                        <p>{{ $machine->mchn_nm }}</p>
                     </div>
                 </div>
             </td>

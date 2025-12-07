@@ -62,6 +62,15 @@ class MachineResource extends BaseResource
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                Tables\Actions\Action::make('printAllLabels')
+                    ->label('Print All Labels')
+                    ->icon('heroicon-o-printer')
+                    ->url(fn () => route('machine.print-multiple-labels', [
+                        'ids' => Machine::pluck('id')->implode(','),
+                    ]))
+                    ->openUrlInNewTab(),
+            ])        
             ->columns([
                 Tables\Columns\TextColumn::make('mchn_cd')->label('Code')->sortable()->searchable(),
                 Tables\Columns\TextColumn::make('mchn_nm')->label('Name')->sortable()->searchable(),

@@ -45,7 +45,8 @@
                     </div>
                     <div class="text">
                         <p>Machine Code: {{ $machine->mchn_cd }}</p>
-                        <p>Name: {{ $machine->dsc }} {{ $machine->mchn_nm }}</p>
+                        <p>{{ $machine->dsc }}</p>
+                        <p>{{ $machine->mchn_nm }}</p>
                     </div>
                 </div>
             </td>

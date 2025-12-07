@@ -22,6 +22,7 @@ class ProductionLog extends Model
         'emp_id',
         'start_time',
         'end_time',
+        'avail_qty',
         'in_qty',
         'out_qty',
         'ng_qty',
@@ -66,4 +67,10 @@ class ProductionLog extends Model
     public function workOrder() {
         return $this->belongsTo(WorkOrder::class, 'wo_no', 'wo_no');
     }
+
+    public function ngDetails()
+    {
+        return $this->hasMany(\App\Models\ProductionNG::class, 'id_prd');
+    }
+
 }

@@ -12,6 +12,8 @@ class Employee extends Model
 
     protected $table = 'empl_tbl';
     protected $primaryKey = 'id';
+    public $timestamps = true; // Enabled timestamps (created_at / updated_at)
+        
     protected $fillable = [
         'emp_id',
         'emp_nm',

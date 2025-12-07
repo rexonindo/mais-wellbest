@@ -6,24 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
-class Machine extends Model
+class ProductionNG extends Model
 {
-    use HasFactory;
-
-    protected $table = 'mchn_tbl';
+    protected $table = 'prdng_tbl';
     protected $primaryKey = 'id';
     public $timestamps = true; // Enabled timestamps (created_at / updated_at)
-        
-    public $incrementing = true;
-    protected $keyType = 'int';
 
     protected $fillable = [
-        'mchn_cd',
-        'mchn_nm',
-        'dept_cd',
-        'uom',
-        'dsc',
-        'stats',
+        'id_prd',
+        'ng_nm',
+        'ng_qty',
     ];
 
     protected static function boot()
@@ -42,10 +34,10 @@ class Machine extends Model
                 $model->updated_by = Auth::user()->name;
             }
         });
-    }
-    
-    public function department()
+    }  
+
+    public function productionLog()
     {
-        return $this->belongsTo(Department::class, 'dept_cd', 'dept_cd');
+        return $this->belongsTo(ProductionLog::class, 'id_prd');
     }
 }

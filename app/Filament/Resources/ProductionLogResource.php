@@ -21,6 +21,7 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\DB;
 
 class ProductionLogResource extends BaseResource
 {
@@ -36,7 +37,8 @@ class ProductionLogResource extends BaseResource
         return $form
             ->schema([
                 Forms\Components\Select::make('wo_no')
-                    ->label('Work Order No')                    
+                    ->label('Work Order No')     
+                    ->disabled(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)               
                     ->options(function () {
                         return \App\Models\WorkOrder::query()
                             ->whereIn('wo_no', function ($query) {
@@ -49,63 +51,39 @@ class ProductionLogResource extends BaseResource
                     })
                     ->searchable()
                     ->reactive()
-                    ->afterStateHydrated(function ($state, callable $set, callable $get) {
-                        // ✅ Run when editing (form loads existing record)
-                        $workOrder = \App\Models\WorkOrder::where('wo_no', $state)->first();
-                        if ($workOrder) {
-                            $item = \App\Models\Item::where('itm_cd', $workOrder->itm_cd)->first();
+                    ->afterStateUpdated(function ($state, callable $set, callable $get, $livewire) {
+                        // Skip when creating a new record
+                        if ($livewire instanceof \Filament\Resources\Pages\CreateRecord) {
+                            $workOrder = \App\Models\WorkOrder::where('wo_no', $state)->first();
+                            if ($workOrder) {
+                                $item = \App\Models\Item::where('itm_cd', $workOrder->itm_cd)->first();
 
-                            if ($item) {
-                                $set('itm_cd', $item->itm_cd);
-                                $set('itm_nm', $item->itm_cd . ' (' . $item->itm_type . ')');
+                                if ($item) {
+                                    $set('itm_cd', $item->itm_cd);
+                                    $set('itm_nm', $item->itm_cd . ' (' . $item->itm_type . ')');
+                                } else {
+                                    $set('itm_cd', $workOrder->itm_cd);
+                                    $set('itm_nm', $workOrder->itm_cd);
+                                }
                             } else {
-                                $set('itm_cd', $workOrder->itm_cd);
-                                $set('itm_nm', $workOrder->itm_cd);
+                                $set('itm_cd', null);
+                                $set('itm_nm', null);
+                                $set('in_qty', null);
+                            }
+                            $procCd = $get('proc_cd'); 
+                            $query = \App\Models\WorkOrderProcess::where('wo_no', $state);
+                            if ($procCd) {
+                                $query->where('proc_cd', $procCd);
+                            }
+                            $workOrderProcess = $query->first();
+                            if ($workOrderProcess) {
+                                $set('in_qty', $workOrderProcess->shoot_qty ?? null);
+                            } else {
+                                $set('in_qty', null);
                             }
                         }
-                        $procCd = $get('proc_cd'); 
-                        $query = \App\Models\WorkOrderProcess::where('wo_no', $state);
-                        if ($procCd) {
-                            $query->where('proc_cd', $procCd);
-                        }
-                        $workOrderProcess = $query->first();
-                        if ($workOrderProcess) {
-                            $set('in_qty', $workOrderProcess->shoot_qty ?? null);
-                        } else {
-                            $set('in_qty', null);
-                        }
-                    })                    
-                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                        $workOrder = \App\Models\WorkOrder::where('wo_no', $state)->first();
-                        if ($workOrder) {
-                            $item = \App\Models\Item::where('itm_cd', $workOrder->itm_cd)->first();
-
-                            if ($item) {
-                                $set('itm_cd', $item->itm_cd);
-                                $set('itm_nm', $item->itm_cd . ' (' . $item->itm_type . ')');
-                            } else {
-                                $set('itm_cd', $workOrder->itm_cd);
-                                $set('itm_nm', $workOrder->itm_cd);
-                            }
-                        } else {
-                            $set('itm_cd', null);
-                            $set('itm_nm', null);
-                            $set('in_qty', null);
-                        }
-                        $procCd = $get('proc_cd'); 
-                        $query = \App\Models\WorkOrderProcess::where('wo_no', $state);
-                        if ($procCd) {
-                            $query->where('proc_cd', $procCd);
-                        }
-                        $workOrderProcess = $query->first();
-                        if ($workOrderProcess) {
-                            $set('in_qty', $workOrderProcess->shoot_qty ?? null);
-                        } else {
-                            $set('in_qty', null);
-                        }
-
                     })
-                    ->required(),
+                    ->required(),                    
 
                 // Hidden real item code (for saving)
                 Forms\Components\Hidden::make('itm_cd')
@@ -118,6 +96,8 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\Select::make('proc_cd')
                     ->label('Process')
+                    ->required()                    
+                    ->disabled(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)
                     ->options(function (callable $get) {
                         $woNo = $get('wo_no');
                         if (!$woNo) return [];
@@ -138,68 +118,42 @@ class ProductionLogResource extends BaseResource
                     })
                     ->searchable()
                     ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                        $woNo = $get('wo_no');
-                        $procCd = $state; // selected process code
-
-                        if (! $woNo || ! $procCd) {
-                            $set('in_qty', null);
-                            return;
+                    ->afterStateUpdated(function ($state, callable $set, callable $get, $livewire) {
+                        if ($livewire instanceof \Filament\Resources\Pages\CreateRecord) {
+                            $woNo = $get('wo_no');
+                            $procCd = $state; // selected process code
+                            if (! $woNo || ! $procCd) {
+                                $set('in_qty', null);
+                                return;
+                            }                            
+                            $SeqNoTbl = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
+                                    ->where('proc_cd', $procCd)
+                                    ->first();
+                            $SeqNo = $SeqNoTbl?->seq_no;           
+                            
+                            if ( $SeqNo === 1 ) {
+                                $workOrderProcess = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
+                                    ->where('proc_cd', $procCd)
+                                    ->first();   
+                                $set('avail_qty', $workOrderProcess?->shoot_qty ?? 0); 
+                                $set('in_qty', $workOrderProcess?->shoot_qty ?? 0); 
+                            }
+                            else
+                            {
+                                $AvailableQty = \DB::select("CALL get_wo_available_qty(?, ?)", [$woNo, $procCd]);
+                                $set('avail_qty', $AvailableQty[0]->avail_qty_shoot ?? 0);  
+                                $set('in_qty', $AvailableQty[0]->avail_qty_shoot ?? 0);      
+                            }                        
                         }
-                        
-                        $SeqNoTbl = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
-                                ->where('proc_cd', $procCd)
-                                ->first();
-                        $SeqNo = $SeqNoTbl?->seq_no;           
-                        
-                        if ( $SeqNo === 1 ) {
-                            $workOrderProcess = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
-                                 ->where('proc_cd', $procCd)
-                                 ->first();   
-                            $set('avail_qty', $workOrderProcess?->shoot_qty ?? 0); 
-                            $set('in_qty', $workOrderProcess?->shoot_qty ?? 0); 
-                        }
-                        else
-                        {
-                            $AvailableQty = \DB::select("CALL get_wo_available_qty(?, ?)", [$woNo, $procCd]);
-                            $set('avail_qty', $AvailableQty[0]->avail_qty_shoot ?? 0);  
-                            $set('in_qty', $AvailableQty[0]->avail_qty_shoot ?? 0);      
-                        }                        
+                    }),
+                    /*
+                    ->afterStateHydrated(function ($state, callable $set, callable $get, $livewire) {
+                
                     })
-                    ->afterStateHydrated(function ($state, callable $set, callable $get) {
-                        $woNo = $get('wo_no');
-                        $procCd = $state; // selected process code
-
-                        if (! $woNo || ! $procCd) {
-                            $set('in_qty', null);
-                            return;
-                        }
-                        
-                        $SeqNoTbl = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
-                                ->where('proc_cd', $procCd)
-                                ->first();
-                        $SeqNo = $SeqNoTbl?->seq_no;           
-                        
-                        if ( $SeqNo === 1 ) {
-                            $workOrderProcess = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
-                                 ->where('proc_cd', $procCd)
-                                 ->first();   
-                            $set('avail_qty', $workOrderProcess?->shoot_qty ?? 0); 
-                            $set('in_qty', $workOrderProcess?->shoot_qty ?? 0); 
-                        }
-                        else
-                        {
-                            $AvailableQty = \DB::select("CALL get_wo_available_qty(?, ?)", [$woNo, $procCd]);
-                            $set('avail_qty', $AvailableQty[0]->avail_qty_shoot ?? 0);  
-                            $set('in_qty', $AvailableQty[0]->avail_qty_shoot ?? 0);      
-                        }                      
-                    })
-                    ->required(),
+                    */
 
                 Forms\Components\Select::make('mchn_cd')
                     ->label('Machine')
-                   //  ->options(fn () => Machine::orderBy('mchn_nm')->pluck('mchn_nm', 'mchn_cd')->toArray())
-
                     ->options(function () {
                         return Machine::orderBy('dsc')
                         ->get()
@@ -208,7 +162,6 @@ class ProductionLogResource extends BaseResource
                         ])
                         ->toArray();
                     })
-
                     ->searchable(),                    
 
                 Forms\Components\Group::make()
@@ -247,35 +200,25 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\TextInput::make('emp_id')
                     ->label('Employee ID')
+                    ->readOnly()
+                    ->required()
                     ->default(function () {
                         $user = \Filament\Facades\Filament::auth()->user();
-                        if (!$user) {
-                            return null;
-                        }
-                        $emp = \App\Models\Employee::leftJoin('users', 'empl_tbl.email', '=', 'users.email')
-                            ->where('users.email', $user->email)
-                            ->select('empl_tbl.emp_id')
-                            ->first();
-
-                        return $emp?->emp_id;
-                    })
-                    ->afterStateHydrated(function (callable $set, $state) {
-                        if (!$state) {
-                            $user = \Filament\Facades\Filament::auth()->user();
-                            if (!$user) return;
-
+                        if ($user) {
                             $emp = \App\Models\Employee::leftJoin('users', 'empl_tbl.email', '=', 'users.email')
                                 ->where('users.email', $user->email)
                                 ->select('empl_tbl.emp_id')
-                                ->first();
-
-                            if ($emp) {
-                                $set('emp_id', $emp->emp_id);
-                            }
+                                ->first();    
+                            if ($emp)
+                            {   return $emp?->emp_id;  }    
+                            else
+                            {   return null;    }                               
                         }
-                    })
-                    ->readOnly() // optional: prevent editing
-                    ->required(),
+                        else
+                        {
+                            return null;
+                        }
+                    }),
 
                 Forms\Components\TextInput::make('avail_qty')
                     ->label('Qty Available (Shoot)')
@@ -285,7 +228,7 @@ class ProductionLogResource extends BaseResource
                 Forms\Components\TextInput::make('in_qty')
                     ->label('Qty Input (Shoot)')
                     ->numeric()->default(0)->minValue(0)->reactive()
-                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $availQty = $get('avail_qty');
                         if ($availQty !== null && $state > $availQty) {
                             Notification::make()
@@ -294,7 +237,7 @@ class ProductionLogResource extends BaseResource
                                 ->send();                            
                             $set('in_qty', null);
                             $component->getLivewire()->dispatch('focus-in-qty');
-                        }
+                        }                  
                     })
                     ->extraAttributes([
                         'x-on:move-focus-in-qty.window' => "
@@ -302,11 +245,11 @@ class ProductionLogResource extends BaseResource
                             if (input) input.focus();
                         ",
                     ]),
-                    
+
                 Forms\Components\TextInput::make('out_qty')
                     ->label('Qty Output (Shoot)')
                     ->numeric()->default(0)->minValue(0)->reactive()
-                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $inQty = $get('in_qty') ?? 0;
                         $outQty = $state ?? 0;
                         $rwkkQty = $get('rwk_qty') ?? 0;
@@ -330,7 +273,7 @@ class ProductionLogResource extends BaseResource
                 Forms\Components\TextInput::make('rwk_qty')
                     ->label('Qty Rework')
                     ->numeric()->default(0)->minValue(0)->reactive()
-                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $inQty = $get('in_qty') ?? 0;
                         $outQty = $get('out_qty') ?? 0;
                         $rwkkQty = $state ?? 0;
@@ -354,7 +297,7 @@ class ProductionLogResource extends BaseResource
                 Forms\Components\TextInput::make('ng_qty')
                     ->label('Qty NG (Shoot)')
                     ->numeric()->default(0)->minValue(0)->reactive()
-                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $inQty = $get('in_qty') ?? 0;
                         $outQty = $get('out_qty') ?? 0;
                         $rwkkQty = $get('rwk_qty') ?? 0;
@@ -362,7 +305,7 @@ class ProductionLogResource extends BaseResource
                         if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
                             Notification::make()
                                 ->danger()
-                                ->title("NG Qty is too large.")
+                                ->title("NG Qty is not valid.")
                                 ->send();
                             $set('ng_qty', null);
                             $component->getLivewire()->dispatch('focus-ng-qty');    
@@ -417,6 +360,11 @@ class ProductionLogResource extends BaseResource
                     ->label('End Time')
                     ->dateTime()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('avail_qty')
+                    ->label('Available Qty (Shoot)')
+                    ->numeric()
+                    ->alignEnd()
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                        
                 Tables\Columns\TextColumn::make('in_qty')
                     ->label('In Qty (Shoot)')
                     ->numeric()
@@ -437,12 +385,25 @@ class ProductionLogResource extends BaseResource
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn($state) => number_format($state ?? 0, 0)),   
+                Tables\Columns\TextColumn::make('detail_ng')
+                    ->label('Detail NG')
+                    ->getStateUsing(function ($record) {
+                        if (empty($record->ng_qty)) {
+                            return '';
+                        }
+                        $sumDetail = DB::table('prdng_tbl')
+                            ->where('id_prd', $record->id)
+                            ->sum('ng_qty');
+                        return $record->ng_qty == $sumDetail ? 'TRUE' : 'FALSE';
+                    })
+                    ->color(fn ($state) => $state === 'TRUE' ? 'success' : 'danger')
+                    ->sortable(), 
                 ])                
             ->filters(self::getTableFilters())
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
-                    ->visible($user->hasRole('admin')),
+                    ->visible($user->hasRole(['admin','production'])),
             ])                        
             ->bulkActions([
                             Tables\Actions\BulkActionGroup::make([
@@ -468,9 +429,7 @@ class ProductionLogResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->orderBy('wo_no')
-            ->orderBy('itm_cd')
-            ->orderBy('start_time');
+            ->orderBy('updated_at', 'desc');
 
         // $user = Filament::auth()->user();
         $user = auth()->user();
@@ -530,9 +489,9 @@ class ProductionLogResource extends BaseResource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\NgDetailsRelationManager::class,
         ];
-    }
+    }    
 
     public static function getPages(): array
     {
