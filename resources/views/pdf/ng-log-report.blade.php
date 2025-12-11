@@ -10,39 +10,31 @@
     </style>
 </head>
 <body>
-    <h2>WO Status Report</h2>
+    <h2>NG Log Report</h2>
     <table>
         <thead>
             <tr>
-                <th>WO No</th>
-                <th>Request Date</th>
+                <th>Process Date</th>
                 <th>Part No</th>
                 <th>Part Type</th>
-                <th>Proc Code</th>
                 <th>Proc Name</th>
-                <th>End Time</th>
-                <th>Plan Qty</th>
-                <th>Out Qty</th>
-                <th>O/S Qty</th>
+                <th>NG Name</th>
+                <th>Qty NG</th>
+                <th>Operator</th>                
                 <th>Machine</th>
-                <th>Employee</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($data as $row)
                 <tr>
-                    <td>{{ $row->wo_no }}</td>
-                    <td>{{ $row->req_dt }}</td>
+                    <td>{{ $row->start_time }}</td>
                     <td>{{ $row->itm_cd }}</td>
                     <td>{{ $row->itm_type }}</td>
-                    <td>{{ $row->proc_cd }}</td>
                     <td>{{ $row->proc_nm }}</td>
-                    <td>{{ $row->end_time }}</td>
-                    <td>{{ $row->plan_qty }}</td>
-                    <td>{{ $row->out_qty }}</td>
-                    <td>{{ $row->os_qty }}</td>
-                    <td>{{ $row->mchn_cd }}</td>
-                    <td>{{ $row->emp_nm }}</td>
+                    <td>{{ $row->ng_nm }}</td>
+                    <td>{{ $row->ng_qty }}</td>
+                    <td>{{ $row->emp_id }}</td>
+                    <td>{{ $row->mchn_nm }}</td>
                 </tr>
             @endforeach
         </tbody>
