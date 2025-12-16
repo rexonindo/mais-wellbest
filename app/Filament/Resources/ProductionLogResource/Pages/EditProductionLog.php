@@ -59,7 +59,7 @@ class EditProductionLog extends EditRecord
         ];
     }
 
-/*
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
         if (!empty($data['wo_no'])) {
@@ -74,6 +74,7 @@ class EditProductionLog extends EditRecord
                     $data['itm_nm'] = $workOrder->itm_cd;
                 }
             }
+            /*
             if (!empty($data['proc_cd'])) {
                 $shootQty = DB::table('wo_proc_tbl')
                     ->where('wo_no', $data['wo_no'])
@@ -88,10 +89,11 @@ class EditProductionLog extends EditRecord
             } else {
                 $data['in_qty'] = $data['in_qty'] ?? $workOrder->plan_qty ?? 0;
             }
+            */
         }
         return $data;
     }
-*/
+
     protected function beforeSave(): void
     {
         $record = $this->record;

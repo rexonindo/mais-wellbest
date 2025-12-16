@@ -20,12 +20,14 @@ class ProductionLog extends Model
         'proc_cd',
         'mchn_cd',
         'emp_id',
+        'cav',
         'start_time',
         'end_time',
         'avail_qty',
         'in_qty',
         'out_qty',
         'ng_qty',
+        'ng_qty_pcs',
         'rwk_qty',
         'rmks'
     ];

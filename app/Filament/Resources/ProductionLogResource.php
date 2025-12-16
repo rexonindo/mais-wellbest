@@ -38,6 +38,9 @@ class ProductionLogResource extends BaseResource
             ->schema([
                 Forms\Components\Select::make('wo_no')
                     ->label('Work Order No')     
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                    ])
                     ->disabled(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)               
                     ->options(function () {
                         return \App\Models\WorkOrder::query()
@@ -50,7 +53,7 @@ class ProductionLogResource extends BaseResource
                             ->toArray();
                     })
                     ->searchable()
-                    ->reactive()
+                    ->reactive()                  
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $livewire) {
                         // Skip when creating a new record
                         if ($livewire instanceof \Filament\Resources\Pages\CreateRecord) {
@@ -96,6 +99,9 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\Select::make('proc_cd')
                     ->label('Process')
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                    ])                 
                     ->required()                    
                     ->disabled(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)
                     ->options(function (callable $get) {
@@ -130,19 +136,20 @@ class ProductionLogResource extends BaseResource
                                     ->where('proc_cd', $procCd)
                                     ->first();
                             $SeqNo = $SeqNoTbl?->seq_no;           
-                            
+                            $set('cav', $SeqNoTbl->cav ?? 1);
+                            $cav = $get('cav') ?? 1;
                             if ( $SeqNo === 1 ) {
                                 $workOrderProcess = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
                                     ->where('proc_cd', $procCd)
-                                    ->first();   
+                                    ->first();                                   
                                 $set('avail_qty', $workOrderProcess?->shoot_qty ?? 0); 
                                 $set('in_qty', $workOrderProcess?->shoot_qty ?? 0); 
                             }
                             else
                             {
                                 $AvailableQty = \DB::select("CALL get_wo_available_qty(?, ?)", [$woNo, $procCd]);
-                                $set('avail_qty', $AvailableQty[0]->avail_qty_shoot ?? 0);  
-                                $set('in_qty', $AvailableQty[0]->avail_qty_shoot ?? 0);      
+                                $set('avail_qty', ($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);  
+                                $set('in_qty', ($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);      
                             }                        
                         }
                     }),
@@ -154,6 +161,9 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\Select::make('mchn_cd')
                     ->label('Machine')
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                    ])                         
                     ->options(function () {
                         return Machine::orderBy('dsc')
                         ->get()
@@ -167,7 +177,10 @@ class ProductionLogResource extends BaseResource
                 Forms\Components\Group::make()
                     ->schema([
                         Forms\Components\DateTimePicker::make('start_time')
-                            ->label('Start Time'),
+                            ->label('Start Time')
+                            ->extraAttributes([
+                                'class' => 'fi-input-wrp bg-yellow-100',
+                            ]),
                         Forms\Components\Actions::make([
                             Forms\Components\Actions\Action::make('StartcurrentTime')
                                 ->visible(fn ($livewire) => ! $livewire instanceof \Filament\Resources\Pages\ViewRecord)
@@ -184,7 +197,10 @@ class ProductionLogResource extends BaseResource
                 Forms\Components\Group::make()
                     ->schema([
                         Forms\Components\DateTimePicker::make('end_time')
-                            ->label('End Time'),
+                            ->label('End Time')
+                            ->extraAttributes([
+                                'class' => 'fi-input-wrp bg-yellow-100',
+                            ]),   
                         Forms\Components\Actions::make([
                             Forms\Components\Actions\Action::make('EndcurrentTime')
                                 ->visible(fn ($livewire) => ! $livewire instanceof \Filament\Resources\Pages\ViewRecord)    
@@ -220,14 +236,18 @@ class ProductionLogResource extends BaseResource
                         }
                     }),
 
+                Forms\Components\TextInput::make('cav')
+                    ->label('Cavity')
+                    ->readOnly(),
+
                 Forms\Components\TextInput::make('avail_qty')
-                    ->label('Qty Available (Shoot)')
+                    ->label('Qty Available (Panel)')
                     ->numeric()
                     ->readOnly(),
 
                 Forms\Components\TextInput::make('in_qty')
-                    ->label('Qty Input (Shoot)')
-                    ->numeric()->default(0)->minValue(0)->reactive()
+                    ->label('Qty Input (Panel)')
+                    ->numeric()->default(null)->minValue(0)->reactive()
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $availQty = $get('avail_qty');
                         if ($availQty !== null && $state > $availQty) {
@@ -247,8 +267,8 @@ class ProductionLogResource extends BaseResource
                     ]),
 
                 Forms\Components\TextInput::make('out_qty')
-                    ->label('Qty Output (Shoot)')
-                    ->numeric()->default(0)->minValue(0)->reactive()
+                    ->label('Qty Output (Panel)')
+                    ->numeric()->default(null)->minValue(0)->reactive()
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $inQty = $get('in_qty') ?? 0;
                         $outQty = $state ?? 0;
@@ -271,8 +291,8 @@ class ProductionLogResource extends BaseResource
                     ]),
 
                 Forms\Components\TextInput::make('rwk_qty')
-                    ->label('Qty Rework')
-                    ->numeric()->default(0)->minValue(0)->reactive()
+                    ->label('Qty Rework (Panel)')
+                    ->numeric()->default(null)->minValue(0)->reactive()                    
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $inQty = $get('in_qty') ?? 0;
                         $outQty = $get('out_qty') ?? 0;
@@ -295,8 +315,8 @@ class ProductionLogResource extends BaseResource
                     ]),                    
 
                 Forms\Components\TextInput::make('ng_qty')
-                    ->label('Qty NG (Shoot)')
-                    ->numeric()->default(0)->minValue(0)->reactive()
+                    ->label('Qty NG (Panel)')
+                    ->numeric()->default(null)->minValue(0)->reactive()
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $inQty = $get('in_qty') ?? 0;
                         $outQty = $get('out_qty') ?? 0;
@@ -318,6 +338,30 @@ class ProductionLogResource extends BaseResource
                         ",
                     ]),                        
 
+                Forms\Components\TextInput::make('ng_qty_pcs')
+                    ->label('Qty NG (Pcs)')
+                    ->numeric()->default(null)->minValue(0)->reactive()
+                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
+                        $inQty = $get('in_qty') ?? 0;
+                        $outQty = $get('out_qty') ?? 0;
+                        $rwkkQty = $get('rwk_qty') ?? 0;
+                        $ngQty = $state ?? 0;
+                        if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
+                            Notification::make()
+                                ->danger()
+                                ->title("NG Qty is not valid.")
+                                ->send();
+                            $set('ng_qty_pcs', null);
+                            $component->getLivewire()->dispatch('focus-ng-qty');    
+                        }
+                    })
+                    ->extraAttributes([
+                        'x-on:move-focus-ng-qty.window' => "
+                            const input = \$el.querySelector('input');
+                            if (input) input.focus();
+                        ",
+                    ]),                              
+                    
                 Forms\Components\Textarea::make('rmks')
                     ->label('Remarks')
                     ->columnSpanFull(),
@@ -361,17 +405,17 @@ class ProductionLogResource extends BaseResource
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('avail_qty')
-                    ->label('Available Qty (Shoot)')
+                    ->label('Available Qty (Panel)')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                        
                 Tables\Columns\TextColumn::make('in_qty')
-                    ->label('In Qty (Shoot)')
+                    ->label('In Qty (Panel)')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),    
                 Tables\Columns\TextColumn::make('out_qty')
-                    ->label('Out Qty (Shoot)')
+                    ->label('Out Qty (Panel)')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),    
