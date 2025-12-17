@@ -154,43 +154,21 @@ class WOStatusReport extends FBasePageResource implements HasTable
 
     protected function exportExcel()
     {
-        $data = $this->getTableQuery()->get()->toArray();
-
+        $records = $this->getFilteredTableQuery()->get();
         $filename = 'WOStatusReport_' . now()->format('Ymd_His') . '.xlsx';
-
-        return Excel::download(new \App\Exports\WOStatusReportExport($data), $filename);
+        return Excel::download(new \App\Exports\WOStatusReportExport($records), $filename);
     }
 
     protected function exportPdf()
     {
-        $data = $this->getTableQuery()->get();
-
-        $pdf = Pdf::loadView('pdf.wo-status-report', compact('data'))
-            ->setPaper('a4', 'landscape');
-
+        $data = $this->getFilteredTableQuery()->get();
+        $pdf = Pdf::loadView('pdf.wo-status-report', [
+            'data' => $data,
+        ])->setPaper('a4', 'landscape');
         return response()->streamDownload(
             fn () => print($pdf->output()),
             'WOStatusReport_' . now()->format('Ymd_His') . '.pdf'
         );
     }
-
-    public function getTableQuery()
-    {
-        return DB::table('wo_status_view')
-            ->select([
-                'wo_no', 
-                'req_dt', 
-                'itm_cd', 
-                'itm_type',
-                'proc_cd',
-                'proc_nm',
-                'end_time', 
-                'plan_qty', 
-                'out_qty', 
-                'os_qty',
-                'mchn_cd', 
-                'emp_nm', 
-            ])
-            ->orderBy('wo_no');
-    }    
+            
 }

@@ -99,8 +99,8 @@ class EditProductionLog extends EditRecord
         $record = $this->record;
         $data   = $this->data; // form data user submitted
 
-        $AvailQty = ($data['avail_qty'] ?? 0);
-        $InQty = ($data['in_qty'] ?? 0);
+        $AvailQty = floatval($data['avail_qty'] ?? 0);
+        $InQty = floatval($data['in_qty'] ?? 0);
         if ($InQty > $AvailQty) {
             Notification::make()
                 ->danger()
@@ -115,7 +115,7 @@ class EditProductionLog extends EditRecord
             ]);
         }   
 
-        $RsltQty = ($data['out_qty'] ?? 0) + ($data['ng_qty'] ?? 0) + ($data['rwk_qty'] ?? 0);
+        $RsltQty = floatval($data['out_qty'] ?? 0) + floatval($data['ng_qty'] ?? 0) + floatval($data['rwk_qty'] ?? 0);
         if ($RsltQty > $InQty) {
             Notification::make()
                 ->danger()
@@ -135,7 +135,8 @@ class EditProductionLog extends EditRecord
             ->where('id_prd', $record->id)
             ->sum('ng_qty');
 
-        if ($data['ng_qty'] < $sumNg) {
+        $NgTotal = (floatval($data['ng_qty'] ?? 0) * floatval($data['cav'] ?? 0)) + floatval($data['ng_qty_pcs'] ?? 0);
+        if ($NgTotal < $sumNg) {
             Notification::make()
                 ->danger()
                 ->title('NG Quantity less than detail NG')

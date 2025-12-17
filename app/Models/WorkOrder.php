@@ -51,6 +51,10 @@ class WorkOrder extends Model
         static::saved(function ($model) {
             $model->refresh();
         });
+
+        static::deleting(function ($workOrder) {
+            $workOrder->processes()->delete();
+        });        
     }
 
     // ✅ Relationship to item
@@ -58,4 +62,9 @@ class WorkOrder extends Model
     {
         return $this->belongsTo(Item::class, 'itm_cd', 'itm_cd');
     }
+
+    public function processes()
+    {
+        return $this->hasMany(WorkOrderProcess::class, 'wo_no', 'wo_no');
+    }    
 }

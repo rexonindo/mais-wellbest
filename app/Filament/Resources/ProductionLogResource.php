@@ -148,8 +148,8 @@ class ProductionLogResource extends BaseResource
                             else
                             {
                                 $AvailableQty = \DB::select("CALL get_wo_available_qty(?, ?)", [$woNo, $procCd]);
-                                $set('avail_qty', ($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);  
-                                $set('in_qty', ($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);      
+                                $set('avail_qty', floatval($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);  
+                                $set('in_qty', floatval($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);      
                             }                        
                         }
                     }),
@@ -270,10 +270,10 @@ class ProductionLogResource extends BaseResource
                     ->label('Qty Output (Panel)')
                     ->numeric()->default(null)->minValue(0)->reactive()
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
-                        $inQty = $get('in_qty') ?? 0;
-                        $outQty = $state ?? 0;
-                        $rwkkQty = $get('rwk_qty') ?? 0;
-                        $ngQty = $get('ng_qty') ?? 0;
+                        $inQty = floatval($get('in_qty') ?? 0);
+                        $outQty = floatval($state ?? 0);
+                        $rwkkQty = floatval($get('rwk_qty') ?? 0);
+                        $ngQty = floatval($get('ng_qty') ?? 0);
                         if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
                             Notification::make()
                                 ->danger()
@@ -294,10 +294,10 @@ class ProductionLogResource extends BaseResource
                     ->label('Qty Rework (Panel)')
                     ->numeric()->default(null)->minValue(0)->reactive()                    
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
-                        $inQty = $get('in_qty') ?? 0;
-                        $outQty = $get('out_qty') ?? 0;
-                        $rwkkQty = $state ?? 0;
-                        $ngQty = $get('ng_qty') ?? 0;
+                        $inQty = floatval($get('in_qty') ?? 0);
+                        $outQty = floatval($get('out_qty') ?? 0);
+                        $rwkkQty = floatval($state ?? 0);
+                        $ngQty = floatval($get('ng_qty') ?? 0);
                         if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
                             Notification::make()
                                 ->danger()
@@ -318,10 +318,10 @@ class ProductionLogResource extends BaseResource
                     ->label('Qty NG (Panel)')
                     ->numeric()->default(null)->minValue(0)->reactive()
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
-                        $inQty = $get('in_qty') ?? 0;
-                        $outQty = $get('out_qty') ?? 0;
-                        $rwkkQty = $get('rwk_qty') ?? 0;
-                        $ngQty = $state ?? 0;
+                        $inQty = floatval($get('in_qty') ?? 0);
+                        $outQty = floatval($get('out_qty') ?? 0);
+                        $rwkkQty = floatval($get('rwk_qty') ?? 0);
+                        $ngQty = floatval($state ?? 0);
                         if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
                             Notification::make()
                                 ->danger()
@@ -340,27 +340,7 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\TextInput::make('ng_qty_pcs')
                     ->label('Qty NG (Pcs)')
-                    ->numeric()->default(null)->minValue(0)->reactive()
-                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
-                        $inQty = $get('in_qty') ?? 0;
-                        $outQty = $get('out_qty') ?? 0;
-                        $rwkkQty = $get('rwk_qty') ?? 0;
-                        $ngQty = $state ?? 0;
-                        if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
-                            Notification::make()
-                                ->danger()
-                                ->title("NG Qty is not valid.")
-                                ->send();
-                            $set('ng_qty_pcs', null);
-                            $component->getLivewire()->dispatch('focus-ng-qty');    
-                        }
-                    })
-                    ->extraAttributes([
-                        'x-on:move-focus-ng-qty.window' => "
-                            const input = \$el.querySelector('input');
-                            if (input) input.focus();
-                        ",
-                    ]),                              
+                    ->numeric()->default(null)->minValue(0)->reactive(),                              
                     
                 Forms\Components\Textarea::make('rmks')
                     ->label('Remarks')
@@ -404,6 +384,9 @@ class ProductionLogResource extends BaseResource
                     ->label('End Time')
                     ->dateTime()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('cav')
+                    ->label('Cavity')
+                    ->numeric(),                    
                 Tables\Columns\TextColumn::make('avail_qty')
                     ->label('Available Qty (Panel)')
                     ->numeric()
@@ -425,20 +408,25 @@ class ProductionLogResource extends BaseResource
                     ->alignEnd()
                     ->formatStateUsing(fn($state) => number_format($state ?? 0, 0)),
                 Tables\Columns\TextColumn::make('ng_qty')
-                    ->label('NG Qty')
+                    ->label('NG Qty Panel')
+                    ->numeric()
+                    ->alignEnd()
+                    ->formatStateUsing(fn($state) => number_format($state ?? 0, 0)),                       
+                Tables\Columns\TextColumn::make('ng_qty_pcs')
+                    ->label('NG Qty Pcs')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn($state) => number_format($state ?? 0, 0)),   
                 Tables\Columns\TextColumn::make('detail_ng')
                     ->label('Detail NG')
                     ->getStateUsing(function ($record) {
-                        if (empty($record->ng_qty)) {
+                        if (empty($record->ng_qty) && empty($record->ng_qty_pcs)) {
                             return '';
                         }
                         $sumDetail = DB::table('prdng_tbl')
                             ->where('id_prd', $record->id)
                             ->sum('ng_qty');
-                        return $record->ng_qty == $sumDetail ? 'TRUE' : 'FALSE';
+                        return ((($record->ng_qty ?? 0) * ($record->cav ?? 0)) + ($record->ng_qty_pcs ?? 0)) == $sumDetail ? 'TRUE' : 'FALSE';
                     })
                     ->color(fn ($state) => $state === 'TRUE' ? 'success' : 'danger')
                     ->sortable(), 

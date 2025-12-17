@@ -68,8 +68,8 @@ class CreateProductionLog extends CreateRecord
     {
         $record = $this->record;
         $data   = $this->data; // form data user submitted
-        $InQty = ($data['in_qty'] ?? 0);
-        $RsltQty = ($data['out_qty'] ?? 0) + ($data['ng_qty'] ?? 0) + ($data['rwk_qty'] ?? 0);
+        $InQty = floatval($data['in_qty'] ?? 0);
+        $RsltQty = floatval($data['out_qty'] ?? 0) + floatval($data['ng_qty'] ?? 0) + floatval($data['rwk_qty'] ?? 0);
         if ($RsltQty > $InQty) {
             Notification::make()
                 ->danger()

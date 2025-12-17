@@ -15,6 +15,7 @@
         <thead>
             <tr>
                 <th>WO No</th>
+                <th>Customer Name</th>
                 <th>Request Date</th>
                 <th>Part No</th>
                 <th>Part Type</th>
@@ -32,6 +33,7 @@
             @foreach ($data as $row)
                 <tr>
                     <td>{{ $row->wo_no }}</td>
+                    <td>{{ $row->cust_nm }}</td>
                     <td>{{ $row->req_dt }}</td>
                     <td>{{ $row->itm_cd }}</td>
                     <td>{{ $row->itm_type }}</td>

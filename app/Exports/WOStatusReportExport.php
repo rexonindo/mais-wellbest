@@ -2,24 +2,25 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromArray;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
 
-class WOStatusReportExport implements FromArray, WithHeadings, WithTitle, WithEvents
+class WOStatusReportExport implements FromCollection, WithHeadings, WithTitle, WithEvents
 {
-    protected array $data;
+    protected Collection $data;
     protected string $reportTitle;
 
-    public function __construct(array $data, string $reportTitle = 'WO Status Report')
+    public function __construct(Collection $data, string $reportTitle = 'WO Status Report')
     {
         $this->data = $data;
         $this->reportTitle = $reportTitle;
     }
 
-    public function array(): array
+    public function collection(): Collection
     {
         return $this->data;
     }
@@ -28,11 +29,12 @@ class WOStatusReportExport implements FromArray, WithHeadings, WithTitle, WithEv
     {
         return [
             'WO No',
+            'Customer Name',
             'Req. Date',
             'Part No',
-            'Part Type', 
+            'Part Type',
             'Proc Code',
-            'Process Name', 
+            'Process Name',
             'End Time',
             'Plan Qty',
             'Out Qty',
@@ -53,18 +55,18 @@ class WOStatusReportExport implements FromArray, WithHeadings, WithTitle, WithEv
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet;
 
-                // Insert title at the top
+                // Insert title rows
                 $sheet->insertNewRowBefore(1, 2);
-                $sheet->mergeCells('A1:L1');
+                $sheet->mergeCells('A1:M1');
                 $sheet->setCellValue('A1', $this->reportTitle);
 
-                // Style the title
+                // Title style
                 $sheet->getStyle('A1')->getFont()->setSize(14)->setBold(true);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
 
-                // Style header row
-                $sheet->getStyle('A3:L3')->getFont()->setBold(true);
-                $sheet->getStyle('A3:L3')->getAlignment()->setHorizontal('center');
+                // Header style
+                $sheet->getStyle('A3:M3')->getFont()->setBold(true);
+                $sheet->getStyle('A3:M3')->getAlignment()->setHorizontal('center');
             },
         ];
     }

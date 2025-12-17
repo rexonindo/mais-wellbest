@@ -13,6 +13,7 @@ use Illuminate\Validation\ValidationException;
 class NgDetailsRelationManager extends RelationManager
 {
     protected static string $relationship = 'ngDetails';
+    protected static ?string $title = 'NG Detail (Pcs)';    
 
     public function form(Forms\Form $form): Forms\Form
     {
@@ -67,22 +68,25 @@ class NgDetailsRelationManager extends RelationManager
     {
         $prd = $this->ownerRecord;
         $editingId = $prd->id;
+        $cav = intval($prd->cav ?? 0);
+        $NgMstPcs = (floatval($prd->ng_qty ?? 0) * $cav) + floatval($prd->ng_qty_pcs ?? 0);
+
         $originalNGQty = 0;
         if ($NgQty) {
             $originalNGQty = $NgQty;
         }        
-        // Sum of other NG rows
-        $currentSum = DB::table('prdng_tbl')
+        // Sum of other NG Shoot sum
+        $currentSumPcs = DB::table('prdng_tbl')
             ->where('id_prd', $prd->id)
             ->when($editingId, fn($q) =>
                 $q->where('id', '!=', $editingId)
             )
-            ->sum('ng_qty');
-
-        $newQty = floatval($data['ng_qty']);
-        $newTotal = $currentSum + $newQty - $originalNGQty;
+            ->sum('ng_qty');            
+        
+        $newQty = floatval(($data['ng_qty'] ?? 0));
+        $newTotal = $currentSumPcs + $newQty - $originalNGQty;
         // Compare against allowed
-        if ($newTotal > $prd->ng_qty) {
+        if ($newTotal > $NgMstPcs) {
 
             Notification::make()
                 ->danger()

@@ -169,49 +169,28 @@ class WOProgressReport extends FBasePageResource implements HasTable
 
     protected function exportExcel()
     {
-        $data = $this->getTableQuery()->get()->toArray();
+        $records = $this->getFilteredTableQuery()->get();
 
         $filename = 'WOProgressReport_' . now()->format('Ymd_His') . '.xlsx';
 
-        return Excel::download(new \App\Exports\WOProgressReportExcel($data), $filename);
+        return Excel::download(
+            new \App\Exports\WOProgressReportExcel($records),
+            $filename
+        );
     }
 
     protected function exportPdf()
     {
-        $data = $this->getTableQuery()->get();
+        $data = $this->getFilteredTableQuery()->get();
 
-        $pdf = Pdf::loadView('pdf.wo-progress-report', compact('data'))
-            ->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('pdf.wo-progress-report', [
+            'data' => $data,
+        ])->setPaper('a4', 'landscape');
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
             'WOProgressReport_' . now()->format('Ymd_His') . '.pdf'
         );
     }
-
-    public function getTableQuery()
-    {
-        return DB::table('wo_progress_view')
-            ->select([
-                'wo_no',
-                'itm_cd', 
-                'itm_type', 
-                'seq_no', 
-                'proc_cd', 
-                'proc_nm',
-                'wo_qty', 
-                'cav',
-                'in_qty', 
-                'rwk_qty', 
-                'ng_qty', 
-                'out_qty', 
-                'mchn_cd', 
-                'emp_nm',
-                'start_time', 
-                'end_time',                 
-            ])
-            ->orderBy('wo_no')
-            ->orderBy('seq_no')
-            ->orderBy('end_time');
-    }    
+           
 }
