@@ -62,6 +62,9 @@ class WorkOrderResource extends BaseResource
                 ->maxLength(50),              
             Forms\Components\DatePicker::make('req_dt')->label('Request Date'),     
             Forms\Components\TextInput::make('plan_qty')->numeric()->label('Planned Quantity'),
+            Forms\Components\TextInput::make('plan_qty_raw')
+                    ->label('Raw Material Qty ')
+                    ->readOnly(),               
             Forms\Components\TextInput::make('plan_qty_pnl')
                     ->label('Panel Qty')
                     ->readOnly(),          

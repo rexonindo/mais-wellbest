@@ -13,17 +13,6 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel; // for Excel export
 use Barryvdh\DomPDF\Facade\Pdf;     // for PDF export
 
-/*
-use Filament\Pages\Page;
-use Filament\Tables;
-use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Concerns\InteractsWithTable;
-use App\Models\NgLogView;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
-use Filament\Tables\Actions\Action;
-use PDF;
-*/
-
 class NGLogReport extends FBasePageResource implements HasTable
 {
     use Tables\Concerns\InteractsWithTable;

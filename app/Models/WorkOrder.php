@@ -21,6 +21,7 @@ class WorkOrder extends Model
         'po_no',
         'req_dt',
         'plan_qty',
+        'plan_qty_raw',
         'plan_qty_pnl',
         'start_dt',
         'end_dt',
