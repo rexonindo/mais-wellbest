@@ -97,6 +97,9 @@ class ProductionLogResource extends BaseResource
                     ->label('Customer P/N')
                     ->readOnly(),
 
+                Forms\Components\TextInput::make('seq_no')
+                    ->label('Seq No'),                    
+
                 Forms\Components\Select::make('proc_cd')
                     ->label('Process')
                     ->extraAttributes([
@@ -114,10 +117,10 @@ class ProductionLogResource extends BaseResource
                         $item = \App\Models\Item::where('itm_cd', $workOrder->itm_cd)->first();
                         if (!$item) return [];
 
-                        return \DB::table('prdroute_tbl')
-                            ->join('proc_tbl', 'prdroute_tbl.proc_cd', '=', 'proc_tbl.proc_cd')
-                            ->where('prdroute_tbl.itm_type', $item->itm_type)
-                            ->orderBy('prdroute_tbl.seq_no')
+                        return \DB::table('wo_proc_tbl')
+                            ->join('proc_tbl', 'wo_proc_tbl.proc_cd', '=', 'proc_tbl.proc_cd')
+                            ->where('wo_proc_tbl.wo_no', $woNo)
+                            ->orderBy('wo_proc_tbl.seq_no')
                             ->get()
                             ->mapWithKeys(fn ($r) => [$r->proc_cd => "{$r->proc_cd} - {$r->proc_nm}"])
                             ->toArray();
@@ -135,15 +138,16 @@ class ProductionLogResource extends BaseResource
                             $SeqNoTbl = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
                                     ->where('proc_cd', $procCd)
                                     ->first();
-                            $SeqNo = $SeqNoTbl?->seq_no;           
+                            $SeqNo = $SeqNoTbl?->seq_no;        
+                            $set('seq_no', $SeqNo ?? 0);    
                             $set('cav', $SeqNoTbl->cav ?? 1);
                             $cav = $get('cav') ?? 1;
                             if ( $SeqNo === 1 ) {
                                 $workOrderProcess = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
                                     ->where('proc_cd', $procCd)
-                                    ->first();                                   
+                                    ->first();                                                                  
                                 $set('avail_qty', $workOrderProcess?->shoot_qty ?? 0); 
-                                $set('in_qty', $workOrderProcess?->shoot_qty ?? 0); 
+                                $set('in_qty', $workOrderProcess?->shoot_qty ?? 0);                                 
                             }
                             else
                             {

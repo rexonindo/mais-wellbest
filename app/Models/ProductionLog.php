@@ -18,6 +18,7 @@ class ProductionLog extends Model
         'wo_no',
         'itm_cd',
         'proc_cd',
+        'seq_no',
         'mchn_cd',
         'emp_id',
         'start_time',
