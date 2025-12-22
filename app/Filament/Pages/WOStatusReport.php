@@ -13,17 +13,16 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel; // for Excel export
 use Barryvdh\DomPDF\Facade\Pdf;     // for PDF export
 
-// class WOStatusReport extends Page implements Tables\Contracts\HasTable
 class WOStatusReport extends FBasePageResource implements HasTable
 {
     use Tables\Concerns\InteractsWithTable;
-
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'WO Status Report';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?int $navigationSort = 2;    
     protected static ?string $slug = 'wo-status-report';
-    // protected static ?string $title = 'Work Order Status Report';
+    protected static ?string $title = 'Work Order Status Report';
     protected static string $view = 'filament.pages.wo-status-report';
 
     public function table(Table $table): Table

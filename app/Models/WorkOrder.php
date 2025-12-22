@@ -29,6 +29,12 @@ class WorkOrder extends Model
         'tool_cd',
     ];
 
+    protected $attributes = [
+        'plan_qty' => 0,
+        'plan_qty_raw' => 0,
+        'plan_qty_pnl' => 0,
+    ];    
+
     protected static function boot()
     {
         parent::boot();

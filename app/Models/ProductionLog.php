@@ -33,6 +33,16 @@ class ProductionLog extends Model
         'rmks'
     ];
 
+    protected $attributes = [
+        'avail_qty' => 0,
+        'in_qty' => 0,
+        'out_qty' => 0,
+        'ng_qty' => 0,
+        'ng_qty_pcs' => 0,
+        'rwk_qty' => 0,
+
+    ];
+
     protected static function boot()
     {
         parent::boot();

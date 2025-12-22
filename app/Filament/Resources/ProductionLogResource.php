@@ -97,9 +97,6 @@ class ProductionLogResource extends BaseResource
                     ->label('Customer P/N')
                     ->readOnly(),
 
-                Forms\Components\TextInput::make('seq_no')
-                    ->label('Seq No'),                    
-
                 Forms\Components\Select::make('proc_cd')
                     ->label('Process')
                     ->extraAttributes([
@@ -163,6 +160,9 @@ class ProductionLogResource extends BaseResource
                     })
                     */
 
+                Forms\Components\Hidden::make('seq_no')
+                    ->label('Seq No'),   
+                    
                 Forms\Components\Select::make('mchn_cd')
                     ->label('Machine')
                     ->extraAttributes([

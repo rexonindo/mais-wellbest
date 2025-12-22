@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel; // for Excel export
 use Barryvdh\DomPDF\Facade\Pdf;     // for PDF export
 
-// class WOProgressReport extends Page implements HasTable
 class WOProgressReport extends FBasePageResource implements HasTable
 {
     use Tables\Concerns\InteractsWithTable;

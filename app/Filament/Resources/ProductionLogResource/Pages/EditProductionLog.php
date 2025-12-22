@@ -34,29 +34,49 @@ class EditProductionLog extends EditRecord
             Actions\DeleteAction::make()
                 ->before(function () {
 
-                    $prdlogId = $this->record->id;
+                    $record = $this->record;
 
-                    // Check if prdng_tbl has any detail for this production log
+                    // Check NG detail (existing logic)
                     $count = DB::table('prdng_tbl')
-                        ->where('id_prd', $prdlogId)
+                        ->where('id_prd', $record->id)
                         ->count();
 
                     if ($count > 0) {
-
-                        // Show error notification
                         Notification::make()
                             ->danger()
                             ->title('Cannot delete Production Log')
-                            ->body("There are NG Detail records linked to this Production Log.")
+                            ->body('There are NG Detail records linked to this Production Log.')
                             ->send();
 
-                        // Stop deletion
                         throw ValidationException::withMessages([
                             'delete' => 'Cannot delete because NG Detail exists.',
                         ]);
                     }
+
+                    // Check MAX seq_no for the same wo_no
+                    $maxSeqNo = DB::table('prdlog_tbl')
+                        ->where('wo_no', $record->wo_no)
+                        ->max('seq_no');
+
+                    if ((int) $record->seq_no !== (int) $maxSeqNo) {
+                        Notification::make()
+                            ->danger()
+                            ->title('Cannot delete Production Log')
+                            ->body(
+                                "Only the last process (Seq No: {$maxSeqNo}) can be deleted.<br>
+                                This record Seq No: {$record->seq_no}"
+                            )
+                            ->send();
+
+                        throw ValidationException::withMessages([
+                            'delete' => 'Cannot delete because this is not the last process.',
+                        ]);
+                    }
                 }),
+
         ];
+
+
     }
 
 
@@ -150,5 +170,7 @@ class EditProductionLog extends EditRecord
             ]);
         }
     }
+
+    
 
 }
