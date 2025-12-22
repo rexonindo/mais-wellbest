@@ -143,28 +143,62 @@ class WOProgressReport extends FBasePageResource implements HasTable
                         ->label('WO No')
                         ->placeholder('Enter WO No'),
                 ])
-                ->query(function ($query, array $data) {
-                    return $query
-                        ->when($data['wo_no'], fn($q, $value) => $q->where('wo_no', 'like', "%{$value}%"));
-                })
-                ->indicateUsing(function (array $data): ?string {
-                    return $data['wo_no'] ? "WO No: {$data['wo_no']}" : null;
-                }),                
+                ->query(fn ($query, array $data) =>
+                    $query->when(
+                        $data['wo_no'],
+                        fn ($q, $value) => $q->where('wo_no', 'like', "%{$value}%")
+                    )
+                )
+                ->indicateUsing(fn (array $data) =>
+                    $data['wo_no'] ? "WO No: {$data['wo_no']}" : null
+                ),
+
             Tables\Filters\Filter::make('itm_cd')
                 ->form([
                     Forms\Components\TextInput::make('itm_cd')
                         ->label('Part No')
                         ->placeholder('Enter Part No'),
                 ])
+                ->query(fn ($query, array $data) =>
+                    $query->when(
+                        $data['itm_cd'],
+                        fn ($q, $value) => $q->where('itm_cd', 'like', "%{$value}%")
+                    )
+                )
+                ->indicateUsing(fn (array $data) =>
+                    $data['itm_cd'] ? "Part No: {$data['itm_cd']}" : null
+                ),
+
+            // Operator (NULL / NOT NULL)
+            Tables\Filters\Filter::make('emp_nm_status')
+                ->label('Operator Status')
+                ->form([
+                    Forms\Components\Select::make('status')
+                        ->options([
+                            'filled' => 'Filled Operator',
+                            'empty'  => 'Empty Operator',
+                        ])
+                        ->placeholder('All'),
+                ])
                 ->query(function ($query, array $data) {
                     return $query
-                        ->when($data['itm_cd'], fn($q, $value) => $q->where('itm_cd', 'like', "%{$value}%"));
+                        ->when($data['status'] === 'filled', fn ($q) =>
+                            $q->whereNotNull('emp_nm')
+                        )
+                        ->when($data['status'] === 'empty', fn ($q) =>
+                            $q->whereNull('emp_nm')
+                        );
                 })
                 ->indicateUsing(function (array $data): ?string {
-                    return $data['itm_cd'] ? "Part No: {$data['itm_cd']}" : null;
-                }),                  
+                    return match ($data['status'] ?? null) {
+                        'filled' => 'Operator: Filled',
+                        'empty'  => 'Operator: Empty',
+                        default  => null,
+                    };
+                }),
         ];
-    }    
+    }
+  
 
     protected function exportExcel()
     {

@@ -202,6 +202,7 @@ class ProductionLogResource extends BaseResource
                     ->schema([
                         Forms\Components\DateTimePicker::make('end_time')
                             ->label('End Time')
+                            ->required()
                             ->extraAttributes([
                                 'class' => 'fi-input-wrp bg-yellow-100',
                             ]),   
