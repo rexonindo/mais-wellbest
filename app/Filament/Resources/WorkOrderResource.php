@@ -33,6 +33,7 @@ class WorkOrderResource extends BaseResource
                 ->required(),  
             Forms\Components\Select::make('itm_cd')
                 ->label('Part No')
+                ->required()
                 ->options(function () {
                     return Item::orderBy('itm_nm')
                     ->get()
@@ -59,9 +60,13 @@ class WorkOrderResource extends BaseResource
                 }),
             Forms\Components\TextInput::make('po_no')
                 ->label('PO Number')
+                ->required()
                 ->maxLength(50),              
             Forms\Components\DatePicker::make('req_dt')->label('Request Date'),     
-            Forms\Components\TextInput::make('plan_qty')->numeric()->label('Planned Quantity'),
+            Forms\Components\TextInput::make('plan_qty')                
+                ->label('Planned Quantity')
+                ->required()
+                ->numeric(),
             Forms\Components\TextInput::make('plan_qty_raw')
                     ->label('Raw Material Qty ')
                     ->readOnly(),               
@@ -69,7 +74,9 @@ class WorkOrderResource extends BaseResource
                     ->label('Panel Qty')
                     ->readOnly(),          
             Forms\Components\DatePicker::make('start_dt')->label('Start Date'),
-            Forms\Components\DatePicker::make('end_dt')->label('End Date'),
+            Forms\Components\DatePicker::make('end_dt')
+                ->label('End Date')
+                ->required(),
             Forms\Components\Select::make('tool_cd')
                 ->label('Tooling Code')
                 ->options(function (callable $get) {
@@ -77,7 +84,6 @@ class WorkOrderResource extends BaseResource
                     if (!$itmCd) {
                         return [];
                     }
-
                     return \App\Models\ToolingCavity::where('itm_cd', $itmCd)
                         ->orderBy('tool_cd')
                         ->pluck('tool_cd', 'tool_cd')
