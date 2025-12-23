@@ -17,6 +17,7 @@ class Process extends Model
         'proc_cd',
         'proc_nm',
         'dept_cd',
+        'wip_sfx',
         'std_time',
     ];
 

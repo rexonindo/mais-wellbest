@@ -41,6 +41,11 @@ class ProcessResource extends BaseResource
                     ->searchable()
                     ->nullable(),
 
+                Forms\Components\TextInput::make('wip_sfx')
+                    ->label('WIP Suffix')
+                    ->maxLength(50)
+                    ->nullable(),                    
+
                 Forms\Components\TextInput::make('std_time')
                     ->label('Standard Time (min)')
                     ->numeric()
@@ -68,6 +73,7 @@ class ProcessResource extends BaseResource
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('department.dept_nm')->label('Department'),
+                Tables\Columns\TextColumn::make('wip_sfx')->label('WIP Suffix'),
                 Tables\Columns\TextColumn::make('std_time')->label('Std Time (min)'),
             ])
             ->filters([
