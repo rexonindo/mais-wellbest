@@ -3,16 +3,26 @@
 namespace App\Filament\Resources\ToolingCavityResource\Pages;
 
 use App\Filament\Resources\ToolingCavityResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateToolingCavity extends CreateRecord
 {
     protected static string $resource = ToolingCavityResource::class;
-    protected static ?string $title = 'Tooling Cavity <Create>';  
 
-    protected function getRedirectUrl(): string
+    public function mount(): void
     {
-        return $this->getResource()::getUrl('index');
-    }        
+        parent::mount();
+
+        // Optional: clear session when opening create page fresh
+        if (! request()->has('createAnother')) {
+            session()->forget('tooling_cavity.itm_cd');
+        }
+    }
+
+    protected function afterCreate(): void
+    {
+        session()->put('tooling_cavity.itm_cd', $this->data['itm_cd'] ?? null);
+        session()->flash('tooling_cavity.focus_tool_cd', true);        
+
+    }
 }

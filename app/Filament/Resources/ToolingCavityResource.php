@@ -27,15 +27,18 @@ class ToolingCavityResource extends BaseResource
     {
         return $form->schema([
             Forms\Components\Select::make('itm_cd')
-                ->label('Item Code')
+                ->label('Part No')
                 ->relationship('item', 'itm_cd')
                 ->searchable()
-                ->required(),
+                ->required()
+                ->default(fn () => session('tooling_cavity.itm_cd')),
+
 
             Forms\Components\TextInput::make('tool_cd')
                 ->label('Tool Code')
                 ->required()
-                ->maxLength(50),
+                ->maxLength(50)
+                ->autofocus(fn () => session()->pull('tooling_cavity.focus_tool_cd', false)),
 
             Forms\Components\Select::make('proc_cd')
                 ->label('Process')
