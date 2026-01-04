@@ -127,7 +127,7 @@ unset($__defined_vars, $__key, $__value); ?>
             this.isOpen = false
 
             this.$refs.modalContainer.dispatchEvent(
-                new CustomEvent('modal-closed', { id: '<?php echo e($id); ?>' }),
+                new CustomEvent('modal-closed', { detail: { id: '<?php echo e($id); ?>' } }),
             )
         },
 
@@ -140,7 +140,7 @@ unset($__defined_vars, $__key, $__value); ?>
                 <?php endif; ?>
 
                 this.$refs.modalContainer.dispatchEvent(
-                    new CustomEvent('modal-opened', { id: '<?php echo e($id); ?>' }),
+                    new CustomEvent('modal-opened', { detail: { id: '<?php echo e($id); ?>' } }),
                 )
             })
         },
@@ -148,6 +148,7 @@ unset($__defined_vars, $__key, $__value); ?>
     <?php if($id): ?>
         x-on:<?php echo e($closeEventName); ?>.window="if ($event.detail.id === '<?php echo e($id); ?>') close()"
         x-on:<?php echo e($openEventName); ?>.window="if ($event.detail.id === '<?php echo e($id); ?>') open()"
+        data-fi-modal-id="<?php echo e($id); ?>"
     <?php endif; ?>
     x-trap.noscroll<?php echo e($autofocus ? '' : '.noautofocus'); ?>="isOpen"
     x-bind:class="{
@@ -159,7 +160,7 @@ unset($__defined_vars, $__key, $__value); ?>
         $displayClasses,
     ]); ?>"
 >
-    <!--[if BLOCK]><![endif]--><?php if($trigger): ?>
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($trigger): ?>
         <div
             <?php if(! $trigger->attributes->get('disabled')): ?>
                 x-on:click="open"
@@ -170,7 +171,7 @@ unset($__defined_vars, $__key, $__value); ?>
             <?php echo e($trigger); ?>
 
         </div>
-    <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
     <div x-cloak x-show="isOpen">
         <div
@@ -232,6 +233,9 @@ unset($__defined_vars, $__key, $__value); ?>
                         x-transition:leave-start="scale-100 opacity-100"
                         x-transition:leave-end="scale-95 opacity-0"
                     <?php endif; ?>
+                    <?php if(filled($id)): ?>
+                        wire:key="<?php echo e(isset($this) ? "{$this->getId()}." : ''); ?>modal.<?php echo e($id); ?>.window"
+                    <?php endif; ?>
                     <?php echo e(($extraModalWindowAttributeBag ?? new \Illuminate\View\ComponentAttributeBag)->class([
                             'fi-modal-window pointer-events-auto relative row-start-2 flex w-full cursor-default flex-col bg-white shadow-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10',
                             'fi-modal-slide-over-window ms-auto overflow-y-auto' => $slideOver,
@@ -268,8 +272,11 @@ unset($__defined_vars, $__key, $__value); ?>
                         ])); ?>
 
                 >
-                    <!--[if BLOCK]><![endif]--><?php if($heading || $header): ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($heading || $header): ?>
                         <div
+                            <?php if(filled($id)): ?>
+                                wire:key="<?php echo e(isset($this) ? "{$this->getId()}." : ''); ?>modal.<?php echo e($id); ?>.header"
+                            <?php endif; ?>
                             class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                 'fi-modal-header flex px-6 pt-6',
                                 'pb-6' => (! $hasSlot) && (! $hasFooter),
@@ -283,7 +290,7 @@ unset($__defined_vars, $__key, $__value); ?>
                                 'items-center' => $hasIcon && $hasHeading && (! $hasDescription) && in_array($alignment, [Alignment::Start, Alignment::Left]),
                             ]); ?>"
                         >
-                            <!--[if BLOCK]><![endif]--><?php if($closeButton): ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($closeButton): ?>
                                 <div
                                     class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                         'absolute',
@@ -312,13 +319,13 @@ unset($__defined_vars, $__key, $__value); ?>
 <?php unset($__componentOriginalf0029cce6d19fd6d472097ff06a800a1); ?>
 <?php endif; ?>
                                 </div>
-                            <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-                            <!--[if BLOCK]><![endif]--><?php if($header): ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($header): ?>
                                 <?php echo e($header); ?>
 
                             <?php else: ?>
-                                <!--[if BLOCK]><![endif]--><?php if($hasIcon): ?>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hasIcon): ?>
                                     <div
                                         class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                             'mb-5 flex items-center justify-center' => $alignment === Alignment::Center,
@@ -380,7 +387,7 @@ unset($__defined_vars, $__key, $__value); ?>
 <?php endif; ?>
                                         </div>
                                     </div>
-                                <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                                 <div
                                     class="<?php echo \Illuminate\Support\Arr::toCssClasses([
@@ -416,7 +423,7 @@ unset($__defined_vars, $__key, $__value); ?>
 <?php unset($__componentOriginald7a9f81547afa3e8c64344ab5afc13c2); ?>
 <?php endif; ?>
 
-                                    <!--[if BLOCK]><![endif]--><?php if($hasDescription): ?>
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hasDescription): ?>
                                         <?php if (isset($component)) { $__componentOriginal97b96faab0e6cbb838ae7fea15042b0e = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal97b96faab0e6cbb838ae7fea15042b0e = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.modal.description','data' => ['class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -439,14 +446,17 @@ unset($__defined_vars, $__key, $__value); ?>
 <?php $component = $__componentOriginal97b96faab0e6cbb838ae7fea15042b0e; ?>
 <?php unset($__componentOriginal97b96faab0e6cbb838ae7fea15042b0e); ?>
 <?php endif; ?>
-                                    <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
-                            <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </div>
-                    <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-                    <!--[if BLOCK]><![endif]--><?php if($hasSlot): ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hasSlot): ?>
                         <div
+                            <?php if(filled($id)): ?>
+                                wire:key="<?php echo e(isset($this) ? "{$this->getId()}." : ''); ?>modal.<?php echo e($id); ?>.content"
+                            <?php endif; ?>
                             class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                 'fi-modal-content flex flex-col gap-y-4 py-6',
                                 'flex-1' => ($width === MaxWidth::Screen) || $slideOver,
@@ -457,10 +467,13 @@ unset($__defined_vars, $__key, $__value); ?>
                             <?php echo e($slot); ?>
 
                         </div>
-                    <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-                    <!--[if BLOCK]><![endif]--><?php if($hasFooter): ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hasFooter): ?>
                         <div
+                            <?php if(filled($id)): ?>
+                                wire:key="<?php echo e(isset($this) ? "{$this->getId()}." : ''); ?>modal.<?php echo e($id); ?>.footer"
+                            <?php endif; ?>
                             class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                 'fi-modal-footer w-full',
                                 'pe-6 ps-[5.25rem]' => $hasIcon && ($alignment === Alignment::Start) && ($footerActionsAlignment !== Alignment::Center) && (! $stickyFooter),
@@ -472,7 +485,7 @@ unset($__defined_vars, $__key, $__value); ?>
                                 'mt-auto' => $slideOver,
                             ]); ?>"
                         >
-                            <!--[if BLOCK]><![endif]--><?php if(! \Filament\Support\is_slot_empty($footer)): ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(! \Filament\Support\is_slot_empty($footer)): ?>
                                 <?php echo e($footer); ?>
 
                             <?php else: ?>
@@ -487,19 +500,19 @@ unset($__defined_vars, $__key, $__value); ?>
                                         },
                                     ]); ?>"
                                 >
-                                    <!--[if BLOCK]><![endif]--><?php if(is_array($footerActions)): ?>
-                                        <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $footerActions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $action): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(is_array($footerActions)): ?>
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $footerActions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $action): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <?php echo e($action); ?>
 
-                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                     <?php else: ?>
                                         <?php echo e($footerActions); ?>
 
-                                    <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
-                            <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </div>
-                    <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </div>
             </div>
         </div>

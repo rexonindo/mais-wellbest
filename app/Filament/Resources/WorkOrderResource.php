@@ -156,7 +156,17 @@ class WorkOrderResource extends BaseResource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
+
+                    Tables\Actions\BulkAction::make('printLabel')
+                        ->label('Print Label')
+                        ->icon('heroicon-o-printer')
+                        ->action(function ($records) {
+                            foreach ($records as $record) {
+                                // adjust if your route needs multiple IDs
+                                redirect()->route('workorder.print-label', $record);
+                            }
+                        }),
                 ]),
             ]);
 

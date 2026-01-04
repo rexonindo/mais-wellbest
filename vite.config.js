@@ -8,6 +8,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/pwa.js',   
+                'resources/css/filament/wellbest/theme.css',
             ],
             refresh: true,
         }),

@@ -6,6 +6,7 @@ $__propNames = \Illuminate\View\ComponentAttributeBag::extractPropNames(([
     'prefix' => null,
     'required' => false,
     'suffix' => null,
+    'tag' => 'label',
 ]));
 
 foreach ($attributes->all() as $__key => $__value) {
@@ -26,6 +27,7 @@ foreach (array_filter(([
     'prefix' => null,
     'required' => false,
     'suffix' => null,
+    'tag' => 'label',
 ]), 'is_string', ARRAY_FILTER_USE_KEY) as $__key => $__value) {
     $$__key = $$__key ?? $__value;
 }
@@ -38,7 +40,8 @@ foreach ($attributes->all() as $__key => $__value) {
 
 unset($__defined_vars, $__key, $__value); ?>
 
-<label
+<<?php echo e($tag); ?>
+
     <?php echo e($attributes->class(['fi-fo-field-wrp-label inline-flex items-center gap-x-3'])); ?>
 
 >
@@ -47,11 +50,11 @@ unset($__defined_vars, $__key, $__value); ?>
 
     <span class="text-sm font-medium leading-6 text-gray-950 dark:text-white">
         
-        <?php echo e($slot); ?><!--[if BLOCK]><![endif]--><?php if($required && (! $disabled)): ?><sup class="text-danger-600 dark:text-danger-400 font-medium">*</sup>
-        <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+        <?php echo e($slot); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($required && (! $disabled)): ?><sup class="text-danger-600 dark:text-danger-400 font-medium">*</sup>
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </span>
 
     <?php echo e($suffix); ?>
 
-</label>
+</<?php echo e($tag); ?>>
 <?php /**PATH D:\website\mais-wellbest\vendor\filament\forms\resources\views/components/field-wrapper/label.blade.php ENDPATH**/ ?>

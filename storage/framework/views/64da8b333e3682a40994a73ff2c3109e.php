@@ -2,30 +2,22 @@
     use Filament\Support\Facades\FilamentView;
 ?>
 
-<!--[if BLOCK]><![endif]--><?php if($this->hasUnsavedDataChangesAlert()): ?>
-    <!--[if BLOCK]><![endif]--><?php if(FilamentView::hasSpaMode()): ?>
+<?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->hasUnsavedDataChangesAlert()): ?>
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(FilamentView::hasSpaMode()): ?>
             <?php
         $__scriptKey = '1185470426-0';
         ob_start();
     ?>
             <script>
-                let formSubmitted = false
-
-                document.addEventListener(
-                    'submit',
-                    () => (formSubmitted = true),
-                )
-
                 shouldPreventNavigation = () => {
-                    if (formSubmitted) {
+                    if ($wire?.__instance?.effects?.redirect) {
                         return
                     }
 
                     return (
                         window.jsMd5(
                             JSON.stringify($wire.data).replace(/\\/g, ''),
-                        ) !== $wire.savedDataHash ||
-                        $wire?.__instance?.effects?.redirect
+                        ) !== $wire.savedDataHash
                     )
                 }
 
@@ -86,6 +78,6 @@
 
         \Livewire\store($this)->push('scripts', $__output, $__scriptKey)
     ?>
-    <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
-<?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+<?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 <?php /**PATH D:\website\mais-wellbest\vendor\filament\filament\resources\views/components/page/unsaved-data-changes-alert.blade.php ENDPATH**/ ?>

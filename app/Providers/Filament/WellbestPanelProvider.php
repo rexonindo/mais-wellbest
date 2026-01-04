@@ -32,28 +32,62 @@ class WellbestPanelProvider extends PanelProvider
             ->default()
             ->id('wellbest')
             ->path('wellbest')
-
-            // --- INSERT PWA FILES HERE ---
-            // 1. Include manifest
             ->renderHook(
                 'panels::head.end',
                 fn (): string => <<<HTML
                     <link rel="manifest" href="/manifest.json">
                     <meta name="theme-color" content="#1a73e8">
                     <script type="module" src="/build/assets/pwa.js"></script>
-                HTML
+                    
+                    <style>
+                        /* 1. Target the custom class for data cells */
+                        .fi-ta-cell.sticky-column {
+                            position: sticky !important;
+                            left: 0 !important;
+                            z-index: 10 !important;
+                            background-color: white !important;
+                            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+                        }
+
+                        /* 2. Target the table header so the title stays put too */
+                        .fi-ta-header-cell.sticky-column {
+                            position: sticky !important;
+                            left: 0 !important;
+                            z-index: 20 !important;
+                            background-color: #f9fafb !important;
+                        }
+
+                        /* 3. Dark mode support */
+                        .dark .fi-ta-cell.sticky-column {
+                            background-color: #09090b !important;
+                            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.5);
+                        }
+                        .dark .fi-ta-header-cell.sticky-column {
+                            background-color: #18181b !important;
+                        }
+
+                        /* 4. Optional: Freeze the Actions column (Right side) */
+                        .fi-ta-actions-cell {
+                            position: sticky !important;
+                            right: 0 !important;
+                            z-index: 10 !important;
+                            background-color: white !important;
+                            background-clip: padding-box;
+                        }
+                        .dark .fi-ta-actions-cell {
+                            background-color: #09090b !important;
+                        }
+                    </style>
+                HTML             
             )
-            // 2. Load pwa.js
             ->bootUsing(function () {
                 FilamentAsset::register([
                     \Filament\Support\Assets\Js::make(
                         'pwa-js',
-                        asset('build/assets/pwa-DwUm5zTl.js') // ← USE YOUR HASHED FILE
+                        asset('build/assets/pwa-DwUm5zTl.js') 
                     ),
                 ], 'wellbest-pwa');
             })
-            // ---------------------------------
-
             ->login()
             ->sidebarCollapsibleOnDesktop()
             ->brandName('MAIS - Wellbest')
@@ -92,7 +126,8 @@ class WellbestPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Quality Control'),
                 NavigationGroup::make()->label('Reports'),
                 NavigationGroup::make()->label('Administration'),
-            ]);
+            ])            
+            ->viteTheme('resources/css/filament/wellbest/theme.css');
     }
 
     public function navigation(\Filament\Navigation\NavigationBuilder $builder): \Filament\Navigation\NavigationBuilder

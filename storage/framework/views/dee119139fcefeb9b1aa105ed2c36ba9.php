@@ -59,15 +59,18 @@ unset($__defined_vars, $__key, $__value); ?>
     <?php echo e($attributes->class(['fi-ta-header-cell px-3 py-3.5 sm:first-of-type:ps-6 sm:last-of-type:pe-6'])); ?>
 
 >
-    <<?php echo e($sortable ? 'button' : 'span'); ?>
-
+    <span
         <?php if($sortable): ?>
             aria-label="<?php echo e(trim(strip_tags($slot))); ?>"
-            type="button"
+            role="button"
+            tabindex="0"
             wire:click="sortTable('<?php echo e($name); ?>')"
+            x-on:keydown.enter.prevent.stop="$wire.sortTable('<?php echo e($name); ?>')"
+            x-on:keydown.space.prevent.stop="$wire.sortTable('<?php echo e($name); ?>')"
         <?php endif; ?>
         class="<?php echo \Illuminate\Support\Arr::toCssClasses([
             'group flex w-full items-center gap-x-1',
+            'cursor-pointer' => $sortable,
             'whitespace-nowrap' => ! $wrap,
             'whitespace-normal' => $wrap,
             match ($alignment) {
@@ -88,7 +91,7 @@ unset($__defined_vars, $__key, $__value); ?>
 
         </span>
 
-        <!--[if BLOCK]><![endif]--><?php if($sortable): ?>
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($sortable): ?>
             <?php if (isset($component)) { $__componentOriginalbfc641e0710ce04e5fe02876ffc6f950 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalbfc641e0710ce04e5fe02876ffc6f950 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.icon','data' => ['alias' => 
@@ -129,7 +132,7 @@ unset($__defined_vars, $__key, $__value); ?>
 <?php $component = $__componentOriginalbfc641e0710ce04e5fe02876ffc6f950; ?>
 <?php unset($__componentOriginalbfc641e0710ce04e5fe02876ffc6f950); ?>
 <?php endif; ?>
-        <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
-    </<?php echo e($sortable ? 'button' : 'span'); ?>>
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+    </span>
 </th>
 <?php /**PATH D:\website\mais-wellbest\vendor\filament\tables\resources\views/components/header-cell.blade.php ENDPATH**/ ?>

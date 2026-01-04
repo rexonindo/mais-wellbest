@@ -1,3 +1,7 @@
+<?php
+    $locale = app()->getLocale();
+?>
+
 <?php $attributes ??= new \Illuminate\View\ComponentAttributeBag;
 
 $__newAttributes = [];
@@ -82,7 +86,9 @@ unset($__defined_vars, $__key, $__value); ?>
         <span
             x-text="
                 window.pluralize(<?php echo \Illuminate\Support\Js::from(__('filament-tables::table.selection_indicator.selected_count'))->toHtml() ?>, <?php echo e($selectedRecordsPropertyName); ?>.length, {
-                    count: <?php echo e($selectedRecordsPropertyName); ?>.length,
+                    count: new Intl.NumberFormat(<?php echo \Illuminate\Support\Js::from(str_replace('_', '-', $locale))->toHtml() ?>).format(
+                        <?php echo e($selectedRecordsPropertyName); ?>.length,
+                    ),
                 })
             "
             class="text-sm font-medium leading-6 text-gray-700 dark:text-gray-200"
@@ -104,7 +110,7 @@ unset($__defined_vars, $__key, $__value); ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['color' => 'primary','tag' => 'button','x-on:click' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($selectAllRecordsAction),'x-show' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($selectCurrentPageOnly ? '! areRecordsSelected(getRecordsOnPage())' : $allSelectableRecordsCount . ' !== ' . $selectedRecordsPropertyName . '.length'),'wire:key' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($this->getId() . 'table.selection.indicator.actions.select-all.' . $allSelectableRecordsCount . '.' . $page)]); ?>
-                <?php echo e(trans_choice('filament-tables::table.selection_indicator.actions.select_all.label', $allSelectableRecordsCount, ['count' => \Illuminate\Support\Number::format($allSelectableRecordsCount)])); ?>
+                <?php echo e(trans_choice('filament-tables::table.selection_indicator.actions.select_all.label', $allSelectableRecordsCount, ['count' => \Illuminate\Support\Number::format($allSelectableRecordsCount, locale: $locale)])); ?>
 
              <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>

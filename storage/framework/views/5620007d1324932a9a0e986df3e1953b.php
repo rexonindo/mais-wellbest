@@ -33,7 +33,7 @@ foreach ($attributes->all() as $__key => $__value) {
 unset($__defined_vars, $__key, $__value); ?>
 
 <div
-    x-data="notificationComponent({ notification: <?php echo \Illuminate\Support\Js::from($notification)->toHtml() ?> })"
+    x-data="notificationComponent({ notification: <?php echo \Illuminate\Support\Js::from($notification->toArray())->toHtml() ?> })"
     <?php echo e($attributes
             ->merge([
                 'wire:key' => "{$this->getId()}.notifications.{$notification->getId()}",

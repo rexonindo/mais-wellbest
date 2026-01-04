@@ -34,6 +34,7 @@ class IVStatusReport extends FBasePageResource implements HasTable
                         'itm_cd', 'wip_cd', 'qty'
                     )
                     ->from('iv_status_view')
+                    ->where('qty', '>', 0)
                     ->orderBy('itm_cd')
                     ->orderBy('proc_cd')
                     ->orderBy('wip_cd');

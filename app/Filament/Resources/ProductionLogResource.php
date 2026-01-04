@@ -22,6 +22,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\DB;
+use Filament\Tables\Columns\TextColumn;
 
 class ProductionLogResource extends BaseResource
 {
@@ -37,10 +38,11 @@ class ProductionLogResource extends BaseResource
         return $form
             ->schema([
                 Forms\Components\Select::make('wo_no')
-                    ->label('Work Order No')     
+                    ->label('Work Order No')
+                    ->required()
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
-                    ])
+                    ])   
                     ->disabled(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)               
                     ->options(function () {
                         return \App\Models\WorkOrder::query()
@@ -85,24 +87,33 @@ class ProductionLogResource extends BaseResource
                                 $set('in_qty', null);
                             }
                         }
-                    })
-                    ->required(),                    
+                    }),
 
                 // Hidden real item code (for saving)
                 Forms\Components\Hidden::make('itm_cd')
                     ->label('Part No'),
 
                 // Display item name (readonly)
+                // Forms\Components\TextInput::make('itm_nm')
+                //     ->label('Customer P/N')
+                //     ->readOnly(),
+
                 Forms\Components\TextInput::make('itm_nm')
                     ->label('Customer P/N')
-                    ->readOnly(),
+                    ->readOnly()
+                    ->dehydrated(false)
+                    ->formatStateUsing(fn ($record) =>
+                        $record?->item
+                            ? $record->item->itm_cd . ' (' . $record->item->itm_type . ')'
+                            : null
+                ),                    
 
                 Forms\Components\Select::make('proc_cd')
                     ->label('Process')
+                    ->required()
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
-                    ])                 
-                    ->required()                    
+                    ])   
                     ->disabled(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)
                     ->options(function (callable $get) {
                         $woNo = $get('wo_no');
@@ -154,11 +165,6 @@ class ProductionLogResource extends BaseResource
                             }                        
                         }
                     }),
-                    /*
-                    ->afterStateHydrated(function ($state, callable $set, callable $get, $livewire) {
-                
-                    })
-                    */
 
                 Forms\Components\Hidden::make('seq_no')
                     ->label('Seq No'),   
@@ -252,6 +258,14 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\TextInput::make('in_qty')
                     ->label('Qty Input (Panel)')
+                    ->required()
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                        'x-on:move-focus-in-qty.window' => "
+                            const input = \$el.querySelector('input');
+                            if (input) input.focus();
+                        ",
+                    ])                    
                     ->numeric()->default(null)->minValue(0)->reactive()
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $availQty = $get('avail_qty');
@@ -263,16 +277,18 @@ class ProductionLogResource extends BaseResource
                             $set('in_qty', null);
                             $component->getLivewire()->dispatch('focus-in-qty');
                         }                  
-                    })
-                    ->extraAttributes([
-                        'x-on:move-focus-in-qty.window' => "
-                            const input = \$el.querySelector('input');
-                            if (input) input.focus();
-                        ",
-                    ]),
+                    }),
 
                 Forms\Components\TextInput::make('out_qty')
                     ->label('Qty Output (Panel)')
+                    ->required()
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                        'x-on:move-focus-out-qty.window' => "
+                            const input = \$el.querySelector('input');
+                            if (input) input.focus();
+                        ",
+                    ])
                     ->numeric()->default(null)->minValue(0)->reactive()
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $inQty = floatval($get('in_qty') ?? 0);
@@ -287,16 +303,17 @@ class ProductionLogResource extends BaseResource
                             $set('out_qty', null);
                             $component->getLivewire()->dispatch('focus-out-qty');    
                         }
-                    })
-                    ->extraAttributes([
-                        'x-on:move-focus-out-qty.window' => "
-                            const input = \$el.querySelector('input');
-                            if (input) input.focus();
-                        ",
-                    ]),
+                    }),
 
                 Forms\Components\TextInput::make('rwk_qty')
                     ->label('Qty Rework (Panel)')
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                        'x-on:move-focus-rwk-qty.window' => "
+                            const input = \$el.querySelector('input');
+                            if (input) input.focus();
+                        ",
+                    ])                    
                     ->numeric()->default(null)->minValue(0)->reactive()                    
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $inQty = floatval($get('in_qty') ?? 0);
@@ -311,16 +328,17 @@ class ProductionLogResource extends BaseResource
                             $set('rwk_qty', null);    
                             $component->getLivewire()->dispatch('focus-rwk-qty');
                         }
-                    })
-                    ->extraAttributes([
-                        'x-on:move-focus-rwk-qty.window' => "
-                            const input = \$el.querySelector('input');
-                            if (input) input.focus();
-                        ",
-                    ]),                    
+                    }),                    
 
                 Forms\Components\TextInput::make('ng_qty')
                     ->label('Qty NG (Panel)')
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                        'x-on:move-focus-ng-qty.window' => "
+                            const input = \$el.querySelector('input');
+                            if (input) input.focus();
+                        ",
+                    ])                       
                     ->numeric()->default(null)->minValue(0)->reactive()
                     ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                         $inQty = floatval($get('in_qty') ?? 0);
@@ -335,20 +353,24 @@ class ProductionLogResource extends BaseResource
                             $set('ng_qty', null);
                             $component->getLivewire()->dispatch('focus-ng-qty');    
                         }
-                    })
-                    ->extraAttributes([
-                        'x-on:move-focus-ng-qty.window' => "
-                            const input = \$el.querySelector('input');
-                            if (input) input.focus();
-                        ",
-                    ]),                        
+                    }),
 
                 Forms\Components\TextInput::make('ng_qty_pcs')
                     ->label('Qty NG (Pcs)')
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                        'x-on:move-focus-ng-qty-pcs.window' => "
+                            const input = \$el.querySelector('input');
+                            if (input) input.focus();
+                        ",
+                    ])                      
                     ->numeric()->default(null)->minValue(0)->reactive(),                              
                     
                 Forms\Components\Textarea::make('rmks')
                     ->label('Remarks')
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                    ])                       
                     ->columnSpanFull(),
             ]);            
     }
@@ -364,11 +386,11 @@ class ProductionLogResource extends BaseResource
                 Tables\Columns\TextColumn::make('itm_cd')
                     ->label('Part No')
                     ->searchable()
-                    ->sortable(),                     
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('item.itm_nm')
                     ->label('Customer P/N')
                     ->searchable()
-                    ->sortable(),                    
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('proc_cd')
                     ->label('Process Code')
                     ->formatStateUsing(function ($state, $record) {
@@ -435,32 +457,35 @@ class ProductionLogResource extends BaseResource
                     })
                     ->color(fn ($state) => $state === 'TRUE' ? 'success' : 'danger')
                     ->sortable(), 
-                ])                
-            ->filters(self::getTableFilters())
+                ])            
+            // ->filters(self::getTableFilters())
+            ->filters([])   
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
                     ->visible($user->hasRole(['admin','production'])),
             ])                        
             ->bulkActions([
-                            Tables\Actions\BulkActionGroup::make([
-                                Tables\Actions\DeleteBulkAction::make(),
-                            ]),
-                    ])
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible($user->hasRole(['admin','production'])),
+                ]),
+            ])
             ->recordClasses(function ($record) {
-                        if ($record->ng_qty > 0) {
-                            return 'bg-red-100 dark:bg-red-900';
-                        }
+                if ($record->ng_qty > 0) {
+                    return 'bg-red-100 dark:bg-red-900';
+                }
 
-                        if ($record->rwk_qty > 0) {
-                            return 'bg-yellow-100 dark:bg-yellow-900';
-                        }
-                        return '';
-                    })
-            ->recordUrl(
-                fn ($record) =>
-                    ProductionLogResource::getUrl('view', ['record' => $record])
-            );                          
+                if ($record->rwk_qty > 0) {
+                    return 'bg-yellow-100 dark:bg-yellow-900';
+                }
+                return '';
+            });
+
+            //->recordUrl(
+            //    fn ($record) =>
+            //        ProductionLogResource::getUrl('view', ['record' => $record])
+            //);                          
     }    
 
     public static function getEloquentQuery(): Builder
