@@ -42,7 +42,7 @@ class ProductionLogResource extends BaseResource
                     ->required()
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
-                    ])   
+                    ])     
                     ->disabled(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)               
                     ->options(function () {
                         return \App\Models\WorkOrder::query()
@@ -113,6 +113,10 @@ class ProductionLogResource extends BaseResource
                     ->required()
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
+                        'x-on:move-focus-proc-cd.window' => "
+                            const input = \$el.querySelector('input');
+                            if (input) input.focus();
+                        ",                        
                     ])   
                     ->disabled(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)
                     ->options(function (callable $get) {
@@ -135,34 +139,57 @@ class ProductionLogResource extends BaseResource
                     })
                     ->searchable()
                     ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set, callable $get, $livewire) {
+                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {    
                         if ($livewire instanceof \Filament\Resources\Pages\CreateRecord) {
+
                             $woNo = $get('wo_no');
                             $procCd = $state; // selected process code
-                            if (! $woNo || ! $procCd) {
-                                $set('in_qty', null);
-                                return;
-                            }                            
-                            $SeqNoTbl = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
-                                    ->where('proc_cd', $procCd)
-                                    ->first();
-                            $SeqNo = $SeqNoTbl?->seq_no;        
-                            $set('seq_no', $SeqNo ?? 0);    
-                            $set('cav', $SeqNoTbl->cav ?? 1);
-                            $cav = $get('cav') ?? 1;
-                            if ( $SeqNo === 1 ) {
-                                $workOrderProcess = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
-                                    ->where('proc_cd', $procCd)
-                                    ->first();                                                                  
-                                $set('avail_qty', $workOrderProcess?->shoot_qty ?? 0); 
-                                $set('in_qty', $workOrderProcess?->shoot_qty ?? 0);                                 
-                            }
+
+                            $CheckValidFlg = \DB::select("CALL check_prdlog_proc(?, ?)", [$woNo, $procCd]);
+                            $validFlg = floatval($CheckValidFlg[0]->valid_flg ?? 0);
+                            if ($validFlg != 1) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title("Process cannot be new input because next process has already exist")
+                                    ->send();                            
+                                $set('proc_cd', null);
+                                $set('cav', null); 
+                                $set('avail_qty', null); 
+                                $set('in_qty', null);  
+                                $set('out_qty', null);  
+                                $set('rwk_qty', null);  
+                                $set('ng_qty', null);  
+                                $set('ng_qty_pcs', null);  
+                                $set('rmks', null);  
+                                $component->getLivewire()->dispatch('focus-proc-cd');
+                            } 
                             else
                             {
-                                $AvailableQty = \DB::select("CALL get_wo_available_qty(?, ?)", [$woNo, $procCd]);
-                                $set('avail_qty', floatval($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);  
-                                $set('in_qty', floatval($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);      
-                            }                        
+                                if (! $woNo || ! $procCd) {
+                                    $set('in_qty', null);
+                                    return;
+                                }                            
+                                $SeqNoTbl = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
+                                        ->where('proc_cd', $procCd)
+                                        ->first();
+                                $SeqNo = $SeqNoTbl?->seq_no;        
+                                $set('seq_no', $SeqNo ?? 0);    
+                                $set('cav', $SeqNoTbl->cav ?? 1);
+                                $cav = $get('cav') ?? 1;
+                                if ( $SeqNo === 1 ) {
+                                    $workOrderProcess = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
+                                        ->where('proc_cd', $procCd)
+                                        ->first();                                                                  
+                                    $set('avail_qty', $workOrderProcess?->shoot_qty ?? 0); 
+                                    $set('in_qty', $workOrderProcess?->shoot_qty ?? 0);                                 
+                                }
+                                else
+                                {
+                                    $AvailableQty = \DB::select("CALL get_wo_available_qty(?, ?)", [$woNo, $procCd]);
+                                    $set('avail_qty', floatval($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);  
+                                    $set('in_qty', floatval($AvailableQty[0]->avail_qty_pcs ?? 0) / $cav);      
+                                }                                 
+                            }
                         }
                     }),
 
@@ -257,7 +284,7 @@ class ProductionLogResource extends BaseResource
                     ->readOnly(),
 
                 Forms\Components\TextInput::make('in_qty')
-                    ->label('Qty Input (Panel)')
+                    ->label('Qty Output (Panel)')
                     ->required()
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
@@ -280,7 +307,7 @@ class ProductionLogResource extends BaseResource
                     }),
 
                 Forms\Components\TextInput::make('out_qty')
-                    ->label('Qty Output (Panel)')
+                    ->label('Qty OK (Panel)')
                     ->required()
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
@@ -367,7 +394,7 @@ class ProductionLogResource extends BaseResource
                     ->numeric()->default(null)->minValue(0)->reactive(),                              
                     
                 Forms\Components\Textarea::make('rmks')
-                    ->label('Remarks')
+                    ->label('Remarks or Information about NG Pcs')
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
                     ])                       
