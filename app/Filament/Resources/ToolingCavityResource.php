@@ -7,10 +7,13 @@ use App\Filament\Resources\ToolingCavityResource\Pages;
 use App\Filament\Resources\ProductRouteResource\RelationManagers;
 use App\Models\ToolingCavity;
 use Filament\Forms;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -31,18 +34,21 @@ class ToolingCavityResource extends BaseResource
                 ->relationship('item', 'itm_cd')
                 ->searchable()
                 ->required()
+                ->reactive()
+                ->afterStateUpdated(function (Set $set) {
+                    $set('proc_cd', null);
+                })                
                 ->default(fn () => session('tooling_cavity.itm_cd')),
-
 
             Forms\Components\TextInput::make('tool_cd')
                 ->label('Tool Code')
                 ->required()
                 ->maxLength(50)
-                ->autofocus(fn () => session()->pull('tooling_cavity.focus_tool_cd', false)),
+                ->default(fn () => session('tooling_cavity.tool_cd')),                
 
             Forms\Components\Select::make('proc_cd')
                 ->label('Process')
-                // ->options(fn () => Process::orderBy('proc_nm')->pluck('proc_nm', 'proc_cd')->toArray())
+                ->required()
                 ->options(
                     fn () => \App\Models\Process::orderBy('proc_nm')
                         ->get()
@@ -50,13 +56,30 @@ class ToolingCavityResource extends BaseResource
                         ->toArray()
                 )                    
                 ->searchable()
-                ->nullable(),     
+                ->options(function (Get $get) {
+                    $itmCd = $get('itm_cd');
+
+                    if (! $itmCd) {
+                        return [];
+                    }
+
+                    return DB::table('itm_proc_view')
+                        ->where('itm_cd', $itmCd)
+                        ->orderBy('seq_no')
+                        ->get()
+                        ->mapWithKeys(fn ($row) => [
+                            $row->proc_cd => "{$row->proc_nm} ({$row->proc_cd})",
+                        ])
+                        ->toArray();
+                })
+                ->disabled(fn (Get $get) => blank($get('itm_cd')))
+                ->autofocus(fn () => session()->pull('tooling_cavity.focus_proc_cd', false)),     
 
             Forms\Components\TextInput::make('cav')
                 ->label('Cavity')
+                ->required()
                 ->numeric()
-                ->minValue(1)
-                ->required(),
+                ->minValue(1),
         ]);
     }
 
@@ -80,7 +103,7 @@ class ToolingCavityResource extends BaseResource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                //Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

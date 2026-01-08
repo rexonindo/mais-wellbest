@@ -10,10 +10,12 @@ class ListToolingCavities extends ListRecords
 {
     protected static string $resource = ToolingCavityResource::class;
     protected static ?string $title = 'Tooling Cavity <List>';
+
     protected function getHeaderActions(): array
     {
         return [
             Actions\CreateAction::make(),
         ];
     }    
+
 }
