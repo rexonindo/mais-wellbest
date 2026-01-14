@@ -4,6 +4,7 @@
             <tr>
                 <th class="px-3 py-2 text-left border-b">Seq No</th>
                 <th class="px-3 py-2 text-left border-b">Process Code</th>
+                <th class="px-3 py-2 text-left border-b">Process Name</th>
                 <th class="px-3 py-2 text-left border-b">Cavity</th>
                 <th class="px-3 py-2 text-left border-b">Shoot Qty</th>
             </tr>
@@ -13,6 +14,7 @@
                 <tr class="hover:bg-gray-50">
                     <td class="px-3 py-1 border-b">{{ $row->seq_no }}</td>
                     <td class="px-3 py-1 border-b">{{ $row->proc_cd }}</td>
+                    <td class="px-3 py-1 border-b">{{ $row->proc_nm }}</td>
                     <td class="px-3 py-1 border-b text-right">{{ $row->cav }}</td>
                     <td class="px-3 py-1 border-b text-right">{{ $row->shoot_qty }}</td>
                 </tr>

@@ -32,8 +32,8 @@ class WOProgressReport extends FBasePageResource implements HasTable
                 return WOProgress::query()
                     ->select(
                         'wo_no', 'itm_cd', 'itm_type', 'seq_no', 'proc_cd', 'proc_nm',
-                        'start_time', 'end_time', 'wo_qty', 'cav',
-                        'in_qty', 'rwk_qty', 'ng_qty', 'out_qty', 'mchn_cd', 'emp_nm'
+                        'wo_qty', 'cav',
+                        'in_qty', 'rwk_qty', 'ng_qty', 'out_qty', 'mchn_cd', 'emp_nm', 'start_time', 'end_time' 
                     )
                     ->from('wo_progress_view')
                     ->orderBy('wo_no')
@@ -76,7 +76,7 @@ class WOProgressReport extends FBasePageResource implements HasTable
                     ->numeric()
                     ->alignEnd(),    
                 Tables\Columns\TextColumn::make('in_qty')
-                    ->label('IN Qty')
+                    ->label('OUT Qty')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),
@@ -91,7 +91,7 @@ class WOProgressReport extends FBasePageResource implements HasTable
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                       
                 Tables\Columns\TextColumn::make('out_qty')
-                    ->label('OUT Qty')
+                    ->label('OK Qty')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),

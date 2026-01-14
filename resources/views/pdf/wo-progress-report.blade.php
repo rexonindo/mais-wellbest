@@ -22,10 +22,10 @@
                 <th>Process Name</th>
                 <th>WO Qty</th>
                 <th>Cavity</th>
-                <th>IN Qty</th>
+                <th>OUT Qty</th>
                 <th>Rework Qty</th>
                 <th>NG Qty</th>
-                <th>OUT Qty</th>
+                <th>OK Qty</th>
                 <th>Machine</th>
                 <th>Employee</th>
                 <th>Start</th>

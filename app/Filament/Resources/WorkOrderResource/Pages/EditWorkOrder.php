@@ -87,10 +87,17 @@ class EditWorkOrder extends EditRecord
                 ->modalContent(function () {
                     $woNo = $this->record->wo_no;
 
-                    $rows = DB::table('wo_proc_tbl')
-                        ->select('seq_no', 'proc_cd', 'cav', 'shoot_qty')
-                        ->where('wo_no', $woNo)
-                        ->orderBy('seq_no')
+                    $rows = DB::table('wo_proc_tbl as a')
+                        ->join('proc_tbl as b', 'a.proc_cd', '=', 'b.proc_cd')
+                        ->select(
+                            'a.seq_no',
+                            'a.proc_cd',
+                            'b.proc_nm',
+                            'a.cav',
+                            'a.shoot_qty' 
+                        )                   
+                        ->where('a.wo_no', $woNo)
+                        ->orderBy('a.seq_no')
                         ->get();
 
                     if ($rows->isEmpty()) {
