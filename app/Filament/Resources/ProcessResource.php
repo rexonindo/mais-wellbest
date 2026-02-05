@@ -67,14 +67,23 @@ class ProcessResource extends BaseResource
                     ->openUrlInNewTab(),
             ])
             ->columns([
-                Tables\Columns\TextColumn::make('proc_cd')->label('Process Code')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('proc_cd')
+                    ->label('Process Code')
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('proc_nm')
                     ->label('Process Name')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('department.dept_nm')->label('Department'),
-                Tables\Columns\TextColumn::make('wip_sfx')->label('WIP Suffix'),
-                Tables\Columns\TextColumn::make('std_time')->label('Std Time (min)'),
+                Tables\Columns\TextColumn::make('wip_sfx')
+                    ->label('WIP Suffix')
+                    ->sortable()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('std_time')
+                    ->label('Std Time (min)')
+                    ->sortable()
+                    ->searchable(),
             ])
             ->filters([
                 //
