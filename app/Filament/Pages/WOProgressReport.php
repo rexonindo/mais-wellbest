@@ -33,7 +33,8 @@ class WOProgressReport extends FBasePageResource implements HasTable
                     ->select(
                         'wo_no', 'itm_cd', 'itm_type', 'seq_no', 'proc_cd', 'proc_nm',
                         'wo_qty', 'cav',
-                        'in_qty', 'rwk_qty', 'ng_qty', 'out_qty', 'mchn_cd', 'emp_nm', 'start_time', 'end_time' 
+                        'in_qty', 'rwk_qty', 'ng_qty', 'out_qty', 'ttl_qty', 'ttl_qty_shoot', 
+                        'mchn_cd', 'emp_nm', 'start_time', 'end_time' 
                     )
                     ->from('wo_progress_view')
                     ->orderBy('wo_no')
@@ -95,6 +96,16 @@ class WOProgressReport extends FBasePageResource implements HasTable
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),
+                Tables\Columns\TextColumn::make('ttl_qty')
+                    ->label('Total Qty')
+                    ->numeric()
+                    ->alignEnd()
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),         
+                Tables\Columns\TextColumn::make('ttl_qty_shoot')
+                    ->label('Total Qty (Shoot)')
+                    ->numeric()
+                    ->alignEnd()
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                                     
                 Tables\Columns\TextColumn::make('mchn_cd')
                     ->label('Machine')
                     ->searchable(query: function ($query, $search) {

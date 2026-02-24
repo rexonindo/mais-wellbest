@@ -40,6 +40,8 @@ class WOProgressReportExcel implements FromCollection, WithHeadings, WithTitle, 
             'Rework Qty',
             'NG Qty',
             'OK Qty',
+            'Total Qty',
+            'Total Qty (Shoot)',
             'Machine Code',
             'Employee Name',
             'Start',
@@ -60,7 +62,7 @@ class WOProgressReportExcel implements FromCollection, WithHeadings, WithTitle, 
 
                 // Insert title rows
                 $sheet->insertNewRowBefore(1, 2);
-                $sheet->mergeCells('A1:P1');
+                $sheet->mergeCells('A1:R1');
                 $sheet->setCellValue('A1', $this->reportTitle);
 
                 // Title style
@@ -68,8 +70,8 @@ class WOProgressReportExcel implements FromCollection, WithHeadings, WithTitle, 
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
 
                 // Header style
-                $sheet->getStyle('A3:P3')->getFont()->setBold(true);
-                $sheet->getStyle('A3:P3')->getAlignment()->setHorizontal('center');
+                $sheet->getStyle('A3:R3')->getFont()->setBold(true);
+                $sheet->getStyle('A3:R3')->getAlignment()->setHorizontal('center');
             },
         ];
     }

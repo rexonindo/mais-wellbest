@@ -43,7 +43,7 @@
                 'flex' => filament()->hasTopNavigation() || (! filament()->hasNavigation()),
             ]); ?>"
         >
-            <?php if(filament()->hasTopbar()): ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(filament()->hasTopbar()): ?>
                 <?php echo e(\Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::TOPBAR_BEFORE, scopes: $livewire?->getRenderHookScopes())); ?>
 
 
@@ -121,7 +121,7 @@
 
         </div>
 
-        <?php if(filament()->hasNavigation()): ?>
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(filament()->hasNavigation()): ?>
             <div
                 x-cloak
                 x-data="{}"

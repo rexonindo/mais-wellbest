@@ -35,4 +35,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get('/intl-test', function () {
+    return [
+        'intl_loaded' => extension_loaded('intl'),
+        'php_ini' => php_ini_loaded_file(),
+        'php_version' => PHP_VERSION,
+    ];
+});
+
+
+
+
 require __DIR__.'/auth.php';

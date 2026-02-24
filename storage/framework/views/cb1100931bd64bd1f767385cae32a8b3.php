@@ -190,7 +190,7 @@ if (isset($__slots)) unset($__slots);
             </script>
         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-        <?php if(filament()->hasDarkMode() && (! filament()->hasDarkModeForced())): ?>
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(filament()->hasDarkMode() && (! filament()->hasDarkModeForced())): ?>
             <script>
                 loadDarkMode()
             </script>

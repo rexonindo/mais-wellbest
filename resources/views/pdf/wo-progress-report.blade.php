@@ -26,6 +26,8 @@
                 <th>Rework Qty</th>
                 <th>NG Qty</th>
                 <th>OK Qty</th>
+                <th>Total Qty</th>
+                <th>Total Qty (Shoot)</th>
                 <th>Machine</th>
                 <th>Employee</th>
                 <th>Start</th>
@@ -47,6 +49,8 @@
                     <td>{{ $row->rwk_qty }}</td>
                     <td>{{ $row->ng_qty }}</td>
                     <td>{{ $row->out_qty }}</td>
+                    <td>{{ $row->ttl_qty }}</td>
+                    <td>{{ $row->ttl_qty_shoot }}</td>
                     <td>{{ $row->mchn_cd }}</td>
                     <td>{{ $row->emp_nm }}</td>
                     <td>{{ $row->start_time }}</td>

@@ -95,7 +95,7 @@ unset($__defined_vars, $__key, $__value); ?>
 <?php endif; ?>
         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-        <?php if(filament()->hasTopNavigation() || (! filament()->hasNavigation())): ?>
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(filament()->hasTopNavigation() || (! filament()->hasNavigation())): ?>
             <div class="me-6 hidden lg:flex">
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($homeUrl = filament()->getHomeUrl()): ?>
                     <a <?php echo e(\Filament\Support\generate_href_html($homeUrl)); ?>>
@@ -144,7 +144,7 @@ unset($__defined_vars, $__key, $__value); ?>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
 
-            <?php if(filament()->hasTenancy() && filament()->hasTenantMenu()): ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(filament()->hasTenancy() && filament()->hasTenantMenu()): ?>
                 <?php if (isset($component)) { $__componentOriginal32b9f4abfc80490155cb7c5dfaf8790d = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal32b9f4abfc80490155cb7c5dfaf8790d = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament-panels::components.tenant-menu','data' => ['class' => 'hidden lg:block']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -336,7 +336,7 @@ unset($__defined_vars, $__key, $__value); ?>
             <?php echo e(\Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::GLOBAL_SEARCH_BEFORE)); ?>
 
 
-            <?php if(filament()->isGlobalSearchEnabled()): ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(filament()->isGlobalSearchEnabled()): ?>
                 <?php
 $__split = function ($name, $params = []) {
     return [$name, $params];
@@ -362,8 +362,8 @@ if (isset($__slots)) unset($__slots);
             <?php echo e(\Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::GLOBAL_SEARCH_AFTER)); ?>
 
 
-            <?php if(filament()->auth()->check()): ?>
-                <?php if(filament()->hasDatabaseNotifications()): ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(filament()->auth()->check()): ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(filament()->hasDatabaseNotifications()): ?>
                     <?php
 $__split = function ($name, $params = []) {
     return [$name, $params];
