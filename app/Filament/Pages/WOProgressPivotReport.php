@@ -58,9 +58,11 @@ class WOProgressPivotReport extends FBasePageResource implements HasTable
                         return Tables\Columns\TextColumn::make($col)
                             ->label(strtoupper(str_replace('_', ' ', $col)))
                             ->wrap()
+                            ->alignLeft()
                             ->toggleable()
                             ->extraAttributes([
-                                'style' => 'min-width:140px; white-space:nowrap;',
+                                'class' => 'text-left',
+                                'style' => 'min-width:140px; white-space:nowrap;',                                
                             ]);
                     }
 
