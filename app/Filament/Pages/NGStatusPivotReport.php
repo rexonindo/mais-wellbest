@@ -54,7 +54,7 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
             ->columns(
                 collect($this->dynamicColumns)->map(function ($col) {
 
-                    if (in_array($col, ['wo_no', 'itm_cd', 'itm_type', 'rmks'])) {
+                    if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'REMARKS NG'])) {
                         return Tables\Columns\TextColumn::make($col)
                             ->label(strtoupper(str_replace('_', ' ', $col)))
                             ->wrap()

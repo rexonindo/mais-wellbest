@@ -54,7 +54,7 @@ class WOProgressPivotReport extends FBasePageResource implements HasTable
             ->columns(
                 collect($this->dynamicColumns)->map(function ($col) {
 
-                    if (in_array($col, ['wo_no', 'itm_cd', 'itm_type', 'end_time'])) {
+                    if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'END DATE'])) {
                         return Tables\Columns\TextColumn::make($col)
                             ->label(strtoupper(str_replace('_', ' ', $col)))
                             ->wrap()

@@ -55,7 +55,7 @@
         ? array_keys($data->first()->getAttributes())
         : [];
 
-    $textColumns = ['wo_no', 'itm_cd', 'itm_type'];
+    $textColumns = ['WO NO', 'PART NO', 'TYPE', 'REMARKS NG'];
 ?>
 
 <table>
