@@ -28,6 +28,7 @@
                 <th>OK Qty</th>
                 <th>Total Qty</th>
                 <th>Total Qty (Shoot)</th>
+                <th>On-Hand Qty</th>
                 <th>Machine</th>
                 <th>Employee</th>
                 <th>Start</th>
@@ -51,6 +52,7 @@
                     <td>{{ $row->out_qty }}</td>
                     <td>{{ $row->ttl_qty }}</td>
                     <td>{{ $row->ttl_qty_shoot }}</td>
+                    <td>{{ $row->onhand_qty }}</td>
                     <td>{{ $row->mchn_cd }}</td>
                     <td>{{ $row->emp_nm }}</td>
                     <td>{{ $row->start_time }}</td>

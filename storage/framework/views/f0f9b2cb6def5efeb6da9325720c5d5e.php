@@ -28,6 +28,7 @@
                 <th>OK Qty</th>
                 <th>Total Qty</th>
                 <th>Total Qty (Shoot)</th>
+                <th>On-Hand Qty</th>
                 <th>Machine</th>
                 <th>Employee</th>
                 <th>Start</th>
@@ -51,6 +52,7 @@
                     <td><?php echo e($row->out_qty); ?></td>
                     <td><?php echo e($row->ttl_qty); ?></td>
                     <td><?php echo e($row->ttl_qty_shoot); ?></td>
+                    <td><?php echo e($row->onhand_qty); ?></td>
                     <td><?php echo e($row->mchn_cd); ?></td>
                     <td><?php echo e($row->emp_nm); ?></td>
                     <td><?php echo e($row->start_time); ?></td>

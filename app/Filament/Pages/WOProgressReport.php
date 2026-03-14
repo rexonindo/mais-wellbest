@@ -8,10 +8,14 @@ use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel; // for Excel export
-use Barryvdh\DomPDF\Facade\Pdf;     // for PDF export
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class WOProgressReport extends FBasePageResource implements HasTable
 {
@@ -28,45 +32,21 @@ class WOProgressReport extends FBasePageResource implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(function () {
-                return WOProgress::query()
-                    ->select(
-                        'wo_no', 'itm_cd', 'itm_type', 'seq_no', 'proc_cd', 'proc_nm',
-                        'wo_qty', 'cav',
-                        'in_qty', 'rwk_qty', 'ng_qty', 'out_qty', 'ttl_qty', 'ttl_qty_shoot', 
-                        'mchn_cd', 'emp_nm', 'start_time', 'end_time' 
-                    )
-                    ->from('wo_progress_view')
-                    ->orderBy('wo_no')
-                    ->orderBy('seq_no')
-                    ->orderBy('end_time');
-            })
-
+            ->query(fn () => WOProgress::query()->whereRaw('1 = 0'))
+            ->paginated([10, 25, 50, 100])
             ->columns([
                 Tables\Columns\TextColumn::make('wo_no')
-                    ->label('WO No')
-                    ->searchable(query: function ($query, $search) {
-                        return $query->where('wo_no', 'like', "%{$search}%");
-                    }),
+                    ->label('WO No'),
                 Tables\Columns\TextColumn::make('itm_cd')
-                    ->label('Part No')
-                    ->searchable(query: function ($query, $search) {
-                        return $query->where('itm_cd', 'like', "%{$search}%");
-                    }),
+                    ->label('Part No'),
                 Tables\Columns\TextColumn::make('itm_type')
-                    ->label('Part Type')
-                    ->searchable(query: function ($query, $search) {
-                        return $query->where('itm_type', 'like', "%{$search}%");
-                    }),                    
+                    ->label('Part Type'),
                 Tables\Columns\TextColumn::make('seq_no')
                     ->label('Seq No'),
                 Tables\Columns\TextColumn::make('proc_cd')
                     ->label('Process Code'),
                 Tables\Columns\TextColumn::make('proc_nm')
-                    ->label('Process Name')
-                    ->searchable(query: function ($query, $search) {
-                        return $query->where('proc_nm', 'like', "%{$search}%");
-                    }),
+                    ->label('Process Name'),
                 Tables\Columns\TextColumn::make('wo_qty')
                     ->label('WO Qty')
                     ->numeric()
@@ -105,17 +85,16 @@ class WOProgressReport extends FBasePageResource implements HasTable
                     ->label('Total Qty (Shoot)')
                     ->numeric()
                     ->alignEnd()
-                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                                     
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),       
+                Tables\Columns\TextColumn::make('onhand_qty')
+                    ->label('Onhand Qty')
+                    ->numeric()
+                    ->alignEnd()
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                                                      
                 Tables\Columns\TextColumn::make('mchn_cd')
-                    ->label('Machine')
-                    ->searchable(query: function ($query, $search) {
-                        return $query->where('mchn_cd', 'like', "%{$search}%");
-                    }),                 
+                    ->label('Machine'),
                 Tables\Columns\TextColumn::make('emp_nm')
-                    ->label('Operator')
-                    ->searchable(query: function ($query, $search) {
-                        return $query->where('emp_nm', 'like', "%{$search}%");
-                    }),  
+                    ->label('Operator'),
                 Tables\Columns\TextColumn::make('start_time')->label('Start Time'),
                 Tables\Columns\TextColumn::make('end_time')->label('End Time'),                                         
             ])
@@ -138,6 +117,38 @@ class WOProgressReport extends FBasePageResource implements HasTable
             ]);
 
 
+    }
+
+    public function getTableRecords(): \Illuminate\Contracts\Pagination\Paginator
+    {
+        $filters = $this->getTableFiltersForm()?->getState() ?? [];
+
+        $woNo   = data_get($filters, 'wo_no.wo_no');
+        $itemCd = data_get($filters, 'itm_cd.itm_cd');
+        $allFlg = data_get($filters, 'all_flg.all_flg', 1);
+
+        $rows = DB::select(
+            "CALL wo_progress_report(?, ?, ?)",
+            [$woNo, $itemCd, $allFlg]
+        );
+
+        $collection = collect($rows)->map(function ($row) {
+            $model = new WOProgress();
+            $model->forceFill((array) $row);
+            $model->exists = true;
+            return $model;
+        });
+
+        $perPage = $this->getTableRecordsPerPage();
+        $page = $this->getTablePage();
+
+        return new LengthAwarePaginator(
+            $collection->forPage($page, $perPage),
+            $collection->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url()]
+        );
     }
 
     public function getTableRecordKey($record): string
@@ -180,40 +191,34 @@ class WOProgressReport extends FBasePageResource implements HasTable
                     $data['itm_cd'] ? "Part No: {$data['itm_cd']}" : null
                 ),
 
-            // Operator (NULL / NOT NULL)
-            Tables\Filters\Filter::make('emp_nm_status')
-                ->label('Operator Status')
+            Tables\Filters\Filter::make('all_flg')
+                ->label('Data Scope')
                 ->form([
-                    Forms\Components\Select::make('status')
+                    Forms\Components\Select::make('all_flg')
+                        ->label('Data Scope')
                         ->options([
-                            'filled' => 'Filled Operator',
-                            'empty'  => 'Empty Operator',
+                            0 => 'Input Data Only',
+                            1 => 'Included Blank Data',                            
                         ])
-                        ->placeholder('All'),
+                        ->default(0),
                 ])
                 ->query(function ($query, array $data) {
-                    return $query
-                        ->when($data['status'] === 'filled', fn ($q) =>
-                            $q->whereNotNull('emp_nm')
-                        )
-                        ->when($data['status'] === 'empty', fn ($q) =>
-                            $q->whereNull('emp_nm')
-                        );
+                    return $query; // filtering handled by stored procedure
                 })
                 ->indicateUsing(function (array $data): ?string {
-                    return match ($data['status'] ?? null) {
-                        'filled' => 'Operator: Filled',
-                        'empty'  => 'Operator: Empty',
-                        default  => null,
+                    return match ($data['all_flg'] ?? 0) {
+                        0 => 'Input Data Only',
+                        1 => 'Included Blank Data',                        
+                        default => 0,
                     };
                 }),
+
         ];
     }
   
-
     protected function exportExcel()
     {
-        $records = $this->getFilteredTableQuery()->get();
+        $records = collect($this->getTableRecords()->items());
 
         $filename = 'WOProgressReport_' . now()->format('Ymd_His') . '.xlsx';
 
@@ -225,7 +230,7 @@ class WOProgressReport extends FBasePageResource implements HasTable
 
     protected function exportPdf()
     {
-        $data = $this->getFilteredTableQuery()->get();
+        $data = collect($this->getTableRecords()->items());
 
         $pdf = Pdf::loadView('pdf.wo-progress-report', [
             'data' => $data,
