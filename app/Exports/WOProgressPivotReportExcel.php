@@ -99,6 +99,7 @@ class WOProgressPivotReportExcel implements
 
                 /* ---------- Header ---------- */
                 $headerRow = 3;
+
                 $sheet->getStyle("A{$headerRow}:{$lastColumn}{$headerRow}")
                     ->getFont()->setBold(true);
 
@@ -112,18 +113,39 @@ class WOProgressPivotReportExcel implements
                     )->setAutoSize(true);
                 }
 
-                /* ---------- Borders ---------- */
-                $startRow = $headerRow;
-                $endRow   = $sheet->getHighestRow();
+                /* ---------- TOTAL ROW ---------- */
 
-                $sheet->getStyle("A{$startRow}:{$lastColumn}{$endRow}")
+                $dataStartRow = 4;
+                $dataEndRow   = $sheet->getHighestRow();
+                $totalRow     = $dataEndRow + 1;
+
+                $sheet->setCellValue("A{$totalRow}", "TOTAL");
+
+                foreach (range(7, $columnCount) as $i) {
+
+                    $col = Coordinate::stringFromColumnIndex($i);
+
+                    $sheet->setCellValue(
+                        "{$col}{$totalRow}",
+                        "=SUM({$col}{$dataStartRow}:{$col}{$dataEndRow})"
+                    );
+                }
+
+                /* ---------- TOTAL style ---------- */
+
+                $sheet->getStyle("A{$totalRow}:{$lastColumn}{$totalRow}")
+                    ->getFont()->setBold(true);
+
+                /* ---------- Borders ---------- */
+
+                $sheet->getStyle("A{$headerRow}:{$lastColumn}{$totalRow}")
                     ->getBorders()
                     ->getAllBorders()
                     ->setBorderStyle(Border::BORDER_THIN);
-               /** 🔹 Freeze header */
-                $sheet->freezePane('A4');                    
-            },        
 
+                /** Freeze header */
+                $sheet->freezePane('A4');
+            }
          ];
     }
 }

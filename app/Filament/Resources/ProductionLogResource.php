@@ -399,6 +399,13 @@ class ProductionLogResource extends BaseResource
                         'class' => 'fi-input-wrp bg-yellow-100',
                     ])                       
                     ->columnSpanFull(),
+
+                Forms\Components\Textarea::make('rmks_rwk')
+                    ->label('Remarks or Rework')
+                    ->extraAttributes([
+                        'class' => 'fi-input-wrp bg-yellow-100',
+                    ])                       
+                    ->columnSpanFull(),
             ]);            
     }
 

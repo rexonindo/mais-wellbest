@@ -30,7 +30,8 @@ class ProductionLog extends Model
         'ng_qty',
         'ng_qty_pcs',
         'rwk_qty',
-        'rmks'
+        'rmks',
+        'rmks_rwk',
     ];
 
     protected $attributes = [
