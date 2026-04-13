@@ -42,7 +42,6 @@ class WOProgressReportExcel implements FromCollection, WithHeadings, WithTitle, 
             'Process Name',
             'WO Qty',
             'Cavity',
-            'OUT Qty',
             'Rework Qty',
             'NG Qty',
             'OK Qty',
@@ -79,17 +78,16 @@ class WOProgressReportExcel implements FromCollection, WithHeadings, WithTitle, 
             $row->proc_nm, //F
             $row->wo_qty, //G
             $row->cav, //H
-            $row->in_qty, //I
-            $row->rwk_qty, //J
-            $row->ng_qty, //K
-            $row->out_qty, //L
-            $row->ttl_qty, //M
-            $row->ttl_qty_shoot, //N
-            $row->onhand_qty, //O
-            $row->mchn_cd, //P
-            $row->emp_nm, //Q
-            $toExcelDate($row->start_time), //R
-            $toExcelDate($row->end_time), //S
+            $row->rwk_qty, //I
+            $row->ng_qty, //J
+            $row->out_qty, //K
+            $row->ttl_qty, //L
+            $row->ttl_qty_shoot, //M
+            $row->onhand_qty, //N
+            $row->mchn_cd, //O
+            $row->emp_nm, //P
+            $toExcelDate($row->start_time), //Q
+            $toExcelDate($row->end_time), //R
         ];
     }
 
@@ -126,21 +124,21 @@ class WOProgressReportExcel implements FromCollection, WithHeadings, WithTitle, 
                         ->setAutoSize(true);
                 }                   
 
-                $textColumns = ['A','B','C','D','E','F','P','Q'];
+                $textColumns = ['A','B','C','D','E','F','O','P'];
                 foreach ($textColumns as $column) {
                     $sheet->getStyle("{$column}4:{$column}{$rowCount}")
                         ->getAlignment()
                         ->setHorizontal('left');
                 }
 
-                $numberColumns = ['G','H','I','J','K','L','M','N','O'];
+                $numberColumns = ['G','H','I','J','K','L','M','N'];
                 foreach ($numberColumns as $column) {
                     $sheet->getStyle("{$column}4:{$column}{$rowCount}")
                         ->getNumberFormat()
                         ->setFormatCode(NumberFormat::FORMAT_NUMBER);
                 }
 
-                $dateColumns = ['R','S'];
+                $dateColumns = ['Q','R'];
                 foreach ($dateColumns as $column) {
                     $sheet->getStyle("{$column}4:{$column}{$rowCount}")
                         ->getNumberFormat()

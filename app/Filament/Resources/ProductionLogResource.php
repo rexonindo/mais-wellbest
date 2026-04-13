@@ -285,7 +285,9 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\TextInput::make('in_qty')
                     ->label('Qty Output (Panel)')
-                    ->required()
+                    ->visible(false),
+/*                    
+                    ->required()                    
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
                         'x-on:move-focus-in-qty.window' => "
@@ -305,7 +307,7 @@ class ProductionLogResource extends BaseResource
                             $component->getLivewire()->dispatch('focus-in-qty');
                         }                  
                     }),
-
+*/
                 Forms\Components\TextInput::make('out_qty')
                     ->label('Qty OK (Panel)')
                     ->required()
@@ -331,70 +333,72 @@ class ProductionLogResource extends BaseResource
                             $component->getLivewire()->dispatch('focus-out-qty');    
                         }
                     }),
+                Forms\Components\Section::make('Rework and NG Qty')
+                    ->schema([
+                        Forms\Components\TextInput::make('rwk_qty')
+                            ->label('Qty Rework (Panel)')
+                            ->extraAttributes([
+                                'class' => 'fi-input-wrp bg-yellow-100',
+                                'x-on:move-focus-rwk-qty.window' => "
+                                    const input = \$el.querySelector('input');
+                                    if (input) input.focus();
+                                ",
+                            ])                    
+                            ->numeric()->default(null)->minValue(0)->reactive()                    
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
+                                $inQty = floatval($get('in_qty') ?? 0);
+                                $outQty = floatval($get('out_qty') ?? 0);
+                                $rwkkQty = floatval($state ?? 0);
+                                $ngQty = floatval($get('ng_qty') ?? 0);
+                                if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
+                                    Notification::make()
+                                        ->danger()
+                                        ->title("Rework Qty is too large.")
+                                        ->send();
+                                    $set('rwk_qty', null);    
+                                    $component->getLivewire()->dispatch('focus-rwk-qty');
+                                }
+                            }),                    
 
-                Forms\Components\TextInput::make('rwk_qty')
-                    ->label('Qty Rework (Panel)')
-                    ->extraAttributes([
-                        'class' => 'fi-input-wrp bg-yellow-100',
-                        'x-on:move-focus-rwk-qty.window' => "
-                            const input = \$el.querySelector('input');
-                            if (input) input.focus();
-                        ",
-                    ])                    
-                    ->numeric()->default(null)->minValue(0)->reactive()                    
-                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
-                        $inQty = floatval($get('in_qty') ?? 0);
-                        $outQty = floatval($get('out_qty') ?? 0);
-                        $rwkkQty = floatval($state ?? 0);
-                        $ngQty = floatval($get('ng_qty') ?? 0);
-                        if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
-                            Notification::make()
-                                ->danger()
-                                ->title("Rework Qty is too large.")
-                                ->send();
-                            $set('rwk_qty', null);    
-                            $component->getLivewire()->dispatch('focus-rwk-qty');
-                        }
-                    }),                    
+                        Forms\Components\TextInput::make('ng_qty')
+                            ->label('Qty NG (Panel)')
+                            ->extraAttributes([
+                                'class' => 'fi-input-wrp bg-yellow-100',
+                                'x-on:move-focus-ng-qty.window' => "
+                                    const input = \$el.querySelector('input');
+                                    if (input) input.focus();
+                                ",
+                            ])                       
+                            ->numeric()->default(null)->minValue(0)->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
+                                $inQty = floatval($get('in_qty') ?? 0);
+                                $outQty = floatval($get('out_qty') ?? 0);
+                                $rwkkQty = floatval($get('rwk_qty') ?? 0);
+                                $ngQty = floatval($state ?? 0);
+                                if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
+                                    Notification::make()
+                                        ->danger()
+                                        ->title("NG Qty is not valid.")
+                                        ->send();
+                                    $set('ng_qty', null);
+                                    $component->getLivewire()->dispatch('focus-ng-qty');    
+                                }
+                            }),
 
-                Forms\Components\TextInput::make('ng_qty')
-                    ->label('Qty NG (Panel)')
-                    ->extraAttributes([
-                        'class' => 'fi-input-wrp bg-yellow-100',
-                        'x-on:move-focus-ng-qty.window' => "
-                            const input = \$el.querySelector('input');
-                            if (input) input.focus();
-                        ",
-                    ])                       
-                    ->numeric()->default(null)->minValue(0)->reactive()
-                    ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
-                        $inQty = floatval($get('in_qty') ?? 0);
-                        $outQty = floatval($get('out_qty') ?? 0);
-                        $rwkkQty = floatval($get('rwk_qty') ?? 0);
-                        $ngQty = floatval($state ?? 0);
-                        if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
-                            Notification::make()
-                                ->danger()
-                                ->title("NG Qty is not valid.")
-                                ->send();
-                            $set('ng_qty', null);
-                            $component->getLivewire()->dispatch('focus-ng-qty');    
-                        }
-                    }),
+                        Forms\Components\TextInput::make('ng_qty_pcs')
+                            ->label('Qty NG (Pcs)')
+                            ->extraAttributes([
+                                'class' => 'fi-input-wrp bg-yellow-100',
+                                'x-on:move-focus-ng-qty-pcs.window' => "
+                                    const input = \$el.querySelector('input');
+                                    if (input) input.focus();
+                                ",
+                            ])                      
+                            ->numeric()->default(null)->minValue(0)->reactive(),                              
+                    ])->columns(3),
 
-                Forms\Components\TextInput::make('ng_qty_pcs')
-                    ->label('Qty NG (Pcs)')
-                    ->extraAttributes([
-                        'class' => 'fi-input-wrp bg-yellow-100',
-                        'x-on:move-focus-ng-qty-pcs.window' => "
-                            const input = \$el.querySelector('input');
-                            if (input) input.focus();
-                        ",
-                    ])                      
-                    ->numeric()->default(null)->minValue(0)->reactive(),                              
-                    
                 Forms\Components\Textarea::make('rmks')
-                    ->label('Remarks or Information about NG Pcs')
+                    ->label('Remarks')
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
                     ])                       
@@ -402,6 +406,7 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\Textarea::make('rmks_rwk')
                     ->label('Remarks or Rework')
+                    ->visible(false)
                     ->extraAttributes([
                         'class' => 'fi-input-wrp bg-yellow-100',
                     ])                       
@@ -585,8 +590,9 @@ class ProductionLogResource extends BaseResource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\NgDetailsRelationManager::class,
-        ];
+            RelationManagers\RwkDetailsRelationManager::class,
+            RelationManagers\NgDetailsRelationManager::class,            
+        ];  
     }    
 
     public static function getPages(): array

@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+
+class ProductionRWK extends Model
+{
+    protected $table = 'prdrwk_tbl';
+    protected $primaryKey = 'id';
+    public $timestamps = true; // Enabled timestamps (created_at / updated_at)
+
+    protected $fillable = [
+        'id_prd',
+        'rwk_nm',
+        'rwk_qty',
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (Auth::check()) {
+                $model->created_by = Auth::user()->name;
+                $model->updated_by = Auth::user()->name;
+            }
+        });
+
+        static::updating(function ($model) {
+            if (Auth::check()) {
+                $model->updated_by = Auth::user()->name;
+            }
+        });
+    }  
+
+    public function productionLog()
+    {
+        return $this->belongsTo(ProductionLog::class, 'id_prd');
+    }
+}

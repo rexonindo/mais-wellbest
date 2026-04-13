@@ -13,10 +13,19 @@ use Illuminate\Validation\ValidationException;
 class CreateProductionLog extends CreateRecord
 {
     protected static string $resource = ProductionLogResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('edit', [
+            'record' => $this->record,
+        ]);
+    }
+/*     
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
-    }    
+    }
+*/    
     public static function canAccess(array $parameters = []): bool
     {
         return true;

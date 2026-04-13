@@ -14,7 +14,7 @@ class IVStatusReportExcel implements FromCollection, WithHeadings, WithTitle, Wi
     protected Collection $data;
     protected string $reportTitle;
 
-    public function __construct(Collection $data, string $reportTitle = 'WO Status Report')
+    public function __construct(Collection $data, string $reportTitle = 'Inventory Status Report')
     {
         $this->data = $data;
         $this->reportTitle = $reportTitle;

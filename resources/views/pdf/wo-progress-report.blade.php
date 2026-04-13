@@ -22,7 +22,6 @@
                 <th>Process Name</th>
                 <th>WO Qty</th>
                 <th>Cavity</th>
-                <th>OUT Qty</th>
                 <th>Rework Qty</th>
                 <th>NG Qty</th>
                 <th>OK Qty</th>
@@ -46,7 +45,6 @@
                     <td>{{ $row->proc_nm }}</td>
                     <td>{{ $row->wo_qty }}</td>
                     <td>{{ $row->cav }}</td>
-                    <td>{{ $row->in_qty }}</td>
                     <td>{{ $row->rwk_qty }}</td>
                     <td>{{ $row->ng_qty }}</td>
                     <td>{{ $row->out_qty }}</td>

@@ -27,7 +27,7 @@ class NgDetailsRelationManager extends RelationManager
                 ->required(),
 
             Forms\Components\TextInput::make('ng_qty')
-                ->label('NG Qty')
+                ->label('NG Qty (Pcs)')
                 ->numeric()
                 ->minValue(0)
                 ->required(),
@@ -39,7 +39,7 @@ class NgDetailsRelationManager extends RelationManager
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('ng_nm')->label('NG Name'),
-                Tables\Columns\TextColumn::make('ng_qty')->label('Qty'),
+                Tables\Columns\TextColumn::make('ng_qty')->label('Qty (Pcs)'),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
@@ -81,8 +81,7 @@ class NgDetailsRelationManager extends RelationManager
             ->when($editingId, fn($q) =>
                 $q->where('id', '!=', $editingId)
             )
-            ->sum('ng_qty');            
-        
+            ->sum(DB::raw('IFNULL(ng_qty, 0)'));
         $newQty = floatval(($data['ng_qty'] ?? 0));
         $newTotal = $currentSumPcs + $newQty - $originalNGQty;
         // Compare against allowed

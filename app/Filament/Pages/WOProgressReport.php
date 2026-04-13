@@ -55,13 +55,15 @@ class WOProgressReport extends FBasePageResource implements HasTable
                 Tables\Columns\TextColumn::make('cav')
                     ->label('Cavity')
                     ->numeric()
-                    ->alignEnd(),    
+                    ->alignEnd(),  
+/*                      
                 Tables\Columns\TextColumn::make('in_qty')
                     ->label('OUT Qty')
                     ->numeric()
                     ->alignEnd()
                     ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),
-                Tables\Columns\TextColumn::make('rwk_qty')
+*/
+                    Tables\Columns\TextColumn::make('rwk_qty')
                     ->label('Rework Qty')
                     ->numeric()
                     ->alignEnd()
@@ -70,7 +72,7 @@ class WOProgressReport extends FBasePageResource implements HasTable
                     ->label('NG Qty')
                     ->numeric()
                     ->alignEnd()
-                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),                       
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0)),
                 Tables\Columns\TextColumn::make('out_qty')
                     ->label('OK Qty')
                     ->numeric()

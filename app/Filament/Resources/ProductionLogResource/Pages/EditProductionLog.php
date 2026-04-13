@@ -54,6 +54,7 @@ class EditProductionLog extends EditRecord
                     }
 
                     // Check MAX seq_no for the same wo_no
+/*                    
                     $maxSeqNo = DB::table('prdlog_tbl')
                         ->where('wo_no', $record->wo_no)
                         ->max('seq_no');
@@ -72,6 +73,7 @@ class EditProductionLog extends EditRecord
                             'delete' => 'Cannot delete because this is not the last process.',
                         ]);
                     }
+*/                        
                 }),
 
         ];

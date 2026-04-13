@@ -87,4 +87,10 @@ class ProductionLog extends Model
         return $this->hasMany(\App\Models\ProductionNG::class, 'id_prd');
     }
 
+    public function rwkDetails()
+    {
+        return $this->hasMany(\App\Models\ProductionRWK::class, 'id_prd');
+    }
+
+
 }
