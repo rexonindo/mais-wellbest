@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>NG Status Pivot By Process</title>
+    <title>WO Progress Pivot By Process</title>
 
     <style>
         body {
@@ -56,7 +56,7 @@
 </head>
 <body>
 
-<h2>NG Status Pivot By Process</h2>
+<h2>WO Progress Pivot By Process</h2>
 
 @php
     /* ----------------------------------
@@ -85,11 +85,84 @@
 
     <!-- HEADER -->
     <thead>
-        <tr>
-            @foreach ($columns as $col)
-                <th>{{ strtoupper(str_replace('_',' ',$col)) }}</th>
-            @endforeach
-        </tr>
+
+    @php
+        $baseColumns = ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'CAV'];
+
+        $groups = [];
+        $order = [];
+
+        foreach ($columns as $col) {
+
+            // Fixed columns
+            if (in_array($col, $baseColumns)) {
+                $groups[$col] = [$col];
+                $order[] = $col;
+                continue;
+            }
+
+            // Process columns
+            if (preg_match('/^(.*)_(IN|OK|RWK|NG|TTL)_QTY$/', $col, $m)) {
+
+                $process = strtoupper(str_replace('_', ' ', $m[1]));
+
+                if (!isset($groups[$process])) {
+                    $groups[$process] = [];
+                    $order[] = $process;
+                }
+
+                $groups[$process][] = $col;
+
+            } else {
+                $groups[$col] = [$col];
+                $order[] = $col;
+            }
+        }
+    @endphp
+
+    <!-- TOP HEADER -->
+    <tr>
+        @foreach ($order as $key)
+
+            @php $cols = $groups[$key]; @endphp
+
+            @if (count($cols) === 1 && in_array($cols[0], $baseColumns))
+                <th rowspan="2">
+                    {{ strtoupper(str_replace('_',' ',$cols[0])) }}
+                </th>
+            @else
+                <th colspan="{{ count($cols) }}">
+                    {{ $key }}
+                </th>
+            @endif
+
+        @endforeach
+    </tr>
+
+    <!-- SUB HEADER -->
+    <tr>
+        @foreach ($order as $key)
+
+            @php $cols = $groups[$key]; @endphp
+
+            @if (!(count($cols) === 1 && in_array($cols[0], $baseColumns)))
+
+                @foreach ($cols as $col)
+
+                    @php
+                        preg_match('/_(IN|OK|RWK|NG|TTL)_QTY$/', $col, $m);
+                        $type = $m[1] ?? '';
+                    @endphp
+
+                    <th>{{ $type }} QTY</th>
+
+                @endforeach
+
+            @endif
+
+        @endforeach
+    </tr>
+
     </thead>
 
     <!-- BODY -->

@@ -4,183 +4,187 @@ namespace App\Filament\Pages;
 
 use App\Filament\Resources\FBasePageResource;
 use App\Models\WOProgressPivot;
+use App\Models\WorkOrder;
+use Filament\Forms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class WOProgressPivotReport extends FBasePageResource implements HasTable
+class WOProgressPivotReport extends FBasePageResource implements HasTable, HasForms
 {
     use Tables\Concerns\InteractsWithTable;
+    use Forms\Concerns\InteractsWithForms;
 
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'WO Progress Pivot By Process';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?int $navigationSort = 6;
     protected static ?string $slug = 'wo-progress-pivot-report';
-    protected static ?string $title = 'WO Progress Pivot By Process';        
+    protected static ?string $title = 'WO Progress Pivot By Process';
     protected static string $view = 'filament.pages.wo-progress-pivot-report';
 
-    protected array $dynamicColumns = [];
 
-    protected function loadDynamicColumns(): void
-    {
-        if (! empty($this->dynamicColumns)) {
-            return;
-        }
+    /* ---------------------------------
+       FORM STATE (IMPORTANT)
+    --------------------------------- */
+    public ?string $wo_no = null;
+    public ?string $itm_cd = null;
 
-        $rows = DB::select('CALL wo_progress_pivot_by_process(NULL, NULL)');
-
-        if (! empty($rows)) {
-            $this->dynamicColumns = array_keys((array) $rows[0]);
-        }
-    }
-
-    /* -------------------------------------------------
-       TABLE
-    ------------------------------------------------- */
-    public function table(Table $table): Table
-    {
-        $this->loadDynamicColumns();
-
-        return $table
-            ->query(fn () => WOProgressPivot::query()->whereRaw('1 = 0'))
-
-            ->columns(
-                collect($this->dynamicColumns)->map(function ($col) {
-
-                    if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'END DATE'])) {
-                        return Tables\Columns\TextColumn::make($col)
-                            ->label(strtoupper(str_replace('_', ' ', $col)))
-                            ->wrap()
-                            ->alignLeft()
-                            ->toggleable()
-                            ->extraAttributes([
-                                'class' => 'text-left',
-                                'style' => 'min-width:140px; white-space:nowrap;',                                
-                            ]);
-                    }
-
-                    return Tables\Columns\TextColumn::make($col)
-                        ->label(strtoupper(str_replace('_', ' ', $col)))
-                        ->formatStateUsing(fn ($state) =>
-                            $state !== null ? number_format((float) $state, 0) : '0'
-                        )
-                        ->alignRight()
-                        ->extraAttributes([
-                            'class' => 'text-right',
-                            'style' => 'min-width:100px; max-width:320px;',
-                        ])
-
-                        ->toggleable();
-                })->toArray()
-            )
-            ->filters($this->getTableFilters())
-            ->paginated(false)
-            ->actions([])
-            ->bulkActions([])
-            ->headerActions([
-                Tables\Actions\Action::make('Export Excel')
-                    ->button()
-                    ->label('Export Excel')
-                    ->color('success')
-                    ->action(fn () => $this->exportExcel()),
-
-                Tables\Actions\Action::make('Export PDF')
-                    ->button()
-                    ->label('Export PDF')
-                    ->color('danger')
-                    ->action(fn () => $this->exportPdf()),
-            ]);     
-
-    }
-
-    /* -------------------------------------------------
-       STORED PROCEDURE EXECUTION (ONLY HERE)
-    ------------------------------------------------- */
-    public function getTableRecords(): EloquentCollection
-    {
-        $filters = $this->getTableFiltersForm()?->getState() ?? [];
-
-        $woNo     = $filters['wo_no']['value'] ?? null;
-        $itemCode = $filters['itm_cd']['value'] ?? null;
-
-        $rows = DB::select(
-            'CALL wo_progress_pivot_by_process(?, ?)',
-            [$woNo, $itemCode]
-        );
-
-        return new EloquentCollection(
-            collect($rows)->map(fn ($row) =>
-                new class((array) $row) extends Model {
-                    protected $guarded = [];
-                    public $timestamps = false;
-                }
-            )
-        );
-    }
-
-    /* -------------------------------------------------
-       UNIQUE ROW KEY
-    ------------------------------------------------- */
-    public function getTableRecordKey($record): string
-    {
-        return spl_object_hash($record);
-    }
-
-    /* -------------------------------------------------
-       FILTERS
-    ------------------------------------------------- */
-    protected function getTableFilters(): array
+    /* ---------------------------------
+       FORM (FILTER UI)
+    --------------------------------- */
+    protected function getFormSchema(): array
     {
         return [
-            SelectFilter::make('wo_no')
-                ->label('Work Order')
-                ->options(
-                    DB::table('wo_tbl')
-                        ->orderBy('wo_no')
-                        ->pluck('wo_no', 'wo_no')
-                        ->toArray()
-                )
-                ->searchable(),
+            Forms\Components\Grid::make(2)->schema([
 
-            SelectFilter::make('itm_cd')
-                ->label('Part No')
-                ->options(
-                    DB::table('itm_tbl')
-                        ->orderBy('itm_cd')
-                        ->pluck('itm_cd', 'itm_cd')
-                        ->toArray()
-                )
-                ->searchable(),
+                Forms\Components\Select::make('wo_no')
+                    ->label('Work Order')
+                    ->options(
+                        DB::table('wo_tbl')
+                            ->orderBy('wo_no')
+                            ->pluck('wo_no', 'wo_no')
+                    )
+                    ->searchable(),
+
+                Forms\Components\Select::make('itm_cd')
+                    ->label('Part No')
+                    ->options(
+                        DB::table('itm_tbl')
+                            ->orderBy('itm_cd')
+                            ->pluck('itm_cd', 'itm_cd')
+                    )
+                    ->searchable(),
+            ]),
         ];
     }
 
-    protected function exportExcel()
+    /* ---------------------------------
+       TABLE
+    --------------------------------- */
+    public function table(Table $table): Table
     {
-        $records = $this->getTableRecords(); // <- call SP with filters
-        $filename = 'WOProgressPivotReport_' . now()->format('Ymd_His') . '.xlsx';
-        return Excel::download(
-            new \App\Exports\WOProgressPivotReportExcel($records),
-            $filename
+        $baseColumns = ['WO NO', 'PART NO', 'TYPE', 'END DATE'];
+        $dynamicColumns = [];
+
+        if ($this->wo_no || $this->itm_cd) {
+            $rows = DB::select(
+                'CALL wo_progress_pivot_by_process_allinfo(?, ?)',
+                [$this->wo_no, $this->itm_cd]
+            );
+
+            if (!empty($rows)) {
+                $dynamicColumns = array_diff(
+                    array_keys((array) $rows[0]),
+                    $baseColumns
+                );
+            }
+        }
+
+        $allColumns = array_merge($baseColumns, $dynamicColumns);
+
+        return $table
+            ->headerActions([
+                Tables\Actions\Action::make('search')
+                    ->label('Search')
+                    ->button()
+                    ->action(fn () => $this->resetTable()),
+
+                Tables\Actions\Action::make('exportExcel')
+                    ->label('Export Excel')
+                    ->color('success')
+                    ->action('exportExcel'),
+
+                Tables\Actions\Action::make('exportPdf')
+                    ->label('Export PDF')
+                    ->color('danger')
+                    ->action('exportPdf'),
+            ])        
+            ->query(fn () => WorkOrder::query()->whereRaw('1=0'))
+            ->columns(
+                collect($allColumns)->map(fn ($col) =>
+                    Tables\Columns\TextColumn::make($col)
+                        ->label(strtoupper(str_replace('_', ' ', $col)))
+                        ->toggleable()
+                )->toArray()
+            )
+            ->paginated(false)
+            ->emptyStateHeading('No data')
+            ->emptyStateDescription('Please select filter');
+    }
+
+    /* ---------------------------------
+       DATA
+    --------------------------------- */
+    public function getTableRecordKey($record): string
+    {
+        return md5(json_encode($record->getAttributes()));
+    }
+
+    public function getTableRecords(): EloquentCollection
+    {
+        if (!$this->wo_no && !$this->itm_cd) {
+            return new EloquentCollection([]);
+        }
+
+        $rows = DB::select(
+            'CALL wo_progress_pivot_by_process_allinfo(?, ?)',
+            [$this->wo_no, $this->itm_cd]
+        );
+
+        return new EloquentCollection(
+            collect($rows)->map(function ($row) {
+                $model = new class extends Model {
+                    protected $guarded = [];
+                    public $timestamps = false;
+                };
+
+                $model->forceFill((array) $row);
+
+                return $model;
+            })
         );
     }
 
-    protected function exportPdf()
+    protected function getFormStatePath(): string
     {
-        $records = $this->getTableRecords(); // <- call SP with filters
+        return '';
+    }
+
+    /* ---------------------------------
+       EXPORT
+    --------------------------------- */
+    public function exportExcel()
+    {
+        $records = $this->getTableRecords();
+
+        if ($records->isEmpty()) {
+            return;
+        }
+
+        return Excel::download(
+            new \App\Exports\WOProgressPivotReportExcel($records),
+            'WOProgressPivotReport_' . now()->format('Ymd_His') . '.xlsx'
+        );
+    }
+
+    public function exportPdf()
+    {
+        $records = $this->getTableRecords();
+
         $pdf = Pdf::loadView('pdf.wo-progress-pivot-report', [
             'data' => $records,
         ])->setPaper('a3', 'landscape');
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
-            'WOProgressPivot' . now()->format('Ymd_His') . '.pdf'
+            'WOProgressPivot_' . now()->format('Ymd_His') . '.pdf'
         );
-    }        
+    }
 }

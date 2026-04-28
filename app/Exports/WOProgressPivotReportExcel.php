@@ -27,7 +27,6 @@ class WOProgressPivotReportExcel implements
         $this->data = $data;
         $this->reportTitle = $reportTitle;
 
-        // ✅ Detect ONLY real columns
         if ($data->isNotEmpty()) {
             $this->columns = array_keys(
                 $data->first()->getAttributes()
@@ -36,8 +35,8 @@ class WOProgressPivotReportExcel implements
     }
 
     /* ---------------------------------
-       Data
-       --------------------------------- */
+       DATA
+    --------------------------------- */
     public function collection(): Collection
     {
         return $this->data->map(function ($row) {
@@ -55,24 +54,53 @@ class WOProgressPivotReportExcel implements
     }
 
     /* ---------------------------------
-       Dynamic Headings
-       --------------------------------- */
+       2-ROW HEADINGS
+    --------------------------------- */
     public function headings(): array
     {
-        return array_map(
-            fn ($col) => strtoupper(str_replace('_', ' ', $col)),
-            $this->columns
-        );
+        $topHeader = [];
+        $subHeader = [];
+
+        foreach ($this->columns as $col) {
+
+            $label = strtoupper(str_replace('_', ' ', $col));
+
+            // Fixed columns → vertical merge
+            if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'CAV'])) {
+                $topHeader[] = $label;
+                $subHeader[] = '';
+                continue;
+            }
+
+            // Dynamic columns: PROCNAME_IN_QTY
+            preg_match('/^(.*)_(IN|OK|RWK|NG|TTL)_QTY$/', $col, $matches);
+
+            if ($matches) {
+                $process = strtoupper(str_replace('_', ' ', $matches[1]));
+                $type    = $matches[2];
+
+                $topHeader[] = $process;
+                $subHeader[] = $type . ' QTY';
+            } else {
+                $topHeader[] = $label;
+                $subHeader[] = '';
+            }
+        }
+
+        return [
+            $topHeader,
+            $subHeader,
+        ];
     }
 
     public function title(): string
     {
-        return 'WO Progress Pivot By Process';
+        return $this->reportTitle;
     }
 
     /* ---------------------------------
-       Styling & Formatting
-       --------------------------------- */
+       STYLING
+    --------------------------------- */
     public function registerEvents(): array
     {
         return [
@@ -87,7 +115,7 @@ class WOProgressPivotReportExcel implements
 
                 $lastColumn = Coordinate::stringFromColumnIndex($columnCount);
 
-                /* ---------- Title ---------- */
+                /* ---------- TITLE ---------- */
                 $sheet->insertNewRowBefore(1, 2);
                 $sheet->mergeCells("A1:{$lastColumn}1");
                 $sheet->setCellValue('A1', $this->reportTitle);
@@ -97,16 +125,76 @@ class WOProgressPivotReportExcel implements
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                /* ---------- Header ---------- */
-                $headerRow = 3;
+                /* ---------- HEADER ---------- */
+                $headerRow1 = 3;
+                $headerRow2 = 4;
 
-                $sheet->getStyle("A{$headerRow}:{$lastColumn}{$headerRow}")
+                // Bold + center
+                $sheet->getStyle("A{$headerRow1}:{$lastColumn}{$headerRow2}")
                     ->getFont()->setBold(true);
 
-                $sheet->getStyle("A{$headerRow}:{$lastColumn}{$headerRow}")
-                    ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("A{$headerRow1}:{$lastColumn}{$headerRow2}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
 
-                /* ---------- Auto-fit ---------- */
+                /* ---------- MERGE HEADER ---------- */
+                $columns = $this->columns;
+                $colIndex = 1;
+
+                while ($colIndex <= count($columns)) {
+
+                    $currentCol = $columns[$colIndex - 1];
+
+                    // Fixed columns → vertical merge
+                    if (in_array($currentCol, ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'CAV'])) {
+
+                        $colLetter = Coordinate::stringFromColumnIndex($colIndex);
+                        $sheet->mergeCells("{$colLetter}{$headerRow1}:{$colLetter}{$headerRow2}");
+
+                        $colIndex++;
+                        continue;
+                    }
+
+                    // ✅ Extract process name properly
+                    if (preg_match('/^(.*)_(IN|OK|RWK|NG|TTL)_QTY$/', $currentCol, $match)) {
+                        $process = $match[1];
+                    } else {
+                        $process = $currentCol;
+                    }
+
+                    $start = $colIndex;
+
+                    //  group SAME PROCESS ONLY
+                    while ($colIndex <= count($columns)) {
+
+                        $nextCol = $columns[$colIndex - 1];
+
+                        if (preg_match('/^(.*)_(IN|OK|RWK|NG|TTL)_QTY$/', $nextCol, $m)) {
+                            $nextProcess = $m[1];
+                        } else {
+                            $nextProcess = $nextCol;
+                        }
+
+                        if ($nextProcess !== $process) {
+                            break;
+                        }
+
+                        $colIndex++;
+                    }
+
+                    $end = $colIndex - 1;
+
+                    //  Merge ONLY if more than 1 column
+                    if ($end > $start) {
+                        $startLetter = Coordinate::stringFromColumnIndex($start);
+                        $endLetter   = Coordinate::stringFromColumnIndex($end);
+
+                        $sheet->mergeCells("{$startLetter}{$headerRow1}:{$endLetter}{$headerRow1}");
+                    }
+                }
+
+                /* ---------- AUTO SIZE ---------- */
                 foreach (range(1, $columnCount) as $i) {
                     $sheet->getColumnDimension(
                         Coordinate::stringFromColumnIndex($i)
@@ -114,15 +202,13 @@ class WOProgressPivotReportExcel implements
                 }
 
                 /* ---------- TOTAL ROW ---------- */
-
-                $dataStartRow = 4;
+                $dataStartRow = 5;
                 $dataEndRow   = $sheet->getHighestRow();
                 $totalRow     = $dataEndRow + 1;
 
                 $sheet->setCellValue("A{$totalRow}", "TOTAL");
 
                 foreach (range(7, $columnCount) as $i) {
-
                     $col = Coordinate::stringFromColumnIndex($i);
 
                     $sheet->setCellValue(
@@ -131,21 +217,18 @@ class WOProgressPivotReportExcel implements
                     );
                 }
 
-                /* ---------- TOTAL style ---------- */
-
                 $sheet->getStyle("A{$totalRow}:{$lastColumn}{$totalRow}")
                     ->getFont()->setBold(true);
 
-                /* ---------- Borders ---------- */
-
-                $sheet->getStyle("A{$headerRow}:{$lastColumn}{$totalRow}")
+                /* ---------- BORDERS ---------- */
+                $sheet->getStyle("A{$headerRow1}:{$lastColumn}{$totalRow}")
                     ->getBorders()
                     ->getAllBorders()
                     ->setBorderStyle(Border::BORDER_THIN);
 
-                /** Freeze header */
-                $sheet->freezePane('A4');
+                /* ---------- FREEZE ---------- */
+                $sheet->freezePane('A5');
             }
-         ];
+        ];
     }
 }

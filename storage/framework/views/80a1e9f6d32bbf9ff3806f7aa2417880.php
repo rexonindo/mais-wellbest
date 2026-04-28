@@ -8,8 +8,38 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes([]); ?>
-    <?php echo e($this->table); ?>
+    <div style="position: relative; z-index: 5;">
+        <?php echo e($this->form); ?>
 
+    </div>
+
+    <div style="margin-top: 10px;">
+        <?php echo e($this->table); ?>
+
+    </div>
+
+    <style>
+        .fi-ta-content {
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+        }
+
+        .fi-ta-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: white;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(() => {
+                if (window.Alpine) {
+                    Alpine.store('sidebar').isOpen = false;
+                }
+            }, 200);
+        });
+    </script>
  <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal166a02a7c5ef5a9331faf66fa665c256)): ?>
