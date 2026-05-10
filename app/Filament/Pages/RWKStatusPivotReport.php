@@ -3,7 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\FBasePageResource;
-use App\Models\NGStatusPivot;
+use App\Models\RWKStatusPivot;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Contracts\HasTable;
@@ -14,17 +14,17 @@ use Illuminate\Database\Eloquent\Model;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class NGStatusPivotReport extends FBasePageResource implements HasTable
+class RWKStatusPivotReport extends FBasePageResource implements HasTable
 {
     use Tables\Concerns\InteractsWithTable;
 
     protected static ?string $navigationGroup = 'Reports';
-    protected static ?string $navigationLabel = 'NG Status Pivot By Process';
+    protected static ?string $navigationLabel = 'RWK Status Pivot By Process';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 8;
-    protected static ?string $slug = 'ng-status-pivot-report';
-    protected static ?string $title = 'NG Status Pivot By Process';        
-    protected static string $view = 'filament.pages.ng-status-pivot-report';
+    protected static ?int $navigationSort = 6;
+    protected static ?string $slug = 'rwk-status-pivot-report';
+    protected static ?string $title = 'RWK Status Pivot By Process';        
+    protected static string $view = 'filament.pages.rwk-status-pivot-report';
 
     protected array $dynamicColumns = [];
 
@@ -34,7 +34,7 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
             return;
         }
 
-        $rows = DB::select('CALL ng_status_pivot_by_process(NULL, NULL)');
+        $rows = DB::select('CALL rwk_status_pivot_by_process(NULL, NULL)');
 
         if (! empty($rows)) {
             $this->dynamicColumns = array_keys((array) $rows[0]);
@@ -49,12 +49,12 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
         $this->loadDynamicColumns();
 
         return $table
-            ->query(fn () => NGStatusPivot::query()->whereRaw('1 = 0'))
+            ->query(fn () => RWKStatusPivot::query()->whereRaw('1 = 0'))
 
             ->columns(
                 collect($this->dynamicColumns)->map(function ($col) {
 
-                    if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'REMARKS NG'])) {
+                    if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'REMARKS RWK'])) {
                         return Tables\Columns\TextColumn::make($col)
                             ->label(strtoupper(str_replace('_', ' ', $col)))
                             ->wrap()
@@ -108,7 +108,7 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
         $itemCode = $filters['itm_cd']['value'] ?? null;
 
         $rows = DB::select(
-            'CALL ng_status_pivot_by_process(?, ?)',
+            'CALL rwk_status_pivot_by_process(?, ?)',
             [$woNo, $itemCode]
         );
 
@@ -161,9 +161,9 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
     protected function exportExcel()
     {
         $records = $this->getTableRecords(); // <- call SP with filters
-        $filename = 'NGStatusPivotReport_' . now()->format('Ymd_His') . '.xlsx';
+        $filename = 'RWKStatusPivotReport_' . now()->format('Ymd_His') . '.xlsx';
         return Excel::download(
-            new \App\Exports\NGStatusPivotReportExcel($records),
+            new \App\Exports\RWKStatusPivotReportExcel($records),
             $filename
         );
     }
@@ -171,13 +171,13 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
     protected function exportPdf()
     {
         $records = $this->getTableRecords(); // <- call SP with filters
-        $pdf = Pdf::loadView('pdf.ng-status-pivot-report', [
+        $pdf = Pdf::loadView('pdf.rwk-status-pivot-report', [
             'data' => $records,
         ])->setPaper('a3', 'landscape');
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
-            'NGStatusPivot' . now()->format('Ymd_His') . '.pdf'
+            'RWKStatusPivot' . now()->format('Ymd_His') . '.pdf'
         );
     }        
 }

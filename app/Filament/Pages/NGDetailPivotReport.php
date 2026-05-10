@@ -3,7 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\FBasePageResource;
-use App\Models\NGStatusPivot;
+use App\Models\NGDetailPivot;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Contracts\HasTable;
@@ -14,17 +14,17 @@ use Illuminate\Database\Eloquent\Model;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class NGStatusPivotReport extends FBasePageResource implements HasTable
+class NGDetailPivotReport extends FBasePageResource implements HasTable
 {
     use Tables\Concerns\InteractsWithTable;
 
     protected static ?string $navigationGroup = 'Reports';
-    protected static ?string $navigationLabel = 'NG Status Pivot By Process';
+    protected static ?string $navigationLabel = 'NG Detail Pivot By Process';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 8;
-    protected static ?string $slug = 'ng-status-pivot-report';
-    protected static ?string $title = 'NG Status Pivot By Process';        
-    protected static string $view = 'filament.pages.ng-status-pivot-report';
+    protected static ?int $navigationSort = 10;
+    protected static ?string $slug = 'ng-detail-pivot-report';
+    protected static ?string $title = 'NG Detail Pivot By Process';        
+    protected static string $view = 'filament.pages.ng-detail-pivot-report';
 
     protected array $dynamicColumns = [];
 
@@ -34,7 +34,7 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
             return;
         }
 
-        $rows = DB::select('CALL ng_status_pivot_by_process(NULL, NULL)');
+        $rows = DB::select('CALL ng_detail_pivot(NULL, NULL)');
 
         if (! empty($rows)) {
             $this->dynamicColumns = array_keys((array) $rows[0]);
@@ -49,7 +49,7 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
         $this->loadDynamicColumns();
 
         return $table
-            ->query(fn () => NGStatusPivot::query()->whereRaw('1 = 0'))
+            ->query(fn () => NGDetailPivot::query()->whereRaw('1 = 0'))
 
             ->columns(
                 collect($this->dynamicColumns)->map(function ($col) {
@@ -92,9 +92,8 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
                     ->label('Export PDF')
                     ->color('danger')
                     ->action(fn () => $this->exportPdf()),
-*/                    
+*/
             ]);     
-
     }
 
     /* -------------------------------------------------
@@ -108,7 +107,7 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
         $itemCode = $filters['itm_cd']['value'] ?? null;
 
         $rows = DB::select(
-            'CALL ng_status_pivot_by_process(?, ?)',
+            'CALL ng_detail_pivot(?, ?)',
             [$woNo, $itemCode]
         );
 
@@ -161,17 +160,31 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
     protected function exportExcel()
     {
         $records = $this->getTableRecords(); // <- call SP with filters
-        $filename = 'NGStatusPivotReport_' . now()->format('Ymd_His') . '.xlsx';
+        $filename = 'NGDetailPivotReport_' . now()->format('Ymd_His') . '.xlsx';
+
+        /*
         return Excel::download(
-            new \App\Exports\NGStatusPivotReportExcel($records),
+            new \App\Exports\NGDetailPivotReportExcel($records),
             $filename
         );
+        */
+
+        return Excel::download(
+            new \App\Exports\NGDetailPivotReportExcel($records),
+            $filename,
+            \Maatwebsite\Excel\Excel::XLSX,
+            [
+                'charts' => true
+            ]
+        );
+
+
     }
 
     protected function exportPdf()
     {
         $records = $this->getTableRecords(); // <- call SP with filters
-        $pdf = Pdf::loadView('pdf.ng-status-pivot-report', [
+        $pdf = Pdf::loadView('pdf.ng-detail-pivot-report', [
             'data' => $records,
         ])->setPaper('a3', 'landscape');
 

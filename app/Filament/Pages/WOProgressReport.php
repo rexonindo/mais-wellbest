@@ -25,7 +25,7 @@ class WOProgressReport extends FBasePageResource implements HasTable
     protected static ?string $navigationLabel = 'WO Progress Report';
     protected static ?string $navigationIcon = 'heroicon-o-document-text';    
     protected static ?string $title = 'WO Progress Report';    
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
     protected static ?string $slug = 'wo-progress-report';
     protected static string $view = 'filament.pages.wo-progress-report';
 

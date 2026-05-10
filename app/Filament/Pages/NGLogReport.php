@@ -21,7 +21,7 @@ class NGLogReport extends FBasePageResource implements HasTable
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'NG Log Report';
-    protected static ?int $navigationSort = 3;    
+    protected static ?int $navigationSort = 8;    
     // protected static ?string $slug = 'wo-status-report';
     // protected static ?string $title = 'Work Order Status Report';
     protected static string $view = 'filament.pages.ng-log-report';

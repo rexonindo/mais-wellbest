@@ -50,4 +50,4 @@
 <?php $component = $__componentOriginal166a02a7c5ef5a9331faf66fa665c256; ?>
 <?php unset($__componentOriginal166a02a7c5ef5a9331faf66fa665c256); ?>
 <?php endif; ?>
-<?php /**PATH D:\website\mais-wellbest\resources\views/filament/pages/wo-progress-report.blade.php ENDPATH**/ ?>
+<?php /**PATH D:\website\mais-wellbest\resources\views\filament\pages\ng-detail-pivot-report.blade.php ENDPATH**/ ?>

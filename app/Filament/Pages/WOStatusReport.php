@@ -20,7 +20,7 @@ class WOStatusReport extends FBasePageResource implements HasTable
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'WO Status Report';
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?int $navigationSort = 2;    
+    protected static ?int $navigationSort = 4;    
     protected static ?string $slug = 'wo-status-report';
     protected static ?string $title = 'Work Order Status Report';
     protected static string $view = 'filament.pages.wo-status-report';

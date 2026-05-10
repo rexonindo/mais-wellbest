@@ -12,11 +12,13 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
+
 class WOProgressPivotReportExcel implements
     FromCollection,
     WithHeadings,
     WithTitle,
     WithEvents
+
 {
     protected Collection $data;
     protected string $reportTitle;
@@ -39,13 +41,49 @@ class WOProgressPivotReportExcel implements
     --------------------------------- */
     public function collection(): Collection
     {
-        return $this->data->map(function ($row) {
+        return $this->data->map(function ($item) {
 
-            $row = $row->getAttributes();
+            $row = $item->getAttributes();
 
             foreach ($row as $key => $value) {
+
+                // numeric rounding
                 if (is_numeric($value)) {
-                    $row[$key] = round((float) $value, 0);
+                    $value = round((float)$value, 0);
+                }
+
+                // handle ALL zero values
+                if ((float)$value == 0) {
+
+                    // TTL_QTY special handling
+                    if (preg_match('/^(.*)_TTL_QTY$/', $key, $match)) {
+
+                        $process = $match[1];
+                        $inKey = $process . '_IN_QTY';
+
+                        $inQty = $row[$inKey] ?? 0;
+
+                        // show zero ONLY if IN_QTY has value
+                        if ((float)$inQty > 0) {
+
+                            // IMPORTANT:
+                            // force visible zero in Excel
+                            $row[$key] = '0';
+
+                        } else {
+
+                            $row[$key] = null;
+                        }
+
+                    } else {
+
+                        // all other zero => blank
+                        $row[$key] = null;
+                    }
+
+                } else {
+
+                    $row[$key] = $value;
                 }
             }
 
@@ -80,7 +118,7 @@ class WOProgressPivotReportExcel implements
                 $type    = $matches[2];
 
                 $topHeader[] = $process;
-                $subHeader[] = $type . ' QTY';
+                $subHeader[] = $type;
             } else {
                 $topHeader[] = $label;
                 $subHeader[] = '';
@@ -156,7 +194,7 @@ class WOProgressPivotReportExcel implements
                         continue;
                     }
 
-                    // ✅ Extract process name properly
+                    // Extract process name properly
                     if (preg_match('/^(.*)_(IN|OK|RWK|NG|TTL)_QTY$/', $currentCol, $match)) {
                         $process = $match[1];
                     } else {
@@ -225,6 +263,63 @@ class WOProgressPivotReportExcel implements
                     ->getBorders()
                     ->getAllBorders()
                     ->setBorderStyle(Border::BORDER_THIN);
+
+                /* ---------- HIDE ZERO EXCEPT TTL_QTY ---------- */
+
+                foreach (range(1, $columnCount) as $i) {
+
+                    $colName = $this->columns[$i - 1] ?? '';
+                    $colLetter = Coordinate::stringFromColumnIndex($i);
+
+                    // skip TTL_QTY columns
+                    if (preg_match('/_TTL_QTY$/', $colName)) {
+                        continue;
+                    }
+
+                    // custom excel format:
+                    // positive;negative;zero(blank)
+                    $sheet->getStyle("{$colLetter}5:{$colLetter}{$totalRow}")
+                        ->getNumberFormat()
+                        ->setFormatCode('#,##0;-#,##0;;@');
+                }
+
+                /* ---------- SHOW TTL_QTY ZERO ONLY WHEN IN_QTY HAS VALUE ---------- */
+
+                foreach ($this->columns as $index => $colName) {
+
+                    // detect TTL_QTY column
+                    if (preg_match('/^(.*)_TTL_QTY$/', $colName, $match)) {
+
+                        $process = $match[1];
+                        $inColName = $process . '_IN_QTY';
+
+                        // find matching IN_QTY column index
+                        $inIndex = array_search($inColName, $this->columns);
+
+                        if ($inIndex === false) {
+                            continue;
+                        }
+
+                        $ttlColLetter = Coordinate::stringFromColumnIndex($index + 1);
+                        $inColLetter  = Coordinate::stringFromColumnIndex($inIndex + 1);
+
+                        // check each data row
+                        for ($row = $dataStartRow; $row <= $dataEndRow; $row++) {
+
+                            $inValue  = $sheet->getCell("{$inColLetter}{$row}")->getValue();
+                            $ttlValue = $sheet->getCell("{$ttlColLetter}{$row}")->getValue();
+
+                            // if IN_QTY empty or zero AND TTL_QTY = 0 => blank it
+                            if ((float)$inValue == 0 && (float)$ttlValue == 0) {
+                                $sheet->setCellValueExplicit(
+                                    "{$ttlColLetter}{$row}",
+                                    '',
+                                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING
+                                );
+                            }
+                        }
+                    }
+                }                
 
                 /* ---------- FREEZE ---------- */
                 $sheet->freezePane('A5');
