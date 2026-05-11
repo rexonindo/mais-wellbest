@@ -352,7 +352,7 @@ class NGDetailPivotReportExcel implements
 
                 /*
                 |--------------------------------------------------------------------------
-                | Get TOTAL IN QTY
+                | Get TOTAL IN QTY (LINUX SAFE)
                 |--------------------------------------------------------------------------
                 */
 
@@ -366,10 +366,15 @@ class NGDetailPivotReportExcel implements
                         $inQtyColIndex + 1
                     );
 
-                    $totalInQty = (float) $sheet
-                        ->getCell("{$inQtyColLetter}{$totalRow}")
-                        ->getCalculatedValue();
-                }                
+                    for ($r = $dataStartRow; $r <= $dataEndRow; $r++) {
+
+                        $cellValue = $sheet
+                            ->getCell("{$inQtyColLetter}{$r}")
+                            ->getValue();
+
+                        $totalInQty += (float) $cellValue;
+                    }
+                }          
 
                 /*
                 |--------------------------------------------------------------------------
@@ -410,13 +415,20 @@ class NGDetailPivotReportExcel implements
 
                     /*
                     |--------------------------------------------------------------------------
-                    | NG TOTAL
+                    | TOTAL NG QTY (LINUX SAFE)
                     |--------------------------------------------------------------------------
                     */
 
-                    $rwkQty = (float) $sheet
-                        ->getCell("{$colLetter}{$totalRow}")
-                        ->getCalculatedValue();
+                    $rwkQty = 0;
+
+                    for ($r = $dataStartRow; $r <= $dataEndRow; $r++) {
+
+                        $cellValue = $sheet
+                            ->getCell("{$colLetter}{$r}")
+                            ->getValue();
+
+                        $rwkQty += (float) $cellValue;
+                    }
 
                     /*
                     |--------------------------------------------------------------------------
