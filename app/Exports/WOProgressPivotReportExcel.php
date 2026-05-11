@@ -117,10 +117,10 @@ class WOProgressPivotReportExcel implements
                 $process = strtoupper(str_replace('_', ' ', $matches[1]));
                 $type    = $matches[2];
 
-                $topHeader[] = $process;
+                $topHeader[] = str_replace(' QTY', '', $process);
                 $subHeader[] = $type;
             } else {
-                $topHeader[] = $label;
+                $topHeader[] = str_replace(' QTY', '', $label);
                 $subHeader[] = '';
             }
         }
