@@ -280,12 +280,12 @@ class ProductionLogResource extends BaseResource
 
                 Forms\Components\TextInput::make('avail_qty')
                     ->label('Qty Available (Panel)')
-                    ->numeric()
-                    ->readOnly(),
+                    ->visible(false),
 
                 Forms\Components\TextInput::make('in_qty')
-                    ->label('Qty Output (Panel)')
-                    ->visible(false),
+                    ->label('Qty Input (Panel)')                    
+                    ->numeric()
+                    ->readOnly(),                    
 /*                    
                     ->required()                    
                     ->extraAttributes([
