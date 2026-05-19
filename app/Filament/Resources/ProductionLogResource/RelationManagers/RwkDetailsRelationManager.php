@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\ProductionLogResource\RelationManagers;
  
-use App\Models\NG;
+use App\Models\RWK;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Forms;
@@ -21,7 +21,7 @@ class RwkDetailsRelationManager extends RelationManager
             Forms\Components\Select::make('rwk_nm')
                 ->label('Rework Name')
                 ->options(
-                    NG::orderBy('ng_nm')->pluck('ng_nm', 'ng_nm')->toArray()
+                    RWK::orderBy('rwk_nm')->pluck('rwk_nm', 'rwk_nm')->toArray()
                 )
                 ->searchable()
                 ->required(),

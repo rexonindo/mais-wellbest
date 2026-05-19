@@ -2,31 +2,31 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\NgResource\Pages;
-use App\Models\NG;
+use App\Filament\Resources\RwkResource\Pages;
+use App\Models\RWK;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Resources\Resource;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 
-class NgResource extends Resource
+class RwkResource extends Resource
 {
-    protected static ?string $model = Ng::class;
+    protected static ?string $model = Rwk::class;
 
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationLabel = 'NG List';
-    protected static ?string $pluralModelLabel = 'NG';
+    protected static ?string $navigationLabel = 'RWK List';
+    protected static ?string $pluralModelLabel = 'RWK';
     protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';    
-    protected static ?string $modelLabel = 'NG';
-    protected static ?int $navigationSort = 8;
+    protected static ?string $modelLabel = 'RWK';
+    protected static ?int $navigationSort = 7;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('ng_nm')
-                    ->label('NG Name')
+                Forms\Components\TextInput::make('rwk_nm')
+                    ->label('Rework Name')
                     ->required()
                     ->maxLength(50),
 
@@ -55,8 +55,8 @@ class NgResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('ng_nm')
-                    ->label('NG Name')
+                Tables\Columns\TextColumn::make('rwk_nm')
+                    ->label('Rework Name')
                     ->searchable()
                     ->sortable(),
 
@@ -83,7 +83,7 @@ class NgResource extends Resource
                     ->sortable(),
                 */
             ])
-            ->defaultSort('ng_nm')
+            ->defaultSort('rwk_nm')
             ->filters([
                 // Add filter if needed
             ])
@@ -106,9 +106,9 @@ class NgResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListNgs::route('/'),
-            'create' => Pages\CreateNg::route('/create'),
-            'edit'   => Pages\EditNg::route('/{record}/edit'),
+            'index'  => Pages\ListRwks::route('/'),
+            'create' => Pages\CreateRwk::route('/create'),
+            'edit'   => Pages\EditRwk::route('/{record}/edit'),
         ];
     }
 }

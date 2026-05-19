@@ -344,21 +344,27 @@ class ProductionLogResource extends BaseResource
                                     if (input) input.focus();
                                 ",
                             ])                    
-                            ->numeric()->default(null)->minValue(0)->reactive()                    
+                            ->numeric()
+                            ->default(0)
+                            ->dehydrateStateUsing(fn ($state) => $state ?? 0)
+                            ->minValue(0)
+                            ->reactive()                    
                             ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                                 $inQty = floatval($get('in_qty') ?? 0);
                                 $outQty = floatval($get('out_qty') ?? 0);
                                 $rwkkQty = floatval($state ?? 0);
                                 $ngQty = floatval($get('ng_qty') ?? 0);
+
                                 if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
                                     Notification::make()
                                         ->danger()
                                         ->title("Rework Qty is too large.")
                                         ->send();
-                                    $set('rwk_qty', null);    
+
+                                    $set('rwk_qty', 0);    
                                     $component->getLivewire()->dispatch('focus-rwk-qty');
                                 }
-                            }),                    
+                            }),                   
 
                         Forms\Components\TextInput::make('ng_qty')
                             ->label('Qty NG (Panel)')
@@ -369,18 +375,24 @@ class ProductionLogResource extends BaseResource
                                     if (input) input.focus();
                                 ",
                             ])                       
-                            ->numeric()->default(null)->minValue(0)->reactive()
+                            ->numeric()
+                            ->default(0)
+                            ->dehydrateStateUsing(fn ($state) => $state ?? 0)
+                            ->minValue(0)
+                            ->reactive()
                             ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
                                 $inQty = floatval($get('in_qty') ?? 0);
                                 $outQty = floatval($get('out_qty') ?? 0);
                                 $rwkkQty = floatval($get('rwk_qty') ?? 0);
                                 $ngQty = floatval($state ?? 0);
+
                                 if (($outQty + $rwkkQty + $ngQty) > $inQty) {                            
                                     Notification::make()
                                         ->danger()
                                         ->title("NG Qty is not valid.")
                                         ->send();
-                                    $set('ng_qty', null);
+
+                                    $set('ng_qty', 0);
                                     $component->getLivewire()->dispatch('focus-ng-qty');    
                                 }
                             }),
@@ -394,7 +406,11 @@ class ProductionLogResource extends BaseResource
                                     if (input) input.focus();
                                 ",
                             ])                      
-                            ->numeric()->default(null)->minValue(0)->reactive(),                              
+                            ->numeric()
+                            ->default(0)
+                            ->dehydrateStateUsing(fn ($state) => $state ?? 0)
+                            ->minValue(0)
+                            ->reactive(),                           
                     ])->columns(3),
 
                 Forms\Components\Textarea::make('rmks')
