@@ -55,8 +55,8 @@ class WOProgressPivotReportExcel implements
                 // handle ALL zero values
                 if ((float)$value == 0) {
 
-                    // TTL_QTY special handling
-                    if (preg_match('/^(.*)_TTL_QTY$/', $key, $match)) {
+                    // SAL_QTY special handling
+                    if (preg_match('/^(.*)_SAL_QTY$/', $key, $match)) {
 
                         $process = $match[1];
                         $inKey = $process . '_IN_QTY';
@@ -111,7 +111,7 @@ class WOProgressPivotReportExcel implements
             }
 
             // Dynamic columns: PROCNAME_IN_QTY
-            preg_match('/^(.*)_(IN|OK|RWK|NG|TTL)_QTY$/', $col, $matches);
+            preg_match('/^(.*)_(IN|OK|RWK|NG|SAL)_QTY$/', $col, $matches);
 
             if ($matches) {
                 $process = strtoupper(str_replace('_', ' ', $matches[1]));
@@ -195,7 +195,7 @@ class WOProgressPivotReportExcel implements
                     }
 
                     // Extract process name properly
-                    if (preg_match('/^(.*)_(IN|OK|RWK|NG|TTL)_QTY$/', $currentCol, $match)) {
+                    if (preg_match('/^(.*)_(IN|OK|RWK|NG|SAL)_QTY$/', $currentCol, $match)) {
                         $process = $match[1];
                     } else {
                         $process = $currentCol;
@@ -208,7 +208,7 @@ class WOProgressPivotReportExcel implements
 
                         $nextCol = $columns[$colIndex - 1];
 
-                        if (preg_match('/^(.*)_(IN|OK|RWK|NG|TTL)_QTY$/', $nextCol, $m)) {
+                        if (preg_match('/^(.*)_(IN|OK|RWK|NG|SAL)_QTY$/', $nextCol, $m)) {
                             $nextProcess = $m[1];
                         } else {
                             $nextProcess = $nextCol;
@@ -249,24 +249,56 @@ class WOProgressPivotReportExcel implements
 
                 foreach (range(7, $columnCount) as $i) {
 
-                    $col = Coordinate::stringFromColumnIndex($i);
+                    $colLetter = Coordinate::stringFromColumnIndex($i);
+                    $colName   = $this->columns[$i - 1] ?? '';
 
-                    $total = 0;
+                    // ==============================
+                    // SAL_QTY COLUMN
+                    // Take LAST non-zero value
+                    // ==============================
+                    if (preg_match('/_SAL_QTY$/', $colName)) {
 
-                    for ($r = $dataStartRow; $r <= $dataEndRow; $r++) {
+                        $lastValue = 0;
 
-                        $cellValue = $sheet
-                            ->getCell("{$col}{$r}")
-                            ->getValue();
+                        for ($r = $dataStartRow; $r <= $dataEndRow; $r++) {
 
-                        $total += (float)$cellValue;
+                            $cellValue = (float)$sheet
+                                ->getCell("{$colLetter}{$r}")
+                                ->getValue();
+
+                            if ($cellValue != 0) {
+                                $lastValue = $cellValue;
+                            }
+                        }
+
+                        $sheet->setCellValue(
+                            "{$colLetter}{$totalRow}",
+                            $lastValue
+                        );
+
+                    } else {
+
+                        // ==============================
+                        // NORMAL COLUMN => SUM
+                        // ==============================
+                        $total = 0;
+
+                        for ($r = $dataStartRow; $r <= $dataEndRow; $r++) {
+
+                            $cellValue = (float)$sheet
+                                ->getCell("{$colLetter}{$r}")
+                                ->getValue();
+
+                            $total += $cellValue;
+                        }
+
+                        $sheet->setCellValue(
+                            "{$colLetter}{$totalRow}",
+                            $total
+                        );
                     }
-
-                    $sheet->setCellValue(
-                        "{$col}{$totalRow}",
-                        $total
-                    );
                 }
+
                 $sheet->getStyle("A{$totalRow}:{$lastColumn}{$totalRow}")
                     ->getFont()->setBold(true);
 
@@ -276,15 +308,15 @@ class WOProgressPivotReportExcel implements
                     ->getAllBorders()
                     ->setBorderStyle(Border::BORDER_THIN);
 
-                /* ---------- HIDE ZERO EXCEPT TTL_QTY ---------- */
+                /* ---------- HIDE ZERO EXCEPT SAL_QTY ---------- */
 
                 foreach (range(1, $columnCount) as $i) {
 
                     $colName = $this->columns[$i - 1] ?? '';
                     $colLetter = Coordinate::stringFromColumnIndex($i);
 
-                    // skip TTL_QTY columns
-                    if (preg_match('/_TTL_QTY$/', $colName)) {
+                    // skip SAL_QTY columns
+                    if (preg_match('/_SAL_QTY$/', $colName)) {
                         continue;
                     }
 
@@ -295,12 +327,12 @@ class WOProgressPivotReportExcel implements
                         ->setFormatCode('#,##0;-#,##0;;@');
                 }
 
-                /* ---------- SHOW TTL_QTY ZERO ONLY WHEN IN_QTY HAS VALUE ---------- */
+                /* ---------- SHOW SAL_QTY ZERO ONLY WHEN IN_QTY HAS VALUE ---------- */
 
                 foreach ($this->columns as $index => $colName) {
 
-                    // detect TTL_QTY column
-                    if (preg_match('/^(.*)_TTL_QTY$/', $colName, $match)) {
+                    // detect SAL_QTY column
+                    if (preg_match('/^(.*)_SAL_QTY$/', $colName, $match)) {
 
                         $process = $match[1];
                         $inColName = $process . '_IN_QTY';
@@ -321,7 +353,7 @@ class WOProgressPivotReportExcel implements
                             $inValue  = $sheet->getCell("{$inColLetter}{$row}")->getValue();
                             $ttlValue = $sheet->getCell("{$ttlColLetter}{$row}")->getValue();
 
-                            // if IN_QTY empty or zero AND TTL_QTY = 0 => blank it
+                            // if IN_QTY empty or zero AND SAL_QTY = 0 => blank it
                             if ((float)$inValue == 0 && (float)$ttlValue == 0) {
                                 $sheet->setCellValueExplicit(
                                     "{$ttlColLetter}{$row}",
