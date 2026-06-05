@@ -53,7 +53,7 @@ class WOProgressPivotReportExcel implements
                 }
 
                 // handle ALL zero values
-                if ((float)$value == 0) {
+                if (is_numeric($value) && (float)$value == 0) {
 
                     // SAL_QTY special handling
                     if (preg_match('/^(.*)_SAL_QTY$/', $key, $match)) {
@@ -185,7 +185,7 @@ class WOProgressPivotReportExcel implements
                     $currentCol = $columns[$colIndex - 1];
 
                     // Fixed columns → vertical merge
-                    if (in_array($currentCol, ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'CAV'])) {
+                    if (in_array($currentCol, ['WO NO', 'SEQ NO', 'ID PRD', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'CAV'])) {
 
                         $colLetter = Coordinate::stringFromColumnIndex($colIndex);
                         $sheet->mergeCells("{$colLetter}{$headerRow1}:{$colLetter}{$headerRow2}");
