@@ -70,7 +70,7 @@ class WOProgressPivotReport extends FBasePageResource implements HasTable, HasFo
     --------------------------------- */
     public function table(Table $table): Table
     {
-        $baseColumns = ['WO NO', 'PART NO', 'TYPE', 'END DATE'];
+        $baseColumns = ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY'];
         $dynamicColumns = [];
 
         if ($this->wo_no || $this->itm_cd) {

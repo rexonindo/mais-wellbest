@@ -33,7 +33,6 @@ class WOProgressPivotReportExcel implements
             $this->columns = array_keys(
                 $data->first()->getAttributes()
             );
-            // dd($this->columns);
         }
     }
 
@@ -105,14 +104,14 @@ class WOProgressPivotReportExcel implements
             $label = strtoupper(str_replace('_', ' ', $col));
 
             // Fixed columns → vertical merge
-            if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY'])) {
+            if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'CAV'])) {
                 $topHeader[] = $label;
                 $subHeader[] = '';
                 continue;
             }
 
             // Dynamic columns: PROCNAME_IN_QTY
-            preg_match('/^(.*)_(IN|OUT|RWK|NG|SAL)_QTY$/', $col, $matches);
+            preg_match('/^(.*)_(IN|OK|RWK|NG|SAL)_QTY$/', $col, $matches);
 
             if ($matches) {
                 $process = strtoupper(str_replace('_', ' ', $matches[1]));
@@ -186,7 +185,7 @@ class WOProgressPivotReportExcel implements
                     $currentCol = $columns[$colIndex - 1];
 
                     // Fixed columns → vertical merge
-                    if (in_array($currentCol, ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY'])) {
+                    if (in_array($currentCol, ['WO NO', 'SEQ NO', 'ID PRD', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'CAV'])) {
 
                         $colLetter = Coordinate::stringFromColumnIndex($colIndex);
                         $sheet->mergeCells("{$colLetter}{$headerRow1}:{$colLetter}{$headerRow2}");
@@ -196,7 +195,7 @@ class WOProgressPivotReportExcel implements
                     }
 
                     // Extract process name properly
-                    if (preg_match('/^(.*)_(IN|OUT|RWK|NG|SAL)_QTY$/', $currentCol, $match)) {
+                    if (preg_match('/^(.*)_(IN|OK|RWK|NG|SAL)_QTY$/', $currentCol, $match)) {
                         $process = $match[1];
                     } else {
                         $process = $currentCol;
@@ -209,7 +208,7 @@ class WOProgressPivotReportExcel implements
 
                         $nextCol = $columns[$colIndex - 1];
 
-                        if (preg_match('/^(.*)_(IN|OUT|RWK|NG|SAL)_QTY$/', $nextCol, $m)) {
+                        if (preg_match('/^(.*)_(IN|OK|RWK|NG|SAL)_QTY$/', $nextCol, $m)) {
                             $nextProcess = $m[1];
                         } else {
                             $nextProcess = $nextCol;
@@ -241,6 +240,7 @@ class WOProgressPivotReportExcel implements
                 }
 
                 /* ---------- TOTAL ROW ---------- */
+
                 $dataStartRow = 5;
                 $dataEndRow   = $sheet->getHighestRow();
                 $totalRow     = $dataEndRow + 1;
