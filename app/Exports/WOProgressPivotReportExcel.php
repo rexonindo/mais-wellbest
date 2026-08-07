@@ -56,25 +56,10 @@ class WOProgressPivotReportExcel implements
                 // handle ALL zero values
                 if (is_numeric($value) && (float)$value == 0) {
 
-                    // SAL_QTY special handling
-                    if (preg_match('/^(.*)_SAL_QTY$/', $key, $match)) {
+                    // SAL_QTY should ALWAYS show 0, never blank
+                    if (preg_match('/_SAL_QTY$/', $key)) {
 
-                        $process = $match[1];
-                        $inKey = $process . '_IN_QTY';
-
-                        $inQty = $row[$inKey] ?? 0;
-
-                        // show zero ONLY if IN_QTY has value
-                        if ((float)$inQty > 0) {
-
-                            // IMPORTANT:
-                            // force visible zero in Excel
-                            $row[$key] = '0';
-
-                        } else {
-
-                            $row[$key] = null;
-                        }
+                        $row[$key] = '0';
 
                     } else {
 
@@ -326,44 +311,6 @@ class WOProgressPivotReportExcel implements
                         ->getNumberFormat()
                         ->setFormatCode('#,##0;-#,##0;;@');
                 }
-
-                /* ---------- SHOW SAL_QTY ZERO ONLY WHEN IN_QTY HAS VALUE ---------- */
-
-                foreach ($this->columns as $index => $colName) {
-
-                    // detect SAL_QTY column
-                    if (preg_match('/^(.*)_SAL_QTY$/', $colName, $match)) {
-
-                        $process = $match[1];
-                        $inColName = $process . '_IN_QTY';
-
-                        // find matching IN_QTY column index
-                        $inIndex = array_search($inColName, $this->columns);
-
-                        if ($inIndex === false) {
-                            continue;
-                        }
-
-                        $ttlColLetter = Coordinate::stringFromColumnIndex($index + 1);
-                        $inColLetter  = Coordinate::stringFromColumnIndex($inIndex + 1);
-
-                        // check each data row
-                        for ($row = $dataStartRow; $row <= $dataEndRow; $row++) {
-
-                            $inValue  = $sheet->getCell("{$inColLetter}{$row}")->getValue();
-                            $ttlValue = $sheet->getCell("{$ttlColLetter}{$row}")->getValue();
-
-                            // if IN_QTY empty or zero AND SAL_QTY = 0 => blank it
-                            if ((float)$inValue == 0 && (float)$ttlValue == 0) {
-                                $sheet->setCellValueExplicit(
-                                    "{$ttlColLetter}{$row}",
-                                    '',
-                                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING
-                                );
-                            }
-                        }
-                    }
-                }                
 
                 /* ---------- FREEZE ---------- */
                 $sheet->freezePane('A5');
