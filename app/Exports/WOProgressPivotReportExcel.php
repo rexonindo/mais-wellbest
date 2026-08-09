@@ -232,7 +232,7 @@ class WOProgressPivotReportExcel implements
 
                 $sheet->setCellValue("A{$totalRow}", "TOTAL");
 
-                foreach (range(7, $columnCount) as $i) {
+                foreach (range(6, $columnCount) as $i) {
 
                     $colLetter = Coordinate::stringFromColumnIndex($i);
                     $colName   = $this->columns[$i - 1] ?? '';
@@ -245,14 +245,15 @@ class WOProgressPivotReportExcel implements
 
                         $lastValue = 0;
 
-                        for ($r = $dataStartRow; $r <= $dataEndRow; $r++) {
+                        // scan bottom-up; use the first cell that actually has a value,
+                        // whether that value is zero or not
+                        for ($r = $dataEndRow; $r >= $dataStartRow; $r--) {
 
-                            $cellValue = (float)$sheet
-                                ->getCell("{$colLetter}{$r}")
-                                ->getValue();
+                            $cellValue = $sheet->getCell("{$colLetter}{$r}")->getValue();
 
-                            if ($cellValue != 0) {
-                                $lastValue = $cellValue;
+                            if ($cellValue !== null && $cellValue !== '') {
+                                $lastValue = (float)$cellValue;
+                                break;
                             }
                         }
 
