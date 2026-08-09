@@ -301,8 +301,14 @@ class WOProgressPivotReportExcel implements
                     $colName = $this->columns[$i - 1] ?? '';
                     $colLetter = Coordinate::stringFromColumnIndex($i);
 
-                    // skip SAL_QTY columns
                     if (preg_match('/_SAL_QTY$/', $colName)) {
+
+                        // SAL_QTY: whole number, comma thousands separator, zero shown as 0
+                        // (not hidden like the other columns).
+                        $sheet->getStyle("{$colLetter}5:{$colLetter}{$totalRow}")
+                            ->getNumberFormat()
+                            ->setFormatCode('#,##0;-#,##0;0');
+
                         continue;
                     }
 
