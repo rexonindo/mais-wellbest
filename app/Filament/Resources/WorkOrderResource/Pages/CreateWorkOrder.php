@@ -12,42 +12,44 @@ use Illuminate\Support\Facades\Log;
 class CreateWorkOrder extends CreateRecord
 {
     protected static string $resource = WorkOrderResource::class;
-    protected static ?string $title = 'Work Order <List>';  
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('index');
+        return $this->getResource()::getUrl('edit', [
+            'record' => $this->record,
+        ]);
     }    
-      
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        // Save the entered values
+        $this->savedData = $data;
+
+        return $data;
+    }
+     
     protected function afterCreate(): void
     {
-        $this->record->refresh();
-
-        // 1. Get WO number and user
         $woNo = $this->record->wo_no;
         $user = Auth::user()->name ?? 'system';
 
-        // 2. Call stored procedure
         DB::statement('CALL gen_wo_process(?, ?)', [$woNo, $user]);
 
-        // 3. Optional: log for debugging
-        \Log::info("gen_wo_process called for WO: $woNo by $user");
-
-        // 4. Optional notification
         Notification::make()
             ->title('Work Order Created Successfully')
-            ->body("Process for WO $woNo generated.")
+            ->body("Process for WO {$woNo} generated.")
             ->success()
             ->send();
 
-        if (method_exists($this, 'form') && $this->form) {
-            $this->form->fill($this->record->toArray());
-        }
+        // Refill previous values
+        $data = $this->savedData;
 
-        $dbValue = DB::table($this->record->getTable())
-            ->where('id', $this->record->id)
-            ->value('plan_qty_pnl');
-            
+        // Clear only fields you want
+        $data['wo_no'] = '';
+        $data['stats'] = 'Planned';
+
+        $this->form->fill($this->savedData);
+
     }
 
 }
