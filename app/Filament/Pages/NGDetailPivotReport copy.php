@@ -8,8 +8,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\DatePicker;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -36,7 +34,7 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
             return;
         }
 
-        $rows = DB::select('CALL ng_detail_pivot(NULL, NULL, NULL, NULL, NULL)');
+        $rows = DB::select('CALL ng_detail_pivot(NULL, NULL)');
 
         if (! empty($rows)) {
             $this->dynamicColumns = array_keys((array) $rows[0]);
@@ -105,15 +103,12 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     {
         $filters = $this->getTableFiltersForm()?->getState() ?? [];
 
-        $woNo      = $filters['wo_no']['value'] ?? null;
-        $itemCode  = $filters['itm_cd']['value'] ?? null;
-        $itmType   = $filters['itm_type']['value'] ?? null;
-        $endDate1  = $filters['end_date']['end_date_1'] ?? null;
-        $endDate2  = $filters['end_date']['end_date_2'] ?? null;
+        $woNo     = $filters['wo_no']['value'] ?? null;
+        $itemCode = $filters['itm_cd']['value'] ?? null;
 
         $rows = DB::select(
-            'CALL ng_detail_pivot(?, ?, ?, ?, ?)',
-            [$woNo, $itemCode, $itmType, $endDate1, $endDate2]
+            'CALL ng_detail_pivot(?, ?)',
+            [$woNo, $itemCode]
         );
 
         return new EloquentCollection(
@@ -159,38 +154,6 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
                         ->toArray()
                 )
                 ->searchable(),
-
-            SelectFilter::make('itm_type')
-                ->label('Item Type')
-                ->options(
-                    DB::table('itm_tbl')
-                        ->distinct()
-                        ->orderBy('itm_type')
-                        ->pluck('itm_type', 'itm_type')
-                        ->toArray()
-                )
-                ->searchable(),
-
-            Filter::make('end_date')
-                ->form([
-                    DatePicker::make('end_date_1')
-                        ->label('End Date From'),
-                    DatePicker::make('end_date_2')
-                        ->label('End Date To'),
-                ])
-                ->indicateUsing(function (array $data): array {
-                    $indicators = [];
-
-                    if ($data['end_date_1'] ?? null) {
-                        $indicators[] = 'End Date From ' . $data['end_date_1'];
-                    }
-
-                    if ($data['end_date_2'] ?? null) {
-                        $indicators[] = 'End Date To ' . $data['end_date_2'];
-                    }
-
-                    return $indicators;
-                }),
         ];
     }
 
