@@ -198,7 +198,7 @@ class NGDetailPivotReportExcel implements
                         'PART NO',
                         'TYPE',
                         'REMARKS',
-                        'IN QTY'
+                        'OUT QTY'
                     ])) {
 
                         $colLetter = Coordinate::stringFromColumnIndex($colIndex);
@@ -352,11 +352,11 @@ class NGDetailPivotReportExcel implements
 
                 /*
                 |--------------------------------------------------------------------------
-                | Get TOTAL IN QTY (LINUX SAFE)
+                | Get TOTAL OUT QTY (LINUX SAFE)
                 |--------------------------------------------------------------------------
                 */
 
-                $inQtyColIndex = array_search('IN QTY', $this->columns);
+                $inQtyColIndex = array_search('OUT QTY', $this->columns);
 
                 $totalInQty = 0;
 
@@ -388,10 +388,10 @@ class NGDetailPivotReportExcel implements
 
                     /*
                     |--------------------------------------------------------------------------
-                    | SKIP IN QTY COLUMN
+                    | SKIP OUT QTY COLUMN
                     |--------------------------------------------------------------------------
                     */
-                    if (strtoupper(trim($colName)) == 'IN QTY') {
+                    if (strtoupper(trim($colName)) == 'OUT QTY') {
                         continue;
                     }
 
