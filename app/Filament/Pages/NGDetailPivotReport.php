@@ -107,7 +107,14 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
 
         $woNo      = $filters['wo_no']['value'] ?? null;
         $itemCode  = $filters['itm_cd']['value'] ?? null;
-        $itmType   = $filters['itm_type']['value'] ?? null;
+
+        $itmType = $filters['itm_type']['values'] ?? [];
+        if (is_array($itmType)) {
+            $itmType = !empty($itmType)
+                ? implode(',', $itmType)
+                : null;
+        }        
+
         $endDate1  = $filters['end_date']['end_date_1'] ?? null;
         $endDate2  = $filters['end_date']['end_date_2'] ?? null;
 
@@ -162,8 +169,11 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
 
             SelectFilter::make('itm_type')
                 ->label('Item Type')
+                ->multiple()
                 ->options(
                     DB::table('itm_tbl')
+                        ->whereNotNull('itm_type')
+                        ->where('itm_type', '<>', '')
                         ->distinct()
                         ->orderBy('itm_type')
                         ->pluck('itm_type', 'itm_type')
