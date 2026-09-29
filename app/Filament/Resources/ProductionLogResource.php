@@ -217,7 +217,7 @@ class ProductionLogResource extends BaseResource
                                 return Machine::orderBy('dsc')
                                 ->get()
                                 ->mapWithKeys(fn ($mchn) => [
-                                    $mchn->mchn_cd => "{$mchn->dsc} - {$mchn->mchn_nm}",
+                                    $mchn->mchn_cd => "{$mchn->mchn_cd} - {$mchn->dsc} - {$mchn->mchn_nm}",
                                 ])
                                 ->toArray();
                             })
