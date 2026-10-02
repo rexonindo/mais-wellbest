@@ -131,6 +131,7 @@ class ProductionLogResource extends BaseResource
                                 ",                        
                             ])   
                             ->disabled(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\EditRecord)
+                            /*
                             ->options(function (callable $get) {
                                 $woNo = $get('wo_no');
                                 if (!$woNo) return [];
@@ -149,6 +150,45 @@ class ProductionLogResource extends BaseResource
                                     ->mapWithKeys(fn ($r) => [$r->proc_cd => "{$r->proc_cd} - {$r->proc_nm}"])
                                     ->toArray();
                             })
+                                        */
+                            ->options(function (callable $get, $livewire) {
+                                $woNo = $get('wo_no');
+                                if (!$woNo) return [];
+
+                                $workOrder = \App\Models\WorkOrder::where('wo_no', $woNo)->first();
+                                if (!$workOrder) return [];
+
+                                $item = \App\Models\Item::where('itm_cd', $workOrder->itm_cd)->first();
+                                if (!$item) return [];
+
+                                // Edit mode: only the saved process, so the field still shows its label
+                                if ($livewire instanceof \Filament\Resources\Pages\EditRecord) {
+                                    $savedProcCd = $livewire->getRecord()?->proc_cd;
+                                    if (!$savedProcCd) return [];
+
+                                    return \DB::table('proc_tbl')
+                                        ->where('proc_cd', $savedProcCd)
+                                        ->get()
+                                        ->mapWithKeys(fn ($r) => [$r->proc_cd => "{$r->proc_cd} - {$r->proc_nm}"])
+                                        ->toArray();
+                                }
+
+                                // Create mode: processes with available qty > 0 (in seq_no order from the SP)
+                                $available = collect(\DB::select('CALL get_wo_available_proc(?)', [$woNo]))
+                                    ->pluck('proc_cd')
+                                    ->all();
+
+                                if (empty($available)) return [];
+
+                                $names = \DB::table('proc_tbl')
+                                    ->whereIn('proc_cd', $available)
+                                    ->pluck('proc_nm', 'proc_cd');
+
+                                // Keep the order returned by the SP
+                                return collect($available)
+                                    ->mapWithKeys(fn ($cd) => [$cd => "{$cd} - " . ($names[$cd] ?? '')])
+                                    ->toArray();
+                            })                            
                             ->searchable()
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {    
