@@ -115,27 +115,52 @@ class ProductionLogResource extends BaseResource
                                     return [];
                                 }
 
-                                return WorkOrder::query()
+                                // 1) Candidate WOs: has the selected process + matches the search text
+                                $candidates = WorkOrder::query()
                                     ->join('itm_tbl', 'wo_tbl.itm_cd', '=', 'itm_tbl.itm_cd')
-                                    // only WOs that have the selected process
-                                    ->whereIn('wo_tbl.wo_no', function ($query) use ($procCd) {
-                                        $query->select('wo_no')
-                                            ->from('wo_proc_tbl')
-                                            ->where('proc_cd', $procCd);
+                                    ->join('wo_proc_tbl', function ($join) use ($procCd) {
+                                        $join->on('wo_proc_tbl.wo_no', '=', 'wo_tbl.wo_no')
+                                            ->where('wo_proc_tbl.proc_cd', '=', $procCd);
                                     })
                                     ->where(function ($q) use ($search) {
                                         $q->where('wo_tbl.wo_no', 'like', "%{$search}%")
                                             ->orWhere('itm_tbl.itm_cd', 'like', "%{$search}%")
                                             ->orWhere('itm_tbl.itm_type', 'like', "%{$search}%");
                                     })
-                                    ->limit(50)
-                                    ->get()
-                                    ->mapWithKeys(fn ($row) => [
-                                        $row->wo_no => "{$row->wo_no} | {$row->itm_cd} ({$row->itm_type})"
-                                    ])
-                                    ->toArray();
-                            })
-                            ->getOptionLabelUsing(function ($value) {
+                                    ->select(
+                                        'wo_tbl.wo_no',
+                                        'itm_tbl.itm_cd',
+                                        'itm_tbl.itm_type',
+                                        'wo_proc_tbl.seq_no',
+                                        'wo_proc_tbl.shoot_qty'
+                                    )
+                                    ->orderByDesc('wo_tbl.wo_no')
+                                    ->limit(300) // safety cap on how many WOs get checked per search
+                                    ->get();
+
+                                // 2) Keep only WOs that still have available qty for this process
+                                $results = [];
+                                foreach ($candidates as $row) {
+
+                                    if ((int) $row->seq_no === 1) {
+                                        // First process: same rule as your afterStateUpdated (qty comes from shoot_qty)
+                                        $availPcs = floatval($row->shoot_qty ?? 0);
+                                    } else {
+                                        $avail    = \DB::select('CALL get_wo_available_qty(?, ?)', [$row->wo_no, $procCd]);
+                                        $availPcs = floatval($avail[0]->avail_qty_pcs ?? 0);
+                                    }
+
+                                    if ($availPcs > 0) {
+                                        $results[$row->wo_no] = "{$row->wo_no} | {$row->itm_cd} ({$row->itm_type})";
+
+                                        if (count($results) >= 50) {
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                return $results;
+                            })                            ->getOptionLabelUsing(function ($value) {
                                 if (!$value) {
                                     return null;
                                 }
