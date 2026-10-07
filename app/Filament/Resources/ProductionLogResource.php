@@ -134,7 +134,7 @@ class ProductionLogResource extends BaseResource
                                         'wo_proc_tbl.seq_no',
                                         'wo_proc_tbl.shoot_qty'
                                     )
-                                    ->orderByDesc('wo_tbl.wo_no')
+                                    ->orderBy('wo_tbl.wo_no')
                                     ->limit(300) // safety cap on how many WOs get checked per search
                                     ->get();
 
