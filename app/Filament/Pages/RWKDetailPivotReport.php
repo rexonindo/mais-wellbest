@@ -8,6 +8,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\DatePicker;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -155,6 +157,41 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
                         ->toArray()
                 )
                 ->searchable(),
+
+            SelectFilter::make('itm_type')
+                ->label('Item Type')
+                ->multiple()
+                ->options(
+                    DB::table('itm_tbl')
+                        ->whereNotNull('itm_type')
+                        ->where('itm_type', '<>', '')
+                        ->distinct()
+                        ->orderBy('itm_type')
+                        ->pluck('itm_type', 'itm_type')
+                        ->toArray()
+                )
+                ->searchable(),
+
+            Filter::make('end_date')
+                ->form([
+                    DatePicker::make('end_date_1')
+                        ->label('End Date From'),
+                    DatePicker::make('end_date_2')
+                        ->label('End Date To'),
+                ])
+                ->indicateUsing(function (array $data): array {
+                    $indicators = [];
+
+                    if ($data['end_date_1'] ?? null) {
+                        $indicators[] = 'End Date From ' . $data['end_date_1'];
+                    }
+
+                    if ($data['end_date_2'] ?? null) {
+                        $indicators[] = 'End Date To ' . $data['end_date_2'];
+                    }
+
+                    return $indicators;
+                }),
         ];
     }
 
