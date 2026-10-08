@@ -36,7 +36,7 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
             return;
         }
 
-        $rows = DB::select('CALL rwk_detail_pivot(NULL, NULL)');
+        $rows = DB::select('CALL rwk_detail_pivot(NULL, NULL, NULL, NULL, NULL)');
 
         if (! empty($rows)) {
             $this->dynamicColumns = array_keys((array) $rows[0]);
@@ -106,12 +106,22 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
     {
         $filters = $this->getTableFiltersForm()?->getState() ?? [];
 
-        $woNo     = $filters['wo_no']['value'] ?? null;
-        $itemCode = $filters['itm_cd']['value'] ?? null;
+        $woNo      = $filters['wo_no']['value'] ?? null;
+        $itemCode  = $filters['itm_cd']['value'] ?? null;
+
+        $itmType = $filters['itm_type']['values'] ?? [];
+        if (is_array($itmType)) {
+            $itmType = !empty($itmType)
+                ? implode(',', $itmType)
+                : null;
+        }        
+
+        $endDate1  = $filters['end_date']['end_date_1'] ?? null;
+        $endDate2  = $filters['end_date']['end_date_2'] ?? null;
 
         $rows = DB::select(
-            'CALL rwk_detail_pivot(?, ?)',
-            [$woNo, $itemCode]
+            'CALL rwk_detail_pivot(?, ?, ?, ?, ?)',
+            [$woNo, $itemCode, $itmType, $endDate1, $endDate2]
         );
 
         return new EloquentCollection(
