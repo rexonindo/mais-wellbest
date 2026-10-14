@@ -62,21 +62,32 @@ class WorkOrderResource extends BaseResource
                 ->label('PO Number')
                 ->required()
                 ->maxLength(50),              
-            Forms\Components\DatePicker::make('req_dt')->label('Request Date'),     
+            Forms\Components\DatePicker::make('req_dt')
+                ->label('Request Date')
+                ->native(false)
+                ->displayFormat('d-m-Y')
+                ->format('Y-m-d'),                    
             Forms\Components\TextInput::make('plan_qty')                
                 ->label('Planned Quantity')
                 ->required()
                 ->numeric(),
             Forms\Components\TextInput::make('plan_qty_raw')
-                    ->label('Raw Material Qty ')
-                    ->readOnly(),               
+                ->label('Raw Material Qty ')
+                ->readOnly(),               
             Forms\Components\TextInput::make('plan_qty_pnl')
-                    ->label('Panel Qty')
-                    ->readOnly(),          
-            Forms\Components\DatePicker::make('start_dt')->label('Start Date'),
+                ->label('Panel Qty')
+                ->readOnly(),          
+            Forms\Components\DatePicker::make('start_dt')
+                ->label('Start Date')
+                ->native(false)
+                ->displayFormat('d-m-Y')
+                ->format('Y-m-d'),                    
             Forms\Components\DatePicker::make('end_dt')
                 ->label('End Date')
-                ->required(),
+                ->required()
+                ->native(false)
+                ->displayFormat('d-m-Y')
+                ->format('Y-m-d'),                    
             Forms\Components\Select::make('tool_cd')
                 ->label('Tooling Code')
                 ->options(function (callable $get) {

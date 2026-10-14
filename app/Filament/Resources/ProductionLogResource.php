@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\DB;
 use Filament\Tables\Columns\TextColumn;
+use Carbon\Carbon;
+use Filament\Forms\Components\DateTimePicker;
 
 class ProductionLogResource extends BaseResource
 {
@@ -273,40 +275,49 @@ class ProductionLogResource extends BaseResource
                             ->searchable(),
                     ]),
 
-                Forms\Components\Section::make(null) // make('Production Time')
+                Forms\Components\Section::make(null)
                     ->columns(2)
                     ->schema([
                         Forms\Components\Group::make()
                             ->columns(2)
                             ->schema([
                                 Forms\Components\DateTimePicker::make('start_time')
-                                        ->label('Start Time')
-                                        ->extraAttributes([
-                                            'class' => 'fi-input-wrp bg-yellow-100',
-                                        ]),
-                                    Forms\Components\Actions::make([
-                                        Forms\Components\Actions\Action::make('StartcurrentTime')
-                                            ->visible(fn ($livewire) => ! $livewire instanceof \Filament\Resources\Pages\ViewRecord)
-                                            ->label('Current Time')
-                                            ->color('primary')
-                                            ->button()
-                                            ->action(function (callable $set) {
-                                                $set('start_time', now()->format('Y-m-d H:i:s'));
-                                            }),
+                                    ->label('Start Time')
+                                    ->native(false)
+                                    ->displayFormat('d-m-Y H:i:s')
+                                    ->format('Y-m-d H:i:s')
+                                    ->extraAttributes([
+                                        'class' => 'fi-input-wrp bg-yellow-100',
                                     ]),
+
+                                Forms\Components\Actions::make([
+                                    Forms\Components\Actions\Action::make('StartcurrentTime')
+                                        ->visible(fn ($livewire) => ! $livewire instanceof \Filament\Resources\Pages\ViewRecord)
+                                        ->label('Current Time')
+                                        ->color('primary')
+                                        ->button()
+                                        ->action(function (callable $set) {
+                                            $set('start_time', now()->format('Y-m-d H:i:s'));
+                                        }),
+                                ]),
                             ]),
+
                         Forms\Components\Group::make()
                             ->columns(2)
                             ->schema([
                                 Forms\Components\DateTimePicker::make('end_time')
                                     ->label('End Time')
                                     ->required()
+                                    ->native(false)
+                                    ->displayFormat('d-m-Y H:i:s')
+                                    ->format('Y-m-d H:i:s')
                                     ->extraAttributes([
                                         'class' => 'fi-input-wrp bg-yellow-100',
-                                    ]),   
+                                    ]),
+
                                 Forms\Components\Actions::make([
                                     Forms\Components\Actions\Action::make('EndcurrentTime')
-                                        ->visible(fn ($livewire) => ! $livewire instanceof \Filament\Resources\Pages\ViewRecord)    
+                                        ->visible(fn ($livewire) => ! $livewire instanceof \Filament\Resources\Pages\ViewRecord)
                                         ->label('Current Time')
                                         ->color('primary')
                                         ->button()
@@ -316,6 +327,7 @@ class ProductionLogResource extends BaseResource
                                 ]),
                             ]),
                     ]),
+
 
                 Forms\Components\Section::make('Production Qty')
                     ->columns(3)
