@@ -89,8 +89,7 @@ class NGDetailPivotReportExcel implements
             if (in_array($col, [
                 'WO NO',
                 'PART NO',
-                'TYPE',
-                'REMARKS'
+                'TYPE'
             ])) {
 
                 $topHeader[] = $label;
@@ -197,8 +196,8 @@ class NGDetailPivotReportExcel implements
                         'WO NO',
                         'PART NO',
                         'TYPE',
-                        'REMARKS',
-                        'OUT QTY'
+                        'OUT QTY',
+                        'FGS QTY'
                     ])) {
 
                         $colLetter = Coordinate::stringFromColumnIndex($colIndex);
@@ -391,9 +390,9 @@ class NGDetailPivotReportExcel implements
                     | SKIP OUT QTY COLUMN
                     |--------------------------------------------------------------------------
                     */
-                    if (strtoupper(trim($colName)) == 'OUT QTY') {
+                    if (strtoupper(trim($colName)) == 'OUT QTY' || strtoupper(trim($colName)) == 'FGS QTY') {
                         continue;
-                    }
+                    }                    
 
                     $colLetter = Coordinate::stringFromColumnIndex($i);
 
@@ -534,7 +533,7 @@ class NGDetailPivotReportExcel implements
                 $title = new Title('NG RATIO CHART');
 
                 $chart = new Chart(
-                    'rwk_chart',
+                    'ng_chart',
                     $title,
                     $legend,
                     $plotArea

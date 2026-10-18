@@ -28,7 +28,24 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     protected static ?string $title = 'NG Detail Pivot By Process';        
     protected static string $view = 'filament.pages.ng-detail-pivot-report';
 
+    public string $reportType = 'CUTTING';
     protected array $dynamicColumns = [];
+
+    protected function getStoredProcedureName(): string
+    {
+        return match ($this->reportType) {
+            'TEST'    => 'ng_detail_2nd_pivot',
+            'CUTTING' => 'ng_detail_1st_pivot',
+            default   => 'ng_detail_1st_pivot',
+        };
+    }    
+
+    public function updatedReportType(): void
+    {
+        $this->dynamicColumns = [];
+
+        $this->resetTable();
+    }
 
     protected function loadDynamicColumns(): void
     {
@@ -36,7 +53,11 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
             return;
         }
 
-        $rows = DB::select('CALL ng_detail_pivot(NULL, NULL, NULL, NULL, NULL)');
+        $procedure = $this->getStoredProcedureName();
+
+        $rows = DB::select(
+            "CALL {$procedure}(NULL, NULL, NULL, NULL, NULL)"
+        );
 
         if (! empty($rows)) {
             $this->dynamicColumns = array_keys((array) $rows[0]);
@@ -56,7 +77,7 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
             ->columns(
                 collect($this->dynamicColumns)->map(function ($col) {
 
-                    if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'REMARKS NG'])) {
+                    if (in_array($col, ['WO NO', 'PART NO', 'TYPE'])) {
                         return Tables\Columns\TextColumn::make($col)
                             ->label(strtoupper(str_replace('_', ' ', $col)))
                             ->wrap()
@@ -83,19 +104,19 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
             ->actions([])
             ->bulkActions([])
             ->headerActions([
-                Tables\Actions\Action::make('Export Excel')
+                Tables\Actions\Action::make('export_excel')
                     ->button()
                     ->label('Export Excel')
                     ->color('success')
                     ->action(fn () => $this->exportExcel()),
 /*
-                Tables\Actions\Action::make('Export PDF')
+                Tables\Actions\Action::make('export_pdf')
                     ->button()
                     ->label('Export PDF')
                     ->color('danger')
                     ->action(fn () => $this->exportPdf()),
 */
-            ]);     
+                    ]);     
     }
 
     /* -------------------------------------------------
@@ -118,9 +139,18 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
         $endDate1  = $filters['end_date']['end_date_1'] ?? null;
         $endDate2  = $filters['end_date']['end_date_2'] ?? null;
 
+        // Select stored procedure based on report type
+        $procedure = $this->getStoredProcedureName();
+
         $rows = DB::select(
-            'CALL ng_detail_pivot(?, ?, ?, ?, ?)',
-            [$woNo, $itemCode, $itmType, $endDate1, $endDate2]
+            "CALL {$procedure}(?, ?, ?, ?, ?)",
+            [
+                $woNo,
+                $itemCode,
+                $itmType,
+                $endDate1,
+                $endDate2,
+            ]
         );
 
         return new EloquentCollection(
@@ -204,40 +234,50 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
         ];
     }
 
+
+
     protected function exportExcel()
     {
-        $records = $this->getTableRecords(); // <- call SP with filters
-        $filename = 'NGDetailPivotReport_' . now()->format('Ymd_His') . '.xlsx';
-
-        /*
-        return Excel::download(
-            new \App\Exports\NGDetailPivotReportExcel($records),
-            $filename
-        );
-        */
+        $records = $this->getTableRecords();
+        $reportType = strtoupper($this->reportType);
+        $reportTitle = 'NG DETAIL PIVOT BY PROCESS - Start From Process : ' . $reportType;
+        $filename = 'NGDetailPivotReport_'
+            . $reportType . '_'
+            . now()->format('Ymd_His')
+            . '.xlsx';
 
         return Excel::download(
-            new \App\Exports\NGDetailPivotReportExcel($records),
+            new \App\Exports\NGDetailPivotReportExcel(
+                $records,
+                $reportTitle
+            ),
             $filename,
             \Maatwebsite\Excel\Excel::XLSX,
             [
-                'charts' => true
+                'charts' => true,
             ]
         );
-
-
     }
+
 
     protected function exportPdf()
     {
-        $records = $this->getTableRecords(); // <- call SP with filters
+        $records = $this->getTableRecords();
+        $reportType = strtoupper($this->reportType);
+        $reportTitle = 'NG DETAIL PIVOT BY PROCESS - Start From Process : ' . $reportType;
+        $filename = 'NGDetailPivotReport_'
+            . $reportType . '_'
+            . now()->format('Ymd_His')
+            . '.pdf';
+
         $pdf = Pdf::loadView('pdf.ng-detail-pivot-report', [
-            'data' => $records,
+            'data'       => $records,
+            'reportType' => $reportType,
         ])->setPaper('a3', 'landscape');
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
-            'NGStatusPivot' . now()->format('Ymd_His') . '.pdf'
-        );
-    }        
+            $filename);
+    }
+    
 }
