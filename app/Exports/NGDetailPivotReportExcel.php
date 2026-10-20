@@ -373,7 +373,15 @@ class NGDetailPivotReportExcel implements
 
                         $totalInQty += (float) $cellValue;
                     }
-                }          
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | NG totals grouped by NG NAME only (ignores process)
+                | Used by the "TOTAL BY NG NAME" sheet below
+                |--------------------------------------------------------------------------
+                */
+                $ngNameTotals = [];
 
                 /*
                 |--------------------------------------------------------------------------
@@ -392,7 +400,7 @@ class NGDetailPivotReportExcel implements
                     */
                     if (strtoupper(trim($colName)) == 'OUT QTY' || strtoupper(trim($colName)) == 'FGS QTY') {
                         continue;
-                    }                    
+                    }
 
                     $colLetter = Coordinate::stringFromColumnIndex($i);
 
@@ -431,6 +439,17 @@ class NGDetailPivotReportExcel implements
 
                     /*
                     |--------------------------------------------------------------------------
+                    | Accumulate by NG NAME (for new sheet)
+                    |--------------------------------------------------------------------------
+                    */
+                    if ($rwkQty != 0) {
+
+                        $ngNameTotals[$rwkName] =
+                            ($ngNameTotals[$rwkName] ?? 0) + $rwkQty;
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
                     | Percentage
                     |--------------------------------------------------------------------------
                     */
@@ -456,7 +475,7 @@ class NGDetailPivotReportExcel implements
 
                     $chartSheet->getStyle("B{$chartRow}")
                         ->getNumberFormat()
-                        ->setFormatCode('0.00%');                    
+                        ->setFormatCode('0.00%');
 
                     $chartRow++;
                 }
@@ -557,7 +576,211 @@ class NGDetailPivotReportExcel implements
                 $chartSheet->addChart($chart);
 
 
+                /*
+                |==========================================================================
+                | NEW SHEET : TOTAL BY NG NAME
+                | Summary of NG QTY by NG NAME only (process is NOT considered)
+                |==========================================================================
+                */
 
+                $ngSheetTitle = 'TOTAL BY NG NAME';
+
+                $ngSheet = $spreadsheet->createSheet();
+                $ngSheet->setTitle($ngSheetTitle);
+
+                /* ---------- SHEET TITLE ---------- */
+
+                $ngSheet->mergeCells('A1:C1');
+
+                $ngSheet->setCellValue('A1', 'TOTAL BY NG NAME');
+
+                $ngSheet->getStyle('A1')->getFont()
+                    ->setBold(true)
+                    ->setSize(16);
+
+                $ngSheet->getStyle('A1')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_LEFT)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                /* ---------- HEADER ---------- */
+
+                $ngSheet->setCellValue('A3', 'NG NAME');
+                $ngSheet->setCellValue('B3', 'NG QTY');
+                $ngSheet->setCellValue('C3', 'NG RATIO');
+
+                $ngSheet->getStyle('A3:C3')->getFont()->setBold(true);
+
+                $ngSheet->getStyle('A3:C3')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                /* ---------- DATA (largest NG QTY first) ---------- */
+
+                arsort($ngNameTotals);
+
+                $ngRow = 4;
+
+                foreach ($ngNameTotals as $ngName => $ngQty) {
+
+                    $ngSheet->setCellValue("A{$ngRow}", $ngName);
+                    $ngSheet->setCellValue("B{$ngRow}", $ngQty);
+                    $ngSheet->setCellValue(
+                        "C{$ngRow}",
+                        $totalInQty > 0 ? $ngQty / $totalInQty : 0
+                    );
+
+                    $ngSheet->getStyle("B{$ngRow}")
+                        ->getNumberFormat()
+                        ->setFormatCode('#,##0');
+
+                    $ngSheet->getStyle("C{$ngRow}")
+                        ->getNumberFormat()
+                        ->setFormatCode('0.00%');
+
+                    $ngRow++;
+                }
+
+                $ngLastDataRow = $ngRow - 1;
+
+                /* ---------- TOTAL ROW + BORDERS ---------- */
+
+                if ($ngLastDataRow >= 4) {
+
+                    $ngSheet->setCellValue("A{$ngRow}", 'TOTAL');
+                    $ngSheet->setCellValue("B{$ngRow}", "=SUM(B4:B{$ngLastDataRow})");
+                    $ngSheet->setCellValue("C{$ngRow}", "=SUM(C4:C{$ngLastDataRow})");
+
+                    $ngSheet->getStyle("B{$ngRow}")
+                        ->getNumberFormat()
+                        ->setFormatCode('#,##0');
+
+                    $ngSheet->getStyle("C{$ngRow}")
+                        ->getNumberFormat()
+                        ->setFormatCode('0.00%');
+
+                    $ngSheet->getStyle("A{$ngRow}:C{$ngRow}")
+                        ->getFont()->setBold(true);
+
+                    $ngSheet->getStyle("A3:C{$ngRow}")
+                        ->getBorders()
+                        ->getAllBorders()
+                        ->setBorderStyle(Border::BORDER_THIN);
+                }
+
+                /* ---------- AUTO SIZE ---------- */
+
+                $ngSheet->getColumnDimension('A')->setAutoSize(true);
+                $ngSheet->getColumnDimension('B')->setAutoSize(true);
+                $ngSheet->getColumnDimension('C')->setAutoSize(true);
+
+                /* ---------- CHART (only when there is data) ---------- */
+
+                if ($ngLastDataRow >= 4) {
+
+                    $ngPointCount = $ngLastDataRow - 3;
+
+                    $ngLabels = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'{$ngSheetTitle}'!\$B\$3",
+                            null,
+                            1
+                        )
+                    ];
+
+                    $ngCategories = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'{$ngSheetTitle}'!\$A\$4:\$A\${$ngLastDataRow}",
+                            null,
+                            $ngPointCount
+                        )
+                    ];
+
+                    $ngValues = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_NUMBER,
+                            "'{$ngSheetTitle}'!\$B\$4:\$B\${$ngLastDataRow}",
+                            null,
+                            $ngPointCount
+                        )
+                    ];
+
+                    $ngSeries = new DataSeries(
+                        DataSeries::TYPE_BARCHART,
+                        DataSeries::GROUPING_CLUSTERED,
+                        range(0, count($ngValues) - 1),
+                        $ngLabels,
+                        $ngCategories,
+                        $ngValues
+                    );
+
+                    $ngSeries->setPlotDirection(DataSeries::DIRECTION_COL);
+
+                    $ngChart = new Chart(
+                        'ng_total_by_name_chart',
+                        new Title('TOTAL NG QTY BY NG NAME'),
+                        new Legend(Legend::POSITION_RIGHT, null, false),
+                        new PlotArea(null, [$ngSeries])
+                    );
+
+                    $ngChart->setTopLeftPosition('E2');
+                    $ngChart->setBottomRightPosition('O20');
+
+                    $ngSheet->addChart($ngChart);
+
+                    /* ---------- NG RATIO CHART (below the QTY chart) ---------- */
+
+                    $ratioLabels = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'{$ngSheetTitle}'!\$C\$3",
+                            null,
+                            1
+                        )
+                    ];
+
+                    $ratioCategories = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'{$ngSheetTitle}'!\$A\$4:\$A\${$ngLastDataRow}",
+                            null,
+                            $ngPointCount
+                        )
+                    ];
+
+                    $ratioValues = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_NUMBER,
+                            "'{$ngSheetTitle}'!\$C\$4:\$C\${$ngLastDataRow}",
+                            '0.00%',
+                            $ngPointCount
+                        )
+                    ];
+
+                    $ratioSeries = new DataSeries(
+                        DataSeries::TYPE_BARCHART,
+                        DataSeries::GROUPING_CLUSTERED,
+                        range(0, count($ratioValues) - 1),
+                        $ratioLabels,
+                        $ratioCategories,
+                        $ratioValues
+                    );
+
+                    $ratioSeries->setPlotDirection(DataSeries::DIRECTION_COL);
+
+                    $ratioChart = new Chart(
+                        'ng_total_by_name_ratio_chart',
+                        new Title('NG RATIO CHART'),
+                        new Legend(Legend::POSITION_RIGHT, null, false),
+                        new PlotArea(null, [$ratioSeries])
+                    );
+
+                    $ratioChart->setTopLeftPosition('E22');
+                    $ratioChart->setBottomRightPosition('O40');
+
+                    $ngSheet->addChart($ratioChart);
+                }
 
 
                 /* ---------- FREEZE ---------- */
@@ -570,5 +793,5 @@ class NGDetailPivotReportExcel implements
     public function charts()
     {
         return [];
-    }    
+    }
 }
