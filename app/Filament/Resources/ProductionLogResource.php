@@ -104,6 +104,17 @@ class ProductionLogResource extends BaseResource
                             ->columnSpanFull()
                             ->searchable()
                             ->live()
+                            ->extraAttributes([
+                                'x-on:keydown.enter.prevent' => <<<'JS'
+                                    const input = $el.querySelector('input');
+                                    if (!input) return;
+                                    const barcode = input.value.trim();
+                                    if (!barcode) return;
+                                    $wire.dispatchFormEvent('work-order-barcode-scanned', {
+                                        barcode: barcode
+                                    });
+                                JS,
+                            ])
                             ->dehydrated(false)
                             ->placeholder(fn (callable $get) => $get('proc_cd')
                                 ? 'Type WO No / Part No to search'
