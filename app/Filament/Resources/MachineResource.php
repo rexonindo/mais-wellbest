@@ -18,7 +18,7 @@ class MachineResource extends BaseResource
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Machine';
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 7;
 
     public static function form(Form $form): Form
     {

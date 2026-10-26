@@ -41,6 +41,11 @@ class ProcessResource extends BaseResource
                     ->searchable()
                     ->nullable(),
 
+                Forms\Components\TextInput::make('division')
+                    ->label('Division')
+                    ->required()
+                    ->maxLength(50),
+
                 Forms\Components\TextInput::make('wip_sfx')
                     ->label('WIP Suffix')
                     ->maxLength(50)
@@ -76,6 +81,10 @@ class ProcessResource extends BaseResource
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('department.dept_nm')->label('Department'),
+                Tables\Columns\TextColumn::make('division')
+                    ->label('Division')
+                    ->sortable()
+                    ->searchable(),                
                 Tables\Columns\TextColumn::make('wip_sfx')
                     ->label('WIP Suffix')
                     ->sortable()

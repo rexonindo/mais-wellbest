@@ -38,7 +38,8 @@ class NgResource extends Resource
                 Forms\Components\TextInput::make('location')
                     ->label('Location')
                     // ->required()
-                    ->maxLength(50),                    
+                    ->maxLength(50),
+                              
                 /*
                 Forms\Components\TextInput::make('created_by')
                     ->default(auth()->user()?->name)

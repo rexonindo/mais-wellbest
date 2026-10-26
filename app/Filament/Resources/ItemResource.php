@@ -22,7 +22,7 @@ class ItemResource extends BaseResource
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Part Number';
     protected static ?string $navigationIcon = 'heroicon-o-building-office';   
-    protected static ?int $navigationSort = 5;      
+    protected static ?int $navigationSort = 6;      
 
     public static function form(Form $form): Form
     {

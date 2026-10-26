@@ -28,12 +28,12 @@ class NGDetailPivotReportExcel implements
     WithCharts
 {
     protected Collection $data;
-    protected string $reportTitle;
+    protected string $reportTitle;    
     protected array $columns = [];
 
     public function __construct(
         Collection $data,
-        string $reportTitle = 'NG DETAIL PIVOT BY PROCESS'
+        string $reportTitle = 'NG DETAIL REPORT'
     ) {
         $this->data = $data;
         $this->reportTitle = $reportTitle;
@@ -107,12 +107,12 @@ class NGDetailPivotReportExcel implements
                     str_replace('_', ' ', $matches[1])
                 );
 
-                $rwkName = strtoupper(
+                $ngName = strtoupper(
                     str_replace('_', ' ', $matches[2])
                 );
 
                 $topHeader[] = $process;
-                $subHeader[] = $rwkName;
+                $subHeader[] = $ngName;
 
             } else {
 
@@ -129,7 +129,7 @@ class NGDetailPivotReportExcel implements
 
     public function title(): string
     {
-        return $this->reportTitle;
+        return 'NG DETAIL REPORT';
     }
 
     /* ---------------------------------
@@ -306,7 +306,7 @@ class NGDetailPivotReportExcel implements
                 ->setBorderStyle(Border::BORDER_THIN);
 
 
-                /* ---------- CHART SHEET ---------- */
+                /* ---------- TOTAL NG BY CATEGORY SHEET ---------- */
 
                 $spreadsheet = $sheet->getParent();
 
@@ -317,7 +317,7 @@ class NGDetailPivotReportExcel implements
                 */
 
                 $chartSheet = $spreadsheet->createSheet();
-                $chartSheet->setTitle('NG Chart');
+                $chartSheet->setTitle('TOTAL NG BY CATEGORY');
 
                 /*
                 |--------------------------------------------------------------------------
@@ -325,9 +325,9 @@ class NGDetailPivotReportExcel implements
                 |--------------------------------------------------------------------------
                 */
 
-                $chartSheet->mergeCells('A1:B1');
+                $chartSheet->mergeCells('A1:C1');
 
-                $chartSheet->setCellValue('A1', 'NG RATIO');
+                $chartSheet->setCellValue('A1', 'TOTAL NG BY CATEGORY');
 
                 $chartSheet->getStyle('A1')->getFont()
                     ->setBold(true)
@@ -337,15 +337,17 @@ class NGDetailPivotReportExcel implements
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-
                 /*
                 |--------------------------------------------------------------------------
                 | Build Chart Data
                 |--------------------------------------------------------------------------
                 */
 
-                $chartSheet->setCellValue('A3', 'NG INFO');
-                $chartSheet->setCellValue('B3', 'TOTAL QTY');
+                $chartSheet->setCellValue('A3', 'CATEGORY');
+                $chartSheet->setCellValue('B3', 'NG NAME');
+                $chartSheet->setCellValue('C3', 'TOTAL QTY');         
+                
+                $chartSheet->getStyle('A3:C3')->getFont()->setBold(true);
 
                 $chartRow = 4;
 
@@ -378,7 +380,7 @@ class NGDetailPivotReportExcel implements
                 /*
                 |--------------------------------------------------------------------------
                 | NG totals grouped by NG NAME only (ignores process)
-                | Used by the "TOTAL BY NG NAME" sheet below
+                | Used by the "TOTAL NG BY NAME" sheet below
                 |--------------------------------------------------------------------------
                 */
                 $ngNameTotals = [];
@@ -388,6 +390,9 @@ class NGDetailPivotReportExcel implements
                 | Sum TOTAL per dynamic column
                 |--------------------------------------------------------------------------
                 */
+
+                $prevDiv     = null;
+                $divStartRow = $chartRow;   // 4
 
                 foreach (range(5, $columnCount) as $i) {
 
@@ -411,13 +416,18 @@ class NGDetailPivotReportExcel implements
                     */
                     if (preg_match('/^(.*?)_(.*)$/', $colName, $match)) {
 
-                        $rwkName = strtoupper(
+                        $divName = strtoupper(
+                            str_replace('_', ' ', $match[1])
+                        );
+
+                        $ngName = strtoupper(
                             str_replace('_', ' ', $match[2])
                         );
 
                     } else {
 
-                        $rwkName = $colName;
+                        $divName = '';
+                        $ngName = $colName;
                     }
 
                     /*
@@ -426,7 +436,7 @@ class NGDetailPivotReportExcel implements
                     |--------------------------------------------------------------------------
                     */
 
-                    $rwkQty = 0;
+                    $ngQty = 0;
 
                     for ($r = $dataStartRow; $r <= $dataEndRow; $r++) {
 
@@ -434,7 +444,7 @@ class NGDetailPivotReportExcel implements
                             ->getCell("{$colLetter}{$r}")
                             ->getValue();
 
-                        $rwkQty += (float) $cellValue;
+                        $ngQty += (float) $cellValue;
                     }
 
                     /*
@@ -442,10 +452,10 @@ class NGDetailPivotReportExcel implements
                     | Accumulate by NG NAME (for new sheet)
                     |--------------------------------------------------------------------------
                     */
-                    if ($rwkQty != 0) {
+                    if ($ngQty != 0) {
 
-                        $ngNameTotals[$rwkName] =
-                            ($ngNameTotals[$rwkName] ?? 0) + $rwkQty;
+                        $ngNameTotals[$ngName] =
+                            ($ngNameTotals[$ngName] ?? 0) + $ngQty;
                     }
 
                     /*
@@ -456,7 +466,7 @@ class NGDetailPivotReportExcel implements
 
                     if ($totalInQty > 0) {
 
-                        $totalValue = $rwkQty / $totalInQty;
+                        $totalValue = $ngQty / $totalInQty;
 
                     } else {
 
@@ -470,10 +480,24 @@ class NGDetailPivotReportExcel implements
                         continue;
                     }
 
-                    $chartSheet->setCellValue("A{$chartRow}", $rwkName);
-                    $chartSheet->setCellValue("B{$chartRow}", $totalValue);
+                    // Category changed: close the previous group and merge it
+                    if ($divName !== $prevDiv) {
 
-                    $chartSheet->getStyle("B{$chartRow}")
+                        if ($prevDiv !== null && $prevDiv !== '' && ($chartRow - 1) > $divStartRow) {
+                            $chartSheet->mergeCells("A{$divStartRow}:A" . ($chartRow - 1));
+                        }
+
+                        $divStartRow = $chartRow;
+                        $prevDiv     = $divName;
+
+                        // write the category name only on the first row of the group
+                        $chartSheet->setCellValue("A{$chartRow}", $divName);
+                    }
+
+                    $chartSheet->setCellValue("B{$chartRow}", $ngName);
+                    $chartSheet->setCellValue("C{$chartRow}", $totalValue);
+
+                    $chartSheet->getStyle("C{$chartRow}")
                         ->getNumberFormat()
                         ->setFormatCode('0.00%');
 
@@ -488,6 +512,17 @@ class NGDetailPivotReportExcel implements
 
                 $chartSheet->getColumnDimension('A')->setAutoSize(true);
                 $chartSheet->getColumnDimension('B')->setAutoSize(true);
+                $chartSheet->getColumnDimension('C')->setAutoSize(true);
+
+                if ($chartRow > 4) {
+                    $chartSheet->getStyle("A4:C" . ($chartRow - 1))
+                        ->getAlignment()
+                        ->setVertical(Alignment::VERTICAL_CENTER);
+                    $chartSheet->getStyle("A3:C" . ($chartRow - 1))
+                        ->getBorders()
+                        ->getAllBorders()
+                        ->setBorderStyle(Border::BORDER_THIN);                        
+                }                   
 
                 /*
                 |--------------------------------------------------------------------------
@@ -498,7 +533,7 @@ class NGDetailPivotReportExcel implements
                 $dataSeriesLabels = [
                     new DataSeriesValues(
                         DataSeriesValues::DATASERIES_TYPE_STRING,
-                        "'NG Chart'!\$B\$3",
+                        "'TOTAL NG BY CATEGORY'!\$C\$3",
                         null,
                         1
                     )
@@ -507,7 +542,7 @@ class NGDetailPivotReportExcel implements
                 $xAxisTickValues = [
                     new DataSeriesValues(
                         DataSeriesValues::DATASERIES_TYPE_STRING,
-                        "'NG Chart'!\$A\$4:\$A\$" . ($chartRow - 1),
+                        "'TOTAL NG BY CATEGORY'!\$B\$4:\$B\$" . ($chartRow - 1),
                         null,
                         ($chartRow - 2)
                     )
@@ -516,7 +551,7 @@ class NGDetailPivotReportExcel implements
                 $dataSeriesValues = [
                     new DataSeriesValues(
                         DataSeriesValues::DATASERIES_TYPE_NUMBER,
-                        "'NG Chart'!\$B\$4:\$B\$" . ($chartRow - 1),
+                        "'TOTAL NG BY CATEGORY'!\$C\$4:\$C\$" . ($chartRow - 1),
                         null,
                         ($chartRow - 2)
                     )
@@ -564,7 +599,7 @@ class NGDetailPivotReportExcel implements
                 |--------------------------------------------------------------------------
                 */
 
-                $chart->setTopLeftPosition('D2');
+                $chart->setTopLeftPosition('E2');
                 $chart->setBottomRightPosition('N20');
 
                 /*
@@ -578,12 +613,12 @@ class NGDetailPivotReportExcel implements
 
                 /*
                 |==========================================================================
-                | NEW SHEET : TOTAL BY NG NAME
+                | NEW SHEET : TOTAL NG BY NAME
                 | Summary of NG QTY by NG NAME only (process is NOT considered)
                 |==========================================================================
                 */
 
-                $ngSheetTitle = 'TOTAL BY NG NAME';
+                $ngSheetTitle = 'TOTAL NG BY NAME';
 
                 $ngSheet = $spreadsheet->createSheet();
                 $ngSheet->setTitle($ngSheetTitle);
@@ -592,7 +627,7 @@ class NGDetailPivotReportExcel implements
 
                 $ngSheet->mergeCells('A1:C1');
 
-                $ngSheet->setCellValue('A1', 'TOTAL BY NG NAME');
+                $ngSheet->setCellValue('A1', 'TOTAL NG BY NAME');
 
                 $ngSheet->getStyle('A1')->getFont()
                     ->setBold(true)
@@ -672,6 +707,12 @@ class NGDetailPivotReportExcel implements
                 $ngSheet->getColumnDimension('A')->setAutoSize(true);
                 $ngSheet->getColumnDimension('B')->setAutoSize(true);
                 $ngSheet->getColumnDimension('C')->setAutoSize(true);
+
+                if ($ngRow > 4) {
+                    $ngSheet->getStyle("A4:C" . ($ngRow - 1))
+                        ->getAlignment()
+                        ->setVertical(Alignment::VERTICAL_CENTER);
+                }                   
 
                 /* ---------- CHART (only when there is data) ---------- */
 

@@ -25,26 +25,46 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?int $navigationSort = 10;
     protected static ?string $slug = 'ng-detail-pivot-report';
-    protected static ?string $title = 'NG Detail Pivot By Process';        
+    protected static ?string $title = 'NG Detail Pivot By Process';
     protected static string $view = 'filament.pages.ng-detail-pivot-report';
 
+    // Values currently selected in the dropdowns (not yet applied)
+    public string $reportCategory = 'DIVISION';
     public string $reportType = 'CUTTING';
+
+    // Values that were applied when OK was last clicked (drive the table)
+    public string $appliedCategory = 'DIVISION';
+    public string $appliedType = 'CUTTING';
+    public array $appliedFilters = [];
+    public bool $reportApplied = false;
+
     protected array $dynamicColumns = [];
 
-    protected function getStoredProcedureName(): string
+    /* -------------------------------------------------
+       OK BUTTON
+    ------------------------------------------------- */
+    public function applyReport(): void
     {
-        return match ($this->reportType) {
-            'TEST'    => 'ng_detail_2nd_pivot',
-            'CUTTING' => 'ng_detail_1st_pivot',
-            default   => 'ng_detail_1st_pivot',
-        };
-    }    
+        $this->appliedCategory = $this->reportCategory;
+        $this->appliedType     = $this->reportType;
+        $this->appliedFilters  = $this->getTableFiltersForm()?->getState() ?? [];
+        $this->reportApplied   = true;
 
-    public function updatedReportType(): void
-    {
         $this->dynamicColumns = [];
 
         $this->resetTable();
+    }
+
+    protected function getStoredProcedureName(): string
+    {
+        // Uses the APPLIED values, not the live dropdown values
+        return match ([$this->appliedCategory, $this->appliedType]) {
+            ['DIVISION', 'CUTTING'] => 'ng_detail_1st_pivot_by_division',
+            ['PROCESS',  'CUTTING'] => 'ng_detail_1st_pivot_by_process',
+            ['DIVISION', 'TEST']    => 'ng_detail_2nd_pivot_by_division',
+            ['PROCESS',  'TEST']    => 'ng_detail_2nd_pivot_by_process',
+            default                 => 'ng_detail_1st_pivot_by_division',
+        };
     }
 
     protected function loadDynamicColumns(): void
@@ -85,7 +105,7 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
                             ->toggleable()
                             ->extraAttributes([
                                 'class' => 'text-left',
-                                'style' => 'min-width:140px; white-space:nowrap;',    
+                                'style' => 'min-width:140px; white-space:nowrap;',
                             ]);
                     }
 
@@ -95,7 +115,6 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
                             'class' => 'text-right',
                             'style' => 'min-width:100px; max-width:320px;',
                         ])
-
                         ->toggleable();
                 })->toArray()
             )
@@ -109,14 +128,7 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
                     ->label('Export Excel')
                     ->color('success')
                     ->action(fn () => $this->exportExcel()),
-/*
-                Tables\Actions\Action::make('export_pdf')
-                    ->button()
-                    ->label('Export PDF')
-                    ->color('danger')
-                    ->action(fn () => $this->exportPdf()),
-*/
-                    ]);     
+            ]);
     }
 
     /* -------------------------------------------------
@@ -124,33 +136,30 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     ------------------------------------------------- */
     public function getTableRecords(): EloquentCollection
     {
-        $filters = $this->getTableFiltersForm()?->getState() ?? [];
+        // Nothing is loaded until OK has been clicked at least once
+        if (! $this->reportApplied) {
+            return new EloquentCollection();
+        }
 
-        $woNo      = $filters['wo_no']['value'] ?? null;
-        $itemCode  = $filters['itm_cd']['value'] ?? null;
+        // Use the filter snapshot taken when OK was clicked
+        $filters = $this->appliedFilters;
+
+        $woNo     = $filters['wo_no']['value'] ?? null;
+        $itemCode = $filters['itm_cd']['value'] ?? null;
 
         $itmType = $filters['itm_type']['values'] ?? [];
         if (is_array($itmType)) {
-            $itmType = !empty($itmType)
-                ? implode(',', $itmType)
-                : null;
-        }        
+            $itmType = ! empty($itmType) ? implode(',', $itmType) : null;
+        }
 
-        $endDate1  = $filters['end_date']['end_date_1'] ?? null;
-        $endDate2  = $filters['end_date']['end_date_2'] ?? null;
+        $endDate1 = $filters['end_date']['end_date_1'] ?? null;
+        $endDate2 = $filters['end_date']['end_date_2'] ?? null;
 
-        // Select stored procedure based on report type
         $procedure = $this->getStoredProcedureName();
 
         $rows = DB::select(
             "CALL {$procedure}(?, ?, ?, ?, ?)",
-            [
-                $woNo,
-                $itemCode,
-                $itmType,
-                $endDate1,
-                $endDate2,
-            ]
+            [$woNo, $itemCode, $itmType, $endDate1, $endDate2]
         );
 
         return new EloquentCollection(
@@ -172,7 +181,7 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     }
 
     /* -------------------------------------------------
-       FILTERS
+       FILTERS (unchanged)
     ------------------------------------------------- */
     protected function getTableFilters(): array
     {
@@ -213,10 +222,8 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
 
             Filter::make('end_date')
                 ->form([
-                    DatePicker::make('end_date_1')
-                        ->label('End Date From'),
-                    DatePicker::make('end_date_2')
-                        ->label('End Date To'),
+                    DatePicker::make('end_date_1')->label('End Date From'),
+                    DatePicker::make('end_date_2')->label('End Date To'),
                 ])
                 ->indicateUsing(function (array $data): array {
                     $indicators = [];
@@ -234,14 +241,14 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
         ];
     }
 
-
-
     protected function exportExcel()
     {
-        $records = $this->getTableRecords();
-        $reportType = strtoupper($this->reportType);
-        $reportTitle = 'NG DETAIL PIVOT BY PROCESS - Start From Process : ' . $reportType;
-        $filename = 'NGDetailPivotReport_'
+        $records        = $this->getTableRecords();
+        $reportCategory = strtoupper($this->appliedCategory);
+        $reportType     = strtoupper($this->appliedType);
+        $reportTitle    = 'NG DETAIL REPORT BY ' . $reportCategory . ' - Start From Process : ' . $reportType;
+        $filename       = 'NGDetailPivotReport_'
+            . $reportCategory . '_'
             . $reportType . '_'
             . now()->format('Ymd_His')
             . '.xlsx';
@@ -253,31 +260,30 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
             ),
             $filename,
             \Maatwebsite\Excel\Excel::XLSX,
-            [
-                'charts' => true,
-            ]
+            ['charts' => true]
         );
     }
 
-
     protected function exportPdf()
     {
-        $records = $this->getTableRecords();
-        $reportType = strtoupper($this->reportType);
-        $reportTitle = 'NG DETAIL PIVOT BY PROCESS - Start From Process : ' . $reportType;
-        $filename = 'NGDetailPivotReport_'
+        $records        = $this->getTableRecords();
+        $reportCategory = strtoupper($this->appliedCategory);
+        $reportType     = strtoupper($this->appliedType);
+        $filename       = 'NGDetailPivotReport_'
+            . $reportCategory . '_'
             . $reportType . '_'
             . now()->format('Ymd_His')
             . '.pdf';
 
         $pdf = Pdf::loadView('pdf.ng-detail-pivot-report', [
-            'data'       => $records,
-            'reportType' => $reportType,
+            'data'           => $records,
+            'reportCategory' => $reportCategory,
+            'reportType'     => $reportType,
         ])->setPaper('a3', 'landscape');
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
-            $filename);
+            $filename
+        );
     }
-    
 }

@@ -1,18 +1,41 @@
-
 <x-filament-panels::page>
     <div class="ng-report-layout">
 
-        {{-- REPORT TYPE --}}
-        <div class="ng-report-type">
-            <label for="reportType">Start From Process : </label>
+        {{-- REPORT CATEGORY + REPORT TYPE + OK (same line) --}}
+        <div class="ng-report-selectors">
 
-            <select
-                id="reportType"
-                wire:model.live="reportType"
-            >
-                <option value="CUTTING">CUTTING</option>
-                <option value="TEST">TEST</option>
-            </select>
+            {{-- REPORT CATEGORY --}}
+            <div class="ng-report-field">
+                <label for="reportCategory">REPORT BY :</label>
+
+                {{-- no .live: value is only sent to the server when OK is clicked --}}
+                <select id="reportCategory" wire:model="reportCategory">
+                    <option value="DIVISION">DIVISION</option>
+                    <option value="PROCESS">PROCESS</option>
+                </select>
+            </div>
+
+            {{-- REPORT TYPE + OK BUTTON --}}
+            <div class="ng-report-field">
+                <label for="reportType">Start From Process :</label>
+
+                <select id="reportType" wire:model="reportType">
+                    <option value="CUTTING">CUTTING</option>
+                    <option value="TEST">TEST</option>
+                </select>
+
+                <button
+                    type="button"
+                    class="ng-report-ok"
+                    wire:click="applyReport"
+                    wire:loading.attr="disabled"
+                    wire:target="applyReport"
+                >
+                    <span wire:loading.remove wire:target="applyReport">OK</span>
+                    <span wire:loading wire:target="applyReport">Loading...</span>
+                </button>
+            </div>
+
         </div>
 
         {{-- FILTER FORM --}}
@@ -28,15 +51,23 @@
     </div>
 
     <style>
-        /* Reduce spacing between all report sections */
         .ng-report-layout {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
 
-        /* Report type label and dropdown on the same line */
-        .ng-report-type {
+        .ng-report-selectors {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 24px;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .ng-report-field {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -44,13 +75,13 @@
             padding: 0 !important;
         }
 
-        .ng-report-type label {
+        .ng-report-field label {
             font-weight: 600;
             white-space: nowrap;
             margin: 0;
         }
 
-        .ng-report-type select {
+        .ng-report-field select {
             width: 180px;
             padding: 5px 10px;
             border: 1px solid #d1d5db;
@@ -59,7 +90,18 @@
             color: #111827;
         }
 
-        /* Remove extra spacing around the filter form */
+        .ng-report-ok {
+            padding: 5px 18px;
+            border-radius: 6px;
+            background: #059669;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .ng-report-ok:hover { background: #047857; }
+        .ng-report-ok:disabled { opacity: .6; cursor: wait; }
+
         .ng-report-filters {
             margin: 0 !important;
             padding: 0 !important;
@@ -70,10 +112,7 @@
             margin-bottom: 0 !important;
         }
 
-        /* Report table */
-        .ng-report-table {
-            margin-top: 0 !important;
-        }
+        .ng-report-table { margin-top: 0 !important; }
 
         .fi-ta-content {
             max-height: calc(100vh - 250px);
@@ -87,14 +126,8 @@
             background: white;
         }
 
-        /* Reduce Filament page content spacing */
-        .fi-page-content {
-            gap: 4px !important;
-        }
-
-        .fi-page-content > * {
-            margin-block: 0 !important;
-        }
+        .fi-page-content { gap: 4px !important; }
+        .fi-page-content > * { margin-block: 0 !important; }
     </style>
 
     <script>

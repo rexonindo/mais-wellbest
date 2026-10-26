@@ -38,7 +38,7 @@
         .cd-row-alert { background: rgba(220,38,38,.08); }
     </style>
 
-    <?php if (! $__env->hasRenderedOnce('386f0e29-3d24-430f-a3f8-36233029daed')): $__env->markAsRenderedOnce('386f0e29-3d24-430f-a3f8-36233029daed'); ?>
+    <?php if (! $__env->hasRenderedOnce('613e6edb-fdbe-454d-ad1d-6f579cfc3639')): $__env->markAsRenderedOnce('613e6edb-fdbe-454d-ad1d-6f579cfc3639'); ?>
         <script src="<?php echo e(asset('js/chart.umd.min.js')); ?>"></script>
     <?php endif; ?>
 

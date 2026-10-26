@@ -13,6 +13,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 
 // class ManageProductRoute extends Page implements Forms\Contracts\HasForms, Tables\Contracts\HasTable
 class ManageProductRoute extends FBasePageResource implements HasTable
@@ -36,13 +37,28 @@ class ManageProductRoute extends FBasePageResource implements HasTable
         $this->form->fill();
     }
 
+    /**
+     * Lookup for P/N Type: SELECT itm_type FROM mais_wellbest.itm_type_view
+     */
+    protected function getItmTypeOptions(): array
+    {
+        return DB::table('mais_wellbest.itm_type_view')
+            ->whereNotNull('itm_type')
+            ->where('itm_type', '<>', '')
+            ->distinct()
+            ->orderBy('itm_type')
+            ->pluck('itm_type', 'itm_type')
+            ->toArray();
+    }    
+
     protected function getFormSchema(): array
     {
         return [
-            Forms\Components\TextInput::make('itm_type')
+            Forms\Components\Select::make('itm_type')
                 ->label('P/N Type')
-                ->required()
-                ->maxLength(50),
+                ->options(fn () => $this->getItmTypeOptions())
+                ->searchable()
+                ->required(),
 
             Forms\Components\TextInput::make('seq_no')
                 ->label('Sequence No')
@@ -74,7 +90,10 @@ class ManageProductRoute extends FBasePageResource implements HasTable
 
     protected function getTableQuery()
     {
-        return ProductRoute::query()->with('process');
+        return ProductRoute::query()
+            ->with('process')
+            ->orderBy('itm_type')
+            ->orderBy('seq_no');
     }
 
     protected function getTableColumns(): array

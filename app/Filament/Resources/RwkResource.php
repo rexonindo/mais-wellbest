@@ -19,7 +19,7 @@ class RwkResource extends Resource
     protected static ?string $pluralModelLabel = 'RWK';
     protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';    
     protected static ?string $modelLabel = 'RWK';
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 9;
 
     public static function form(Form $form): Form
     {
