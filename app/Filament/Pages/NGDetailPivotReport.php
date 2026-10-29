@@ -97,7 +97,7 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
             ->columns(
                 collect($this->dynamicColumns)->map(function ($col) {
 
-                    if (in_array($col, ['WO NO', 'PART NO', 'TYPE'])) {
+                    if (in_array($col, ['WO NO', 'PART NO', 'GROUP ITEM'])) {
                         return Tables\Columns\TextColumn::make($col)
                             ->label(strtoupper(str_replace('_', ' ', $col)))
                             ->wrap()
@@ -136,21 +136,17 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     ------------------------------------------------- */
     public function getTableRecords(): EloquentCollection
     {
-        // Nothing is loaded until OK has been clicked at least once
         if (! $this->reportApplied) {
             return new EloquentCollection();
         }
 
-        // Use the filter snapshot taken when OK was clicked
-        $filters = $this->appliedFilters;
+        $filters = $this->tableFilters ?? [];   // live state, not appliedFilters
 
         $woNo     = $filters['wo_no']['value'] ?? null;
         $itemCode = $filters['itm_cd']['value'] ?? null;
 
-        $itmType = $filters['itm_type']['values'] ?? [];
-        if (is_array($itmType)) {
-            $itmType = ! empty($itmType) ? implode(',', $itmType) : null;
-        }
+        $itmGrp = $filters['itm_grp']['values'] ?? [];
+        $itmGrp = ! empty($itmGrp) ? implode(',', $itmGrp) : null;
 
         $endDate1 = $filters['end_date']['end_date_1'] ?? null;
         $endDate2 = $filters['end_date']['end_date_2'] ?? null;
@@ -159,7 +155,7 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
 
         $rows = DB::select(
             "CALL {$procedure}(?, ?, ?, ?, ?)",
-            [$woNo, $itemCode, $itmType, $endDate1, $endDate2]
+            [$woNo, $itemCode, $itmGrp, $endDate1, $endDate2]
         );
 
         return new EloquentCollection(
@@ -206,16 +202,16 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
                 )
                 ->searchable(),
 
-            SelectFilter::make('itm_type')
-                ->label('Item Type')
+            SelectFilter::make('itm_grp')
+                ->label('Item Group')
                 ->multiple()
                 ->options(
-                    DB::table('itm_tbl')
-                        ->whereNotNull('itm_type')
-                        ->where('itm_type', '<>', '')
+                    DB::table('itmgrp_tbl')
+                        ->whereNotNull('itm_grp')
+                        ->where('itm_grp', '<>', '')
                         ->distinct()
-                        ->orderBy('itm_type')
-                        ->pluck('itm_type', 'itm_type')
+                        ->orderBy('itm_grp')
+                        ->pluck('itm_grp', 'itm_grp')
                         ->toArray()
                 )
                 ->searchable(),
