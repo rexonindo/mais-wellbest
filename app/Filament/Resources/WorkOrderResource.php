@@ -111,7 +111,13 @@ class WorkOrderResource extends BaseResource
                     'Completed' => 'Completed',
                     'Cancelled' => 'Cancelled',
                 ])
-                ->default('Planned'),              
+                ->default('Planned'),   
+            Forms\Components\Select::make('skip_validation')
+                ->options([
+                    'NO' => 'NO',
+                    'YES' => 'YES',
+                ])
+                ->default('NO'),
         ]);
     }
 
@@ -153,6 +159,11 @@ class WorkOrderResource extends BaseResource
                         'warning' => 'In Progress',
                         'success' => 'Completed',
                         'danger' => 'Cancelled',
+                    ]),
+                Tables\Columns\BadgeColumn::make('skip_validation')
+                    ->colors([
+                        'primary' => 'NO',
+                        'warning' => 'YES',
                     ]),
             ])
             ->filters([])         

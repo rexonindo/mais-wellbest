@@ -28,6 +28,7 @@ class WorkOrder extends Model
         'end_dt',
         'stats',
         'tool_cd',
+        'skip_validation'
     ];
 
     protected $attributes = [
