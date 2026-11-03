@@ -39,6 +39,11 @@ class NgResource extends Resource
                     ->label('Location')
                     // ->required()
                     ->maxLength(50),
+
+                Forms\Components\TextInput::make('category')
+                    ->label('Category')
+                    ->required()
+                    ->maxLength(50),                    
                               
                 /*
                 Forms\Components\TextInput::make('created_by')
@@ -67,6 +72,11 @@ class NgResource extends Resource
 
                 Tables\Columns\TextColumn::make('location')
                     ->label('Location')
+                    ->searchable()
+                    ->sortable(),    
+
+                Tables\Columns\TextColumn::make('category')
+                    ->label('Category')
                     ->searchable()
                     ->sortable(),    
 

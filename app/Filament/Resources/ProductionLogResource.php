@@ -95,6 +95,7 @@ class ProductionLogResource extends BaseResource
                                     $set('avail_qty', null);
                                     $set('in_qty', null);
                                     $set('out_qty', null);
+                                    $livewire->dispatch('move-focus-wo-no');
                                 }
                             }),
 
@@ -104,6 +105,7 @@ class ProductionLogResource extends BaseResource
                             ->columnSpanFull()
                             ->searchable()
                             ->live()
+                            /*
                             ->extraAttributes([
                                 'x-on:keydown.enter.prevent' => <<<'JS'
                                     const input = $el.querySelector('input');
@@ -115,12 +117,14 @@ class ProductionLogResource extends BaseResource
                                     });
                                 JS,
                             ])
+                            */    
                             ->dehydrated(false)
                             ->placeholder(fn (callable $get) => $get('proc_cd')
                                 ? 'Type WO No / Part No to search'
                                 : 'Select Process first')
                             ->disabled(fn ($livewire, callable $get) =>
                                 $livewire instanceof \Filament\Resources\Pages\EditRecord || blank($get('proc_cd')))
+
                             ->getSearchResultsUsing(function (string $search, callable $get): array {
 
                                 $procCd = $get('proc_cd');
@@ -173,7 +177,9 @@ class ProductionLogResource extends BaseResource
                                 }
 
                                 return $results;
-                            })                            ->getOptionLabelUsing(function ($value) {
+                            })                            
+                            
+                            ->getOptionLabelUsing(function ($value) {
                                 if (!$value) {
                                     return null;
                                 }
@@ -185,85 +191,85 @@ class ProductionLogResource extends BaseResource
 
                                 return $row ? "{$row->itm_cd} ({$row->itm_type})" : null;
                             })
-                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component, $livewire) {
 
-                                if (!$state) {
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $livewire) {
+                                if (! $state || ! ($livewire instanceof \Filament\Resources\Pages\CreateRecord)) {
                                     return;
                                 }
+                                $procCd = $get('proc_cd');
+                                $wo     = WorkOrder::where('wo_no', $state)->first();
+                                $woProc = $wo ? WorkOrderProcess::where('wo_no', $state)->where('proc_cd', $procCd)->first() : null;
 
-                                $wo = WorkOrder::where('wo_no', $state)->first();
-                                if (!$wo) {
+                                if (! $wo || ! $woProc || ! static::fillFromWorkOrder($wo, $woProc, $procCd, $set)) {
+                                    static::resetWoFields($set);
                                     return;
                                 }
-
-                                $item = Item::where('itm_cd', $wo->itm_cd)->first();
 
                                 $set('wo_no', $wo->wo_no);
-                                $set('itm_cd', $wo->itm_cd);
-                                $set('itm_nm', $item ? "{$item->itm_cd} ({$item->itm_type})" : null);
-
-                                // The process/qty logic now runs here (it used to run on Process change)
-                                if (!($livewire instanceof \Filament\Resources\Pages\CreateRecord)) {
-                                    return;
-                                }
-
-                                $woNo   = $wo->wo_no;
-                                $procCd = $get('proc_cd');
-                                if (!$procCd) {
-                                    $set('in_qty', null);
-                                    return;
-                                }
-
-                                $checkValidFlg = \DB::select("CALL check_prdlog_proc(?, ?)", [$woNo, $procCd]);
-                                $validFlg = floatval($checkValidFlg[0]->valid_flg ?? 0);
-
-                                if ($validFlg != 1) {
-                                    Notification::make()
-                                        ->danger()
-                                        ->title("Process cannot be new input because next process has already exist")
-                                        ->send();
-
-                                    $set('work_order_lookup', null);
-                                    $set('wo_no', null);
-                                    $set('itm_cd', null);
-                                    $set('itm_nm', null);
-                                    $set('seq_no', null);
-                                    $set('mchn_cd', null);
-                                    $set('cav', null);
-                                    $set('avail_qty', null);
-                                    $set('in_qty', null);
-                                    $set('out_qty', null);
-                                    $set('rwk_qty', null);
-                                    $set('ng_qty', null);
-                                    $set('ng_qty_pcs', null);
-                                    $set('rmks', null);
-                                    return;
-                                }
-
-                                $woProc = \App\Models\WorkOrderProcess::where('wo_no', $woNo)
-                                    ->where('proc_cd', $procCd)
-                                    ->first();
-
-                                $seqNo = $woProc?->seq_no;
-                                $cav   = $woProc->cav ?? 1;
-
-                                $set('seq_no', $seqNo ?? 0);
-                                $set('cav', $cav);
-
-                                if ($seqNo === 1) {
-                                    $set('avail_qty', $woProc?->shoot_qty ?? 0);
-                                    $set('in_qty', $woProc?->shoot_qty ?? 0);
-                                } else {
-                                    $availableQty = \DB::select("CALL get_wo_available_qty(?, ?)", [$woNo, $procCd]);
-                                    $qty = floatval($availableQty[0]->avail_qty_pcs ?? 0) / $cav;
-                                    $set('avail_qty', $qty);
-                                    $set('in_qty', $qty);
-                                }
+                                $livewire->dispatch('move-focus-mchn-cd');
                             }),
-
+                            
                         Forms\Components\TextInput::make('wo_no')
-                            ->label('WO Number')
-                            ->readOnly(),
+                            ->label('WO Number (scan QR here)')
+                            ->placeholder('Scan WO QR code')
+                            ->readOnly(fn ($livewire) => ! ($livewire instanceof \Filament\Resources\Pages\CreateRecord))
+                            ->live(onBlur: true)
+                            ->extraAttributes([
+                                // Scanner sends Enter after the code -> blur the input -> Livewire syncs (onBlur)
+                                'x-on:keydown.enter.prevent' => "\$el.querySelector('input')?.blur()",
+                                // Allows focusing this field from the server
+                                'x-on:move-focus-wo-no.window' => "
+                                    setTimeout(() => {
+                                        const input = \$el.querySelector('input');
+                                        if (input) { input.focus(); input.select(); }
+                                    }, 150);
+                                ",
+                            ])
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $livewire) {
+                                if (! ($livewire instanceof \Filament\Resources\Pages\CreateRecord)) {
+                                    return;
+                                }
+
+                                $woNo   = trim((string) $state);
+                                $procCd = $get('proc_cd');
+
+                                if ($woNo === '') {
+                                    return;
+                                }
+
+                                if (! $procCd) {
+                                    Notification::make()->danger()->title('Select Process first')->send();
+                                    $set('wo_no', null);
+                                    $livewire->dispatch('move-focus-proc-cd');
+                                    return;
+                                }
+
+                                $wo = WorkOrder::where('wo_no', $woNo)->first();
+                                $woProc = $wo
+                                    ? WorkOrderProcess::where('wo_no', $woNo)->where('proc_cd', $procCd)->first()
+                                    : null;
+
+                                if (! $wo || ! $woProc) {
+                                    Notification::make()->danger()
+                                        ->title($wo ? "WO {$woNo} does not have this process" : "WO {$woNo} not found")
+                                        ->send();
+                                    static::resetWoFields($set);
+                                    $livewire->dispatch('move-focus-wo-no');
+                                    return;
+                                }
+
+                                if (! static::fillFromWorkOrder($wo, $woProc, $procCd, $set)) {
+                                    static::resetWoFields($set);
+                                    $livewire->dispatch('move-focus-wo-no');
+                                    return;
+                                }
+
+                                $set('work_order_lookup', null);
+
+                                // Success -> go to the next field
+                                $livewire->dispatch('move-focus-mchn-cd');
+                            }),    
+
                         Forms\Components\TextInput::make('itm_nm')
                             ->readOnly(),
                         Forms\Components\Hidden::make('itm_cd'),
@@ -274,6 +280,12 @@ class ProductionLogResource extends BaseResource
                             ->label('Machine')
                             ->extraAttributes([
                                 'class' => 'fi-input-wrp bg-yellow-100',
+                                'x-on:move-focus-mchn-cd.window' => "
+                                    setTimeout(() => {
+                                        const el = \$el.querySelector('input, button');
+                                        if (el) el.focus();
+                                    }, 150);
+                                ",
                             ])
                             ->options(function () {
                                 return Machine::orderBy('dsc')
@@ -673,6 +685,49 @@ class ProductionLogResource extends BaseResource
                     return $data['itm_cd'] ? "Part No : {$data['itm_cd']}" : null;
                 }),                  
         ];
+    }    
+
+
+    protected static function resetWoFields(callable $set): void
+    {
+        foreach (['work_order_lookup','wo_no','itm_cd','itm_nm','seq_no','mchn_cd','cav',
+                'avail_qty','in_qty','out_qty','rwk_qty','ng_qty','ng_qty_pcs','rmks'] as $f) {
+            $set($f, null);
+        }
+    }
+
+    protected static function fillFromWorkOrder($wo, $woProc, string $procCd, callable $set): bool
+    {
+        $woNo = $wo->wo_no;
+
+        $check = \DB::select('CALL check_prdlog_proc(?, ?)', [$woNo, $procCd]);
+        if (floatval($check[0]->valid_flg ?? 0) != 1) {
+            Notification::make()->danger()
+                ->title('Process cannot be new input because next process has already exist')
+                ->send();
+            return false;
+        }
+
+        $item  = Item::where('itm_cd', $wo->itm_cd)->first();
+        $seqNo = $woProc->seq_no;
+        $cav   = $woProc->cav ?? 1;
+
+        $set('itm_cd', $wo->itm_cd);
+        $set('itm_nm', $item ? "{$item->itm_cd} ({$item->itm_type})" : null);
+        $set('seq_no', $seqNo ?? 0);
+        $set('cav', $cav);
+
+        if ((int) $seqNo === 1) {
+            $qty = $woProc->shoot_qty ?? 0;
+        } else {
+            $avail = \DB::select('CALL get_wo_available_qty(?, ?)', [$woNo, $procCd]);
+            $qty   = floatval($avail[0]->avail_qty_pcs ?? 0) / $cav;
+        }
+
+        $set('avail_qty', $qty);
+        $set('in_qty', $qty);
+
+        return true;
     }    
 
     public static function getRelations(): array

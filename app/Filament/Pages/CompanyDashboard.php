@@ -59,11 +59,11 @@ class CompanyDashboard extends Page
         $this->dateFrom = now()->subDays(29)->toDateString();
 
         $this->itemOptions = DB::table('mais_wellbest.prod_yield_view')
-            ->select('itm_cd', DB::raw('MAX(itm_nm) as itm_nm'))
+            ->select('itm_cd', DB::raw('MAX(itm_cd) as itm_cd'))
             ->groupBy('itm_cd')
             ->orderBy('itm_cd')
             ->get()
-            ->map(fn ($r) => ['code' => $r->itm_cd, 'name' => $r->itm_nm])
+            ->map(fn ($r) => ['code' => $r->itm_cd, 'name' => $r->itm_cd])
             ->all();
 
         $this->customerOptions = DB::table('mais_wellbest.prod_yield_view')

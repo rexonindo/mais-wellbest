@@ -21,6 +21,7 @@ class NG extends Model
         'ng_nm',
         'dsc',
         'location',
+        'category',
     ];
 
     protected static function boot()

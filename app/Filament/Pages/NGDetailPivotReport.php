@@ -29,11 +29,11 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     protected static string $view = 'filament.pages.ng-detail-pivot-report';
 
     // Values currently selected in the dropdowns (not yet applied)
-    public string $reportCategory = 'DIVISION';
+    public string $reportCategory = 'CATEGORY';
     public string $reportType = 'CUTTING';
 
     // Values that were applied when OK was last clicked (drive the table)
-    public string $appliedCategory = 'DIVISION';
+    public string $appliedCategory = 'CATEGORY';
     public string $appliedType = 'CUTTING';
     public array $appliedFilters = [];
     public bool $reportApplied = false;
@@ -59,11 +59,13 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     {
         // Uses the APPLIED values, not the live dropdown values
         return match ([$this->appliedCategory, $this->appliedType]) {
+            ['CATEGORY', 'CUTTING'] => 'ng_detail_1st_pivot_by_category',
             ['DIVISION', 'CUTTING'] => 'ng_detail_1st_pivot_by_division',
             ['PROCESS',  'CUTTING'] => 'ng_detail_1st_pivot_by_process',
+            ['CATEGORY', 'TEST']    => 'ng_detail_2nd_pivot_by_category',
             ['DIVISION', 'TEST']    => 'ng_detail_2nd_pivot_by_division',
             ['PROCESS',  'TEST']    => 'ng_detail_2nd_pivot_by_process',
-            default                 => 'ng_detail_1st_pivot_by_division',
+            default                 => 'ng_detail_1st_pivot_by_category',
         };
     }
 

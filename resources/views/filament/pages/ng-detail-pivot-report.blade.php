@@ -10,6 +10,7 @@
 
                 {{-- no .live: value is only sent to the server when OK is clicked --}}
                 <select id="reportCategory" wire:model="reportCategory">
+                    <option value="CATEGORY">CATEGORY</option>
                     <option value="DIVISION">DIVISION</option>
                     <option value="PROCESS">PROCESS</option>
                 </select>
