@@ -107,7 +107,7 @@ class CompanyDashboard extends Page
             ->select(
                 DB::raw('DATE(end_time) as d'),
                 'itm_cd',
-                DB::raw('MAX(itm_nm) as itm_nm'),
+                DB::raw('MAX(itm_cd) as itm_cd'),
                 DB::raw("COALESCE(NULLIF(TRIM(cust_nm), ''), 'Unassigned') as cust"),
                 'proc_cd',
                 DB::raw('MAX(TRIM(proc_nm)) as proc_nm'),
@@ -169,7 +169,7 @@ class CompanyDashboard extends Page
             $ng  = (int) $g->sum('ng_qty');
             return [
                 'code'     => $code,
-                'name'     => $g->first()->itm_nm,
+                'name'     => $g->first()->itm_cd,
                 'final'    => $final->proc_nm ?? '-',
                 'output'   => (int) $g->where('proc_cd', $finalProc[$code])->sum('out_qty'),
                 'ng'       => $ng,
