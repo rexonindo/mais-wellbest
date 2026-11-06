@@ -87,7 +87,7 @@
     <thead>
 
     @php
-        $baseColumns = ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'CAV'];
+        $baseColumns = ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'CAV', 'DELIVERY_QTY'];
 
         $groups = [];
         $order = [];
@@ -102,7 +102,7 @@
             }
 
             // Process columns
-            if (preg_match('/^(.*)_(IN|OK|RWK|NG|TTL)_QTY$/', $col, $m)) {
+            if (preg_match('/^(.*)_(IN|OUT|RWK|NG|SAL)_QTY$/', $col, $m)) {
 
                 $process = strtoupper(str_replace('_', ' ', $m[1]));
 
@@ -150,7 +150,7 @@
                 @foreach ($cols as $col)
 
                     @php
-                        preg_match('/_(IN|OK|RWK|NG|TTL)_QTY$/', $col, $m);
+                        preg_match('/_(IN|OUT|RWK|NG|SAL)_QTY$/', $col, $m);
                         $type = $m[1] ?? '';
                     @endphp
 

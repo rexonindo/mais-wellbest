@@ -39,6 +39,12 @@ class RwkResource extends Resource
                     ->label('Location')
                     // ->required()
                     ->maxLength(50),                    
+
+                Forms\Components\TextInput::make('category')
+                    ->label('Category')
+                    ->required()
+                    ->maxLength(50),                    
+                                      
                 /*
                 Forms\Components\TextInput::make('created_by')
                     ->default(auth()->user()?->name)
@@ -67,7 +73,12 @@ class RwkResource extends Resource
                 Tables\Columns\TextColumn::make('location')
                     ->label('Location')
                     ->searchable()
-                    ->sortable(),    
+                    ->sortable(),
+                    
+                Tables\Columns\TextColumn::make('category')
+                    ->label('Category')
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_by')
                     ->label('Created By'),             

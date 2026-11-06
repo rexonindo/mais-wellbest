@@ -23,12 +23,51 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'RWK Detail Pivot By Process';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 10;
     protected static ?string $slug = 'rwk-detail-pivot-report';
-    protected static ?string $title = 'RWK Detail Pivot By Process';        
+    protected static ?string $title = 'RWK Detail Pivot By Process';
     protected static string $view = 'filament.pages.rwk-detail-pivot-report';
 
+    // Values currently selected in the dropdowns (not yet applied)
+    public string $reportCategory = 'CATEGORY';
+    public string $reportType = 'CUTTING';
+
+    // Values that were applied when OK was last clicked (drive the table)
+    public string $appliedCategory = 'CATEGORY';
+    public string $appliedType = 'CUTTING';
+    public array $appliedFilters = [];
+    public bool $reportApplied = false;
+
     protected array $dynamicColumns = [];
+
+    /* -------------------------------------------------
+       OK BUTTON
+    ------------------------------------------------- */
+    public function applyReport(): void
+    {
+        $this->appliedCategory = $this->reportCategory;
+        $this->appliedType     = $this->reportType;
+        $this->appliedFilters  = $this->getTableFiltersForm()?->getState() ?? [];
+        $this->reportApplied   = true;
+
+        $this->dynamicColumns = [];
+
+        $this->resetTable();
+    }
+
+    protected function getStoredProcedureName(): string
+    {
+        // Uses the APPLIED values, not the live dropdown values
+        return match ([$this->appliedCategory, $this->appliedType]) {
+            ['CATEGORY', 'CUTTING'] => 'rwk_detail_1st_pivot_by_category',
+            ['DIVISION', 'CUTTING'] => 'rwk_detail_1st_pivot_by_division',
+            ['PROCESS',  'CUTTING'] => 'rwk_detail_1st_pivot_by_process',
+            ['CATEGORY', 'TEST']    => 'rwk_detail_2nd_pivot_by_category',
+            ['DIVISION', 'TEST']    => 'rwk_detail_2nd_pivot_by_division',
+            ['PROCESS',  'TEST']    => 'rwk_detail_2nd_pivot_by_process',
+            default                 => 'rwk_detail_1st_pivot_by_category',
+        };
+    }
 
     protected function loadDynamicColumns(): void
     {
@@ -36,7 +75,11 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
             return;
         }
 
-        $rows = DB::select('CALL rwk_detail_pivot(NULL, NULL, NULL, NULL, NULL)');
+        $procedure = $this->getStoredProcedureName();
+
+        $rows = DB::select(
+            "CALL {$procedure}(NULL, NULL, NULL, NULL, NULL)"
+        );
 
         if (! empty($rows)) {
             $this->dynamicColumns = array_keys((array) $rows[0]);
@@ -56,7 +99,7 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
             ->columns(
                 collect($this->dynamicColumns)->map(function ($col) {
 
-                    if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'REMARKS RWK'])) {
+                    if (in_array($col, ['WO NO', 'PART NO', 'GROUP ITEM'])) {
                         return Tables\Columns\TextColumn::make($col)
                             ->label(strtoupper(str_replace('_', ' ', $col)))
                             ->wrap()
@@ -64,7 +107,7 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
                             ->toggleable()
                             ->extraAttributes([
                                 'class' => 'text-left',
-                                'style' => 'min-width:140px; white-space:nowrap;',    
+                                'style' => 'min-width:140px; white-space:nowrap;',
                             ]);
                     }
 
@@ -74,7 +117,6 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
                             'class' => 'text-right',
                             'style' => 'min-width:100px; max-width:320px;',
                         ])
-
                         ->toggleable();
                 })->toArray()
             )
@@ -83,20 +125,12 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
             ->actions([])
             ->bulkActions([])
             ->headerActions([
-                Tables\Actions\Action::make('Export Excel')
+                Tables\Actions\Action::make('export_excel')
                     ->button()
                     ->label('Export Excel')
                     ->color('success')
                     ->action(fn () => $this->exportExcel()),
-/*
-                Tables\Actions\Action::make('Export PDF')
-                    ->button()
-                    ->label('Export PDF')
-                    ->color('danger')
-                    ->action(fn () => $this->exportPdf()),
-*/                    
-            ]);     
-
+            ]);
     }
 
     /* -------------------------------------------------
@@ -104,24 +138,26 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
     ------------------------------------------------- */
     public function getTableRecords(): EloquentCollection
     {
-        $filters = $this->getTableFiltersForm()?->getState() ?? [];
+        if (! $this->reportApplied) {
+            return new EloquentCollection();
+        }
 
-        $woNo      = $filters['wo_no']['value'] ?? null;
-        $itemCode  = $filters['itm_cd']['value'] ?? null;
+        $filters = $this->tableFilters ?? [];   // live state, not appliedFilters
 
-        $itmType = $filters['itm_type']['values'] ?? [];
-        if (is_array($itmType)) {
-            $itmType = !empty($itmType)
-                ? implode(',', $itmType)
-                : null;
-        }        
+        $woNo     = $filters['wo_no']['value'] ?? null;
+        $itemCode = $filters['itm_cd']['value'] ?? null;
 
-        $endDate1  = $filters['end_date']['end_date_1'] ?? null;
-        $endDate2  = $filters['end_date']['end_date_2'] ?? null;
+        $itmGrp = $filters['itm_grp']['values'] ?? [];
+        $itmGrp = ! empty($itmGrp) ? implode(',', $itmGrp) : null;
+
+        $endDate1 = $filters['end_date']['end_date_1'] ?? null;
+        $endDate2 = $filters['end_date']['end_date_2'] ?? null;
+
+        $procedure = $this->getStoredProcedureName();
 
         $rows = DB::select(
-            'CALL rwk_detail_pivot(?, ?, ?, ?, ?)',
-            [$woNo, $itemCode, $itmType, $endDate1, $endDate2]
+            "CALL {$procedure}(?, ?, ?, ?, ?)",
+            [$woNo, $itemCode, $itmGrp, $endDate1, $endDate2]
         );
 
         return new EloquentCollection(
@@ -143,7 +179,7 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
     }
 
     /* -------------------------------------------------
-       FILTERS
+       FILTERS (unchanged)
     ------------------------------------------------- */
     protected function getTableFilters(): array
     {
@@ -168,26 +204,24 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
                 )
                 ->searchable(),
 
-            SelectFilter::make('itm_type')
-                ->label('Item Type')
+            SelectFilter::make('itm_grp')
+                ->label('Item Group')
                 ->multiple()
                 ->options(
-                    DB::table('itm_tbl')
-                        ->whereNotNull('itm_type')
-                        ->where('itm_type', '<>', '')
+                    DB::table('itmgrp_tbl')
+                        ->whereNotNull('itm_grp')
+                        ->where('itm_grp', '<>', '')
                         ->distinct()
-                        ->orderBy('itm_type')
-                        ->pluck('itm_type', 'itm_type')
+                        ->orderBy('itm_grp')
+                        ->pluck('itm_grp', 'itm_grp')
                         ->toArray()
                 )
                 ->searchable(),
 
             Filter::make('end_date')
                 ->form([
-                    DatePicker::make('end_date_1')
-                        ->label('End Date From'),
-                    DatePicker::make('end_date_2')
-                        ->label('End Date To'),
+                    DatePicker::make('end_date_1')->label('End Date From'),
+                    DatePicker::make('end_date_2')->label('End Date To'),
                 ])
                 ->indicateUsing(function (array $data): array {
                     $indicators = [];
@@ -207,38 +241,47 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
 
     protected function exportExcel()
     {
-        $records = $this->getTableRecords(); // <- call SP with filters
-        $filename = 'RWKDetailPivotReport_' . now()->format('Ymd_His') . '.xlsx';
+        $records        = $this->getTableRecords();
+        $reportCategory = strtoupper($this->appliedCategory);
+        $reportType     = strtoupper($this->appliedType);
+        $reportTitle    = 'RWK DETAIL REPORT BY ' . $reportCategory . ' - Start From Process : ' . $reportType;
+        $filename       = 'RWKDetailPivotReport_'
+            . $reportCategory . '_'
+            . $reportType . '_'
+            . now()->format('Ymd_His')
+            . '.xlsx';
 
-        /*
         return Excel::download(
-            new \App\Exports\RWKDetailPivotReportExcel($records),
-            $filename
-        );
-        */
-
-        return Excel::download(
-            new \App\Exports\RWKDetailPivotReportExcel($records),
+            new \App\Exports\RWKDetailPivotReportExcel(
+                $records,
+                $reportTitle
+            ),
             $filename,
             \Maatwebsite\Excel\Excel::XLSX,
-            [
-                'charts' => true
-            ]
+            ['charts' => true]
         );
-
-
     }
 
     protected function exportPdf()
     {
-        $records = $this->getTableRecords(); // <- call SP with filters
+        $records        = $this->getTableRecords();
+        $reportCategory = strtoupper($this->appliedCategory);
+        $reportType     = strtoupper($this->appliedType);
+        $filename       = 'RWKDetailPivotReport_'
+            . $reportCategory . '_'
+            . $reportType . '_'
+            . now()->format('Ymd_His')
+            . '.pdf';
+
         $pdf = Pdf::loadView('pdf.rwk-detail-pivot-report', [
-            'data' => $records,
+            'data'           => $records,
+            'reportCategory' => $reportCategory,
+            'reportType'     => $reportType,
         ])->setPaper('a3', 'landscape');
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
-            'RWKStatusPivot' . now()->format('Ymd_His') . '.pdf'
+            $filename
         );
-    }        
+    }
 }

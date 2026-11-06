@@ -12,7 +12,6 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
-
 class WOProgressPivotReportExcel implements
     FromCollection,
     WithHeadings,
@@ -23,6 +22,7 @@ class WOProgressPivotReportExcel implements
     protected Collection $data;
     protected string $reportTitle;
     protected array $columns = [];
+    protected const FIXED_COLUMNS = ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY', 'DELIVERY_QTY'];
 
     public function __construct(Collection $data, string $reportTitle = 'WO Progress Pivot By Process')
     {
@@ -90,7 +90,7 @@ class WOProgressPivotReportExcel implements
             $label = strtoupper(str_replace('_', ' ', $col));
 
             // Fixed columns → vertical merge
-            if (in_array($col, ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY'])) {
+            if (in_array($col, self::FIXED_COLUMNS)) {
                 $topHeader[] = $label;
                 $subHeader[] = '';
                 continue;
@@ -171,7 +171,7 @@ class WOProgressPivotReportExcel implements
                     $currentCol = $columns[$colIndex - 1];
 
                     // Fixed columns → vertical merge
-                    if (in_array($currentCol, ['WO NO', 'PART NO', 'TYPE', 'END DATE', 'WO QTY'])) {
+                    if (in_array($currentCol, self::FIXED_COLUMNS)) {
 
                         $colLetter = Coordinate::stringFromColumnIndex($colIndex);
                         $sheet->mergeCells("{$colLetter}{$headerRow1}:{$colLetter}{$headerRow2}");

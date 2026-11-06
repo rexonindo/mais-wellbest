@@ -21,6 +21,7 @@ class RWK extends Model
         'rwk_nm',
         'dsc',
         'location',
+        'category',
     ];
 
     protected static function boot()
