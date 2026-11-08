@@ -6,10 +6,10 @@
 
             {{-- REPORT CATEGORY --}}
             <div class="ng-report-field">
-                <label for="reportCategory">REPORT BY :</label>
+                <label for="reportGroup">Group By :</label>
 
                 {{-- no .live: value is only sent to the server when OK is clicked --}}
-                <select id="reportCategory" wire:model="reportCategory">
+                <select id="reportGroup" wire:model="reportGroup">
                     <option value="CATEGORY">CATEGORY</option>
                     <option value="DIVISION">DIVISION</option>
                     <option value="PROCESS">PROCESS</option>

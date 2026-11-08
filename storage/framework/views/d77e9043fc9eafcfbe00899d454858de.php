@@ -11,8 +11,10 @@
 
     <style>
         .cd-wrap { display: flex; flex-direction: column; gap: 1.25rem; }
+        .cd-btn-row { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: .75rem; }
         .cd-grid { display: grid; gap: 1rem; }
         .cd-g5 { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+        .cd-g6 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
         .cd-g2 { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
         .cd-card { background: #fff; border: 1px solid #e5e7eb; border-radius: .75rem; padding: 1rem 1.25rem; }
         .dark .cd-card { background: #18181b; border-color: #27272a; }
@@ -38,8 +40,10 @@
         .cd-row-alert { background: rgba(220,38,38,.08); }
     </style>
 
-    <?php if (! $__env->hasRenderedOnce('03e3c2df-8c0a-4fb7-803a-5a421e7489ad')): $__env->markAsRenderedOnce('03e3c2df-8c0a-4fb7-803a-5a421e7489ad'); ?>
-        <script src="<?php echo e(asset('js/chart.umd.min.js')); ?>"></script>
+    <?php if (! $__env->hasRenderedOnce('98f80a27-b058-4552-be6a-1191c2ec2cf8')): $__env->markAsRenderedOnce('98f80a27-b058-4552-be6a-1191c2ec2cf8'); ?>
+        <link rel="stylesheet" href="<?php echo e(asset('css/flatpickr.min.css')); ?>">
+        <script src="<?php echo e(asset('js/flatpickr.min.js')); ?>"></script>
+        <script src="<?php echo e(asset('js/chart.umd.min.js')); ?>"></script>        
     <?php endif; ?>
 
     <script>
@@ -59,8 +63,9 @@
                     data: {
                         labels: d.daily.labels,
                         datasets: [
-                            { type: 'bar', label: 'Output (pcs)', data: d.daily.output, backgroundColor: '#3b82f6', yAxisID: 'y', order: 2 },
-                            { type: 'line', label: 'NG rate (%)', data: d.daily.rate, borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1', tension: .3, order: 1 },
+                            { type: 'bar',  label: 'Output (pcs)', data: d.daily.output, backgroundColor: '#3b82f6', yAxisID: 'y', order: 2 },
+                            { type: 'line', label: 'NG rate (%)',  data: d.daily.rate, borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1', tension: .3, order: 1 },
+                            { type: 'line', label: 'RWK rate (%)', data: d.daily.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
                         ],
                     },
                     options: {
@@ -68,7 +73,28 @@
                         interaction: { mode: 'index', intersect: false },
                         scales: {
                             y:  { beginAtZero: true, title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG %' } },
+                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },                        
+                        },
+                    },
+                });
+
+                make('cdProcessOutput', {
+                    type: 'bar',
+                    data: {
+                        labels: d.processOutput.labels,
+                        datasets: [
+                            { type: 'bar',  label: 'In Qty (pcs)',  data: d.processOutput.in,  backgroundColor: '#60a5fa', yAxisID: 'y',  order: 3 },
+                            { type: 'bar',  label: 'Out Qty (pcs)', data: d.processOutput.out, backgroundColor: '#34d399', yAxisID: 'y',  order: 3 },
+                            { type: 'line', label: 'NG ratio (%)',  data: d.processOutput.ng_rate,  borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1', tension: .3, order: 1 },
+                            { type: 'line', label: 'RWK ratio (%)', data: d.processOutput.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
+                        ],
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y:  { beginAtZero: true, position: 'left', title: { display: true, text: 'pcs' } },
+                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Ratio %' } },
                         },
                     },
                 });
@@ -79,20 +105,41 @@
                     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
                 });
 
+                make('cdPcbGroup', {
+                    type: 'bar',
+                    data: {
+                        labels: d.pcbGroup.labels,
+                        datasets: [
+                            { type: 'bar',  label: 'NG (pcs)',     data: d.pcbGroup.ng,       backgroundColor: '#f87171', yAxisID: 'y',  order: 2 },
+                            { type: 'line', label: 'NG ratio (%)',  data: d.pcbGroup.rate,     borderColor: '#7f1d1d', backgroundColor: '#7f1d1d', yAxisID: 'y1', tension: .3, order: 1 },
+                            { type: 'line', label: 'RWK ratio (%)', data: d.pcbGroup.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
+                        ],
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y:  { beginAtZero: true, position: 'left', title: { display: true, text: 'pcs' } },
+                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
+                        },
+                    },
+                });                
+
                 make('cdProcess', {
                     type: 'bar',
                     data: {
                         labels: d.process.labels,
                         datasets: [
-                            { type: 'bar', label: 'NG (pcs)', data: d.process.ng, backgroundColor: '#f87171', yAxisID: 'y' },
-                            { type: 'line', label: 'NG rate (%)', data: d.process.rate, borderColor: '#7f1d1d', backgroundColor: '#7f1d1d', yAxisID: 'y1' },
+                            { type: 'bar',  label: 'NG (pcs)',      data: d.process.ng,       backgroundColor: '#f87171', yAxisID: 'y',  order: 2 },
+                            { type: 'line', label: 'NG rate (%)',   data: d.process.rate,     borderColor: '#7f1d1d', backgroundColor: '#7f1d1d', yAxisID: 'y1', order: 1 },
+                            { type: 'line', label: 'RWK rate (%)',  data: d.process.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', order: 1 },
                         ],
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         scales: {
                             y:  { beginAtZero: true },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } },
+                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
                         },
                     },
                 });
@@ -137,190 +184,79 @@
                 update(d) { render(d); },
             };
         };
+        window.cdDatePicker = function (initial) {
+            return {
+                value: initial,
+                fp: null,
+                init() {
+                    const start = () => {
+                        if (!window.flatpickr) { return setTimeout(start, 100); }
+                        this.fp = flatpickr(this.$refs.input, {
+                            dateFormat: 'Y-m-d',   // value sent to Livewire
+                            altInput: true,
+                            altFormat: 'd-M-Y',    // what the user sees
+                            allowInput: false,
+                            defaultDate: this.value || null,
+                            onChange: (dates, str) => { this.value = str; },
+                        });
+                        // keeps the picker in sync when setRange() changes the value
+                        this.$watch('value', v => this.fp.setDate(v || null, false));
+                    };
+                    start();
+                },
+            };
+        };        
     </script>
 
     
-    <div class="text-center mb-8">
-        <img src="<?php echo e(asset('images/logo-wellbest-with-name.png')); ?>" alt="Company Logo" class="h-32 mx-auto object-contain">
-    </div>
-    <div class="text-center mb-8 text-gray-700 text-base leading-relaxed">
-
-        <p>&nbsp;&nbsp;</p>
-        <p>
-            <h1><strong>Manufacturing Actual Input System (MAIS)</strong></h1>
-            is a system used to record and monitor the real-time inputs of manufacturing process&nbsp;such as raw materials, labor, machine usage, etc.</br>
-            It focuses on tracking what is truly used, rather than what was planned or estimated, to improve accuracy, efficiency, and cost control.
-        </p>
-        <p>&nbsp;</p>
-        <p><strong>Benefits of this system :</strong></p>
-        <ul>
-        <li><strong>Real-time accuracy</strong>: Tracks actual usage of materials, labor, and energy, reducing discrepancies between planned and actual costs.</li>
-        <li><strong>Improved cost control</strong>: Helps identify waste, overuse, or inefficiencies, enabling better budgeting and resource allocation.</li>
-        <li><strong>Enhanced productivity</strong>: Pinpoints bottlenecks or underperforming areas by comparing actual input data with expected benchmarks.</li>
-        <li><strong>Better decision-making</strong>: Provides reliable data for managers to make informed adjustments to processes or supply chains.</li>
-        <li><strong>Quality assurance</strong>: Ensures that inputs meet required standards, supporting consistent product quality.</li>
-        <li><strong>Compliance and traceability</strong>: Maintains detailed records of inputs for audits, certifications, and regulatory compliance</li>
-        </ul>
-        <p></br></br>Thank you</p>
-        <p><strong>Management</strong></p>
-    </div>
-    </br>
-
-    
-    <div class="flex justify-center gap-6">
-
-        <?php if (isset($component)) { $__componentOriginal9b945b32438afb742355861768089b04 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal9b945b32438afb742355861768089b04 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.card','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('filament::card'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes([]); ?>
-            <div class="flex flex-col items-center justify-center text-center h-full py-1">
-                <h2 class="text-sm font-medium text-gray-500">Total Running Product</h2>
-                <p class="mt-1 text-xl font-bold text-gray-900">
-                    <?php echo e(number_format($ttlProduct ?? 0, 0, '.', ',')); ?>
-
-                </p>
-            </div>
-         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $attributes = $__attributesOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__attributesOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $component = $__componentOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__componentOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-
-        <?php if (isset($component)) { $__componentOriginal9b945b32438afb742355861768089b04 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal9b945b32438afb742355861768089b04 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.card','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('filament::card'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes([]); ?>
-            <div class="flex flex-col items-center justify-center text-center h-full py-1">
-                <h2 class="text-sm font-medium text-gray-500">Total Running Machine</h2>
-                <p class="mt-1 text-xl font-bold text-gray-900">
-                    <?php echo e(number_format($ttlMachine ?? 0, 0, '.', ',')); ?>
-
-                </p>
-            </div>
-         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $attributes = $__attributesOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__attributesOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $component = $__componentOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__componentOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-
-        <?php if (isset($component)) { $__componentOriginal9b945b32438afb742355861768089b04 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal9b945b32438afb742355861768089b04 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.card','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('filament::card'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes([]); ?>
-            <div class="flex flex-col items-center justify-center text-center h-full py-1">
-                <h2 class="text-sm font-medium text-gray-500">Total Plan Qty</h2>
-                <p class="mt-1 text-xl font-bold text-gray-900">
-                    <?php echo e(number_format($ttlPlanQty ?? 0, 0, '.', ',')); ?>
-
-                </p>
-            </div>
-         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $attributes = $__attributesOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__attributesOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $component = $__componentOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__componentOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-
-        <?php if (isset($component)) { $__componentOriginal9b945b32438afb742355861768089b04 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal9b945b32438afb742355861768089b04 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.card','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('filament::card'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes([]); ?>
-            <div class="flex flex-col items-center justify-center text-center h-full py-1">
-                <h2 class="text-sm font-medium text-gray-500">Total Output Qty</h2>
-                <p class="mt-1 text-xl font-bold text-gray-900">
-                    <?php echo e(number_format($ttlOutQty ?? 0, 0, '.', ',')); ?>
-
-                </p>
-            </div>
-         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $attributes = $__attributesOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__attributesOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $component = $__componentOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__componentOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-
-        <?php if (isset($component)) { $__componentOriginal9b945b32438afb742355861768089b04 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal9b945b32438afb742355861768089b04 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'filament::components.card','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('filament::card'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes([]); ?>
-            <div class="flex flex-col items-center justify-center text-center h-full py-1">
-                <h2 class="text-sm font-medium text-gray-500">Total Outstanding Qty</h2>
-                <p class="mt-1 text-xl font-bold text-gray-900">
-                    <?php echo e(number_format($ttlOSQty ?? 0, 0, '.', ',')); ?>
-
-                </p>
-            </div>
-         <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $attributes = $__attributesOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__attributesOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal9b945b32438afb742355861768089b04)): ?>
-<?php $component = $__componentOriginal9b945b32438afb742355861768089b04; ?>
-<?php unset($__componentOriginal9b945b32438afb742355861768089b04); ?>
-<?php endif; ?>
-
-    </div>
-
-    
     <div class="cd-wrap" x-data="cdCharts(<?php echo \Illuminate\Support\Js::from($charts)->toHtml() ?>)" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+        <h2 class="text-center text-3xl font-bold mt-0 mb-8">Production Output, NG and Rework Analysis Dashboard</h2>
 
-        <h2 class="text-center text-xl font-bold mt-6">Production Output &amp; NG Analysis</h2>
-
+        
+        <div class="cd-grid cd-g6">
+            <div class="cd-card">
+                <div class="cd-label">Total Running Product</div>
+                <div class="cd-value"><?php echo e(number_format($ttlProduct ?? 0, 0, '.', ',')); ?></div>
+                <div class="cd-sub">pcs, at current month</div>
+            </div>
+            <div class="cd-card">
+                <div class="cd-label">Total Running Machine</div>
+                <div class="cd-value"><?php echo e(number_format($ttlMachine ?? 0, 0, '.', ',')); ?></div>
+                <div class="cd-sub">pcs, at current month</div>
+            </div>
+            <div class="cd-card">
+                <div class="cd-label">Total Plan Qty</div>
+                <div class="cd-value"><?php echo e(number_format($ttlPlanQty ?? 0, 0, '.', ',')); ?></div>
+                <div class="cd-sub">pcs, WO Qty as Request Date at current month</div>
+            </div>
+            <div class="cd-card">
+                <div class="cd-label">Total Input Qty</div>
+                <div class="cd-value"><?php echo e(number_format($ttlInQty ?? 0, 0, '.', ',')); ?></div>
+                <div class="cd-sub">pcs, Warehouse Output Qty at current month</div>
+            </div>
+            <div class="cd-card">
+                <div class="cd-label">Total Output Qty</div>
+                <div class="cd-value"><?php echo e(number_format($ttlOutQty ?? 0, 0, '.', ',')); ?></div>
+                <div class="cd-sub">pcs, Finish Good Output Qty at current month</div>
+            </div>
+            <div class="cd-card">
+                <div class="cd-label">Total Outstanding Qty</div>
+                <div class="cd-value"><?php echo e(number_format($ttlOSQty ?? 0, 0, '.', ',')); ?></div>
+                <div class="cd-sub">pcs, at current month</div>
+            </div>
+        </div>
+        
         
         <div class="cd-card">
             <div class="cd-filters">
-                <div><label>From</label><input type="date" wire:model.live="dateFrom"></div>
-                <div><label>To</label><input type="date" wire:model.live="dateTo"></div>
+                <div wire:ignore x-data="cdDatePicker(<?php if ((object) ('dateFrom') instanceof \Livewire\WireDirective) : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('dateFrom'->value()); ?>')<?php echo e('dateFrom'->hasModifier('live') ? '.live' : ''); ?><?php else : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('dateFrom'); ?>')<?php endif; ?>.live)" x-init="init()">
+                    <label>From</label>
+                    <input type="text" x-ref="input">
+                </div>
+                <div wire:ignore x-data="cdDatePicker(<?php if ((object) ('dateTo') instanceof \Livewire\WireDirective) : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('dateTo'->value()); ?>')<?php echo e('dateTo'->hasModifier('live') ? '.live' : ''); ?><?php else : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('dateTo'); ?>')<?php endif; ?>.live)" x-init="init()">
+                    <label>To</label>
+                    <input type="text" x-ref="input">
+                </div>
                 <div>
                     <label>Product</label>
                     <select wire:model.live="itemFilter">
@@ -341,10 +277,13 @@
                     </select>
                 </div>                
 
-                <button type="button" class="cd-btn" wire:click="setRange(1)">Today</button>
-                <button type="button" class="cd-btn" wire:click="setRange(7)">7 days</button>
-                <button type="button" class="cd-btn" wire:click="setRange(30)">30 days</button>
-                <button type="button" class="cd-btn" wire:click="setRange(90)">90 days</button>
+                <div class="cd-btn-row">
+                    <button type="button" class="cd-btn" wire:click="setRange(1)">Today</button>
+                    <button type="button" class="cd-btn" wire:click="setRange(7)">7 days</button>
+                    <button type="button" class="cd-btn" wire:click="setRange(30)">30 days</button>
+                    <button type="button" class="cd-btn" wire:click="setRange(90)">90 days</button>
+                </div>                
+
             </div>
         </div>
 
@@ -379,9 +318,14 @@
 
         
         <div class="cd-card">
-            <div class="cd-title">Daily Output &amp; NG Rate</div>
+            <div class="cd-title">Daily Output, NG and Rework Rate</div>
             <div class="cd-chart" wire:ignore><canvas id="cdDaily"></canvas></div>
         </div>
+
+        <div class="cd-card">
+            <div class="cd-title">Output By Process</div>
+            <div class="cd-chart" wire:ignore><canvas id="cdProcessOutput"></canvas></div>
+        </div>        
 
         <div class="cd-grid cd-g2">
             <div class="cd-card">
@@ -395,7 +339,12 @@
         </div>
 
         <div class="cd-card">
-            <div class="cd-title">NG by Process</div>
+            <div class="cd-title">NG and Rework by PCB Group</div>
+            <div class="cd-chart" wire:ignore><canvas id="cdPcbGroup"></canvas></div>
+        </div>        
+
+        <div class="cd-card">
+            <div class="cd-title">NG and Rework by Process</div>
             <div class="cd-chart" wire:ignore><canvas id="cdProcess"></canvas></div>
         </div>
 

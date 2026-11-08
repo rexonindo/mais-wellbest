@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>WO Progress Pivot By Process</title>
+    <title>Work Order Progress By Process</title>
 
     <style>
         body {
@@ -56,7 +56,7 @@
 </head>
 <body>
 
-<h2>WO Progress Pivot By Process</h2>
+<h2>Work Order Progress By Process</h2>
 
 @php
     /* ----------------------------------

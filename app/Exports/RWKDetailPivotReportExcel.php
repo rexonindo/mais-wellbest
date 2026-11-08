@@ -29,15 +29,17 @@ class RWKDetailPivotReportExcel implements
 {
     protected Collection $data;
     protected string $reportTitle;
+    protected string $reportGroup;    
     protected array $columns = [];
 
     public function __construct(
         Collection $data,
-        string $reportTitle = 'REWORK DETAIL PIVOT BY PROCESS'
+        string $reportTitle = 'REWORK DETAIL BY GROUP',
+        string $reportGroup = 'CATEGORY'
     ) {
         $this->data = $data;
         $this->reportTitle = $reportTitle;
-
+        $this->reportGroup = $reportGroup;
         if ($data->isNotEmpty()) {
             $this->columns = array_keys(
                 $data->first()->getAttributes()
@@ -89,8 +91,7 @@ class RWKDetailPivotReportExcel implements
             if (in_array($col, [
                 'WO NO',
                 'PART NO',
-                'TYPE',
-                'REMARKS'
+                'TYPE'
             ])) {
 
                 $topHeader[] = $label;
@@ -130,7 +131,7 @@ class RWKDetailPivotReportExcel implements
 
     public function title(): string
     {
-        return $this->reportTitle;
+        return 'REWORK DETAIL REPORT';
     }
 
     /* ---------------------------------
@@ -197,8 +198,8 @@ class RWKDetailPivotReportExcel implements
                         'WO NO',
                         'PART NO',
                         'TYPE',
-                        'REMARKS',
-                        'IN QTY'
+                        'OUT QTY',
+                        'FGS QTY'
                     ])) {
 
                         $colLetter = Coordinate::stringFromColumnIndex($colIndex);
@@ -307,7 +308,7 @@ class RWKDetailPivotReportExcel implements
                 ->setBorderStyle(Border::BORDER_THIN);
 
 
-                /* ---------- CHART SHEET ---------- */
+                /* ---------- TOTAL RWK BY GROUP SHEET ---------- */
 
                 $spreadsheet = $sheet->getParent();
 
@@ -318,7 +319,7 @@ class RWKDetailPivotReportExcel implements
                 */
 
                 $chartSheet = $spreadsheet->createSheet();
-                $chartSheet->setTitle('RWK Chart');
+                $chartSheet->setTitle('TOTAL RWK BY GROUP');
 
                 /*
                 |--------------------------------------------------------------------------
@@ -326,9 +327,9 @@ class RWKDetailPivotReportExcel implements
                 |--------------------------------------------------------------------------
                 */
 
-                $chartSheet->mergeCells('A1:B1');
+                $chartSheet->mergeCells('A1:D1');
 
-                $chartSheet->setCellValue('A1', 'REWORK RATIO');
+                $chartSheet->setCellValue('A1', 'TOTAL RWK BY ' . $this->reportGroup);
 
                 $chartSheet->getStyle('A1')->getFont()
                     ->setBold(true)
@@ -338,25 +339,27 @@ class RWKDetailPivotReportExcel implements
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-
                 /*
                 |--------------------------------------------------------------------------
                 | Build Chart Data
                 |--------------------------------------------------------------------------
                 */
 
-                $chartSheet->setCellValue('A3', 'RWK INFO');
-                $chartSheet->setCellValue('B3', 'TOTAL QTY');
+                $chartSheet->setCellValue('A3', $this->reportGroup);
+                $chartSheet->setCellValue('B3', 'RWK NAME');
+                $chartSheet->setCellValue('C3', 'RWK QTY');
+                $chartSheet->setCellValue('D3', 'RWK RATIO');
+                $chartSheet->getStyle('A3:D3')->getFont()->setBold(true);     
 
                 $chartRow = 4;
 
                 /*
                 |--------------------------------------------------------------------------
-                | Get TOTAL IN QTY (LINUX SAFE)
+                | Get TOTAL OUT QTY (LINUX SAFE)
                 |--------------------------------------------------------------------------
                 */
 
-                $inQtyColIndex = array_search('IN QTY', $this->columns);
+                $inQtyColIndex = array_search('OUT QTY', $this->columns);
 
                 $totalInQty = 0;
 
@@ -378,9 +381,20 @@ class RWKDetailPivotReportExcel implements
 
                 /*
                 |--------------------------------------------------------------------------
+                | RWK totals grouped by RWK NAME only (ignores process)
+                | Used by the "TOTAL RWK BY NAME" sheet below
+                |--------------------------------------------------------------------------
+                */
+                $rwkNameTotals = [];
+
+                /*
+                |--------------------------------------------------------------------------
                 | Sum TOTAL per dynamic column
                 |--------------------------------------------------------------------------
                 */
+
+                $groupTotals = [];
+                $chartRows = [];
 
                 foreach (range(5, $columnCount) as $i) {
 
@@ -388,10 +402,10 @@ class RWKDetailPivotReportExcel implements
 
                     /*
                     |--------------------------------------------------------------------------
-                    | SKIP IN QTY COLUMN
+                    | SKIP OUT QTY COLUMN
                     |--------------------------------------------------------------------------
                     */
-                    if (strtoupper(trim($colName)) == 'IN QTY') {
+                    if (strtoupper(trim($colName)) == 'OUT QTY' || strtoupper(trim($colName)) == 'FGS QTY') {
                         continue;
                     }
 
@@ -404,18 +418,23 @@ class RWKDetailPivotReportExcel implements
                     */
                     if (preg_match('/^(.*?)_(.*)$/', $colName, $match)) {
 
+                        $divName = strtoupper(
+                            str_replace('_', ' ', $match[1])
+                        );
+
                         $rwkName = strtoupper(
                             str_replace('_', ' ', $match[2])
                         );
 
                     } else {
 
+                        $divName = '';
                         $rwkName = $colName;
                     }
 
                     /*
                     |--------------------------------------------------------------------------
-                    | RWK TOTAL (LINUX SAFE)
+                    | TOTAL RWK QTY (LINUX SAFE)
                     |--------------------------------------------------------------------------
                     */
 
@@ -429,6 +448,21 @@ class RWKDetailPivotReportExcel implements
 
                         $rwkQty += (float) $cellValue;
                     }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Accumulate by RWK NAME (for new sheet)
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if ($rwkQty != 0) {
+
+                        $rwkNameTotals[$rwkName] =
+                            ($rwkNameTotals[$rwkName] ?? 0) + $rwkQty;
+
+                        $groupKey = $divName !== '' ? $divName : 'OTHER';
+                        $groupTotals[$groupKey] = ($groupTotals[$groupKey] ?? 0) + $rwkQty;
+                    }                    
 
                     /*
                     |--------------------------------------------------------------------------
@@ -452,16 +486,56 @@ class RWKDetailPivotReportExcel implements
                         continue;
                     }
 
-                    $chartSheet->setCellValue("A{$chartRow}", $rwkName);
-                    $chartSheet->setCellValue("B{$chartRow}", $totalValue);
+                    $chartRows[] = [
+                        'div'   => $divName,
+                        'rwk'    => $rwkName,
+                        'qty'   => $rwkQty,
+                        'ratio' => $totalValue,
+                    ];
 
-                    $chartSheet->getStyle("B{$chartRow}")
-                        ->getNumberFormat()
-                        ->setFormatCode('0.00%');                    
+                }
+
+                // Sort by category A-Z (blank category last); within a category the original column order is kept
+                usort($chartRows, function ($a, $b) {
+                    if ($a['div'] === '' && $b['div'] !== '') return 1;
+                    if ($b['div'] === '' && $a['div'] !== '') return -1;
+                    return strnatcasecmp($a['div'], $b['div']);
+                });
+
+                $prevDiv     = null;
+                $divStartRow = $chartRow;
+
+                foreach ($chartRows as $r) {
+
+                    // Category changed: close the previous group and merge it
+                    if ($r['div'] !== $prevDiv) {
+
+                        if ($prevDiv !== null && $prevDiv !== '' && ($chartRow - 1) > $divStartRow) {
+                            $chartSheet->mergeCells("A{$divStartRow}:A" . ($chartRow - 1));
+                        }
+
+                        $divStartRow = $chartRow;
+                        $prevDiv     = $r['div'];
+
+                        $chartSheet->setCellValue("A{$chartRow}", $r['div']);
+                    }
+
+                    $chartSheet->setCellValue("B{$chartRow}", $r['rwk']);
+                    $chartSheet->setCellValue("C{$chartRow}", $r['qty']);
+                    $chartSheet->setCellValue("D{$chartRow}", $r['ratio']);
+
+                    $chartSheet->getStyle("C{$chartRow}")
+                        ->getNumberFormat()->setFormatCode('#,##0');
+                    $chartSheet->getStyle("D{$chartRow}")
+                        ->getNumberFormat()->setFormatCode('0.00%');
 
                     $chartRow++;
                 }
 
+                // Merge the last group
+                if ($prevDiv !== null && $prevDiv !== '' && ($chartRow - 1) > $divStartRow) {
+                    $chartSheet->mergeCells("A{$divStartRow}:A" . ($chartRow - 1));
+                }
                 /*
                 |--------------------------------------------------------------------------
                 | Auto Size
@@ -470,6 +544,18 @@ class RWKDetailPivotReportExcel implements
 
                 $chartSheet->getColumnDimension('A')->setAutoSize(true);
                 $chartSheet->getColumnDimension('B')->setAutoSize(true);
+                $chartSheet->getColumnDimension('C')->setAutoSize(true);
+                $chartSheet->getColumnDimension('D')->setAutoSize(true);
+
+                if ($chartRow > 4) {
+                    $chartSheet->getStyle("A4:D" . ($chartRow - 1))
+                        ->getAlignment()
+                        ->setVertical(Alignment::VERTICAL_CENTER);
+                    $chartSheet->getStyle("A3:D" . ($chartRow - 1))
+                        ->getBorders()
+                        ->getAllBorders()
+                        ->setBorderStyle(Border::BORDER_THIN);
+                }              
 
                 /*
                 |--------------------------------------------------------------------------
@@ -480,7 +566,7 @@ class RWKDetailPivotReportExcel implements
                 $dataSeriesLabels = [
                     new DataSeriesValues(
                         DataSeriesValues::DATASERIES_TYPE_STRING,
-                        "'RWK Chart'!\$B\$3",
+                        "'TOTAL RWK BY GROUP'!\$D\$3",
                         null,
                         1
                     )
@@ -489,7 +575,7 @@ class RWKDetailPivotReportExcel implements
                 $xAxisTickValues = [
                     new DataSeriesValues(
                         DataSeriesValues::DATASERIES_TYPE_STRING,
-                        "'RWK Chart'!\$A\$4:\$A\$" . ($chartRow - 1),
+                        "'TOTAL RWK BY GROUP'!\$B\$4:\$B\$" . ($chartRow - 1),
                         null,
                         ($chartRow - 2)
                     )
@@ -498,8 +584,8 @@ class RWKDetailPivotReportExcel implements
                 $dataSeriesValues = [
                     new DataSeriesValues(
                         DataSeriesValues::DATASERIES_TYPE_NUMBER,
-                        "'RWK Chart'!\$B\$4:\$B\$" . ($chartRow - 1),
-                        null,
+                        "'TOTAL RWK BY GROUP'!\$D\$4:\$D\$" . ($chartRow - 1),
+                        '0.00%',
                         ($chartRow - 2)
                     )
                 ];
@@ -531,7 +617,7 @@ class RWKDetailPivotReportExcel implements
                     false
                 );
 
-                $title = new Title('REWORK RATIO CHART');
+                $title = new Title('RWK RATIO CHART');
 
                 $chart = new Chart(
                     'rwk_chart',
@@ -546,8 +632,8 @@ class RWKDetailPivotReportExcel implements
                 |--------------------------------------------------------------------------
                 */
 
-                $chart->setTopLeftPosition('D2');
-                $chart->setBottomRightPosition('N20');
+                $chart->setTopLeftPosition('J2');
+                $chart->setBottomRightPosition('S20');
 
                 /*
                 |--------------------------------------------------------------------------
@@ -557,8 +643,315 @@ class RWKDetailPivotReportExcel implements
 
                 $chartSheet->addChart($chart);
 
+                /* ---------- RWK RATIO BY GROUP (summary table + chart) ---------- */
 
+                arsort($groupTotals);
 
+                $chartSheet->setCellValue('F3', $this->reportGroup);
+                $chartSheet->setCellValue('G3', 'RWK QTY');
+                $chartSheet->setCellValue('H3', 'RWK RATIO');
+
+                $chartSheet->getStyle('F3:H3')->getFont()->setBold(true);
+                $chartSheet->getStyle('F3:H3')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                $grpRow = 4;
+
+                foreach ($groupTotals as $grpName => $grpQty) {
+
+                    $chartSheet->setCellValue("F{$grpRow}", $grpName);
+                    $chartSheet->setCellValue("G{$grpRow}", $grpQty);
+                    $chartSheet->setCellValue(
+                        "H{$grpRow}",
+                        $totalInQty > 0 ? $grpQty / $totalInQty : 0
+                    );
+
+                    $chartSheet->getStyle("G{$grpRow}")
+                        ->getNumberFormat()->setFormatCode('#,##0');
+                    $chartSheet->getStyle("H{$grpRow}")
+                        ->getNumberFormat()->setFormatCode('0.00%');
+
+                    $grpRow++;
+                }
+
+                $grpLast = $grpRow - 1;
+
+                $chartSheet->getColumnDimension('F')->setAutoSize(true);
+                $chartSheet->getColumnDimension('G')->setAutoSize(true);
+                $chartSheet->getColumnDimension('H')->setAutoSize(true);
+
+                if ($grpLast >= 4) {
+
+                    $chartSheet->getStyle("F3:H{$grpLast}")
+                        ->getBorders()
+                        ->getAllBorders()
+                        ->setBorderStyle(Border::BORDER_THIN);
+
+                    $grpCount = $grpLast - 3;
+
+                    $grpLabels = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'TOTAL RWK BY GROUP'!\$H\$3",
+                            null,
+                            1
+                        )
+                    ];
+
+                    $grpCategories = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'TOTAL RWK BY GROUP'!\$F\$4:\$F\${$grpLast}",
+                            null,
+                            $grpCount
+                        )
+                    ];
+
+                    $grpValues = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_NUMBER,
+                            "'TOTAL RWK BY GROUP'!\$H\$4:\$H\${$grpLast}",
+                            '0.00%',
+                            $grpCount
+                        )
+                    ];
+
+                    $grpSeries = new DataSeries(
+                        DataSeries::TYPE_BARCHART,
+                        DataSeries::GROUPING_CLUSTERED,
+                        range(0, count($grpValues) - 1),
+                        $grpLabels,
+                        $grpCategories,
+                        $grpValues
+                    );
+
+                    $grpSeries->setPlotDirection(DataSeries::DIRECTION_COL);
+
+                    $grpChart = new Chart(
+                        'rwk_ratio_by_group_chart',
+                        new Title('RWK RATIO BY ' . $this->reportGroup),
+                        new Legend(Legend::POSITION_RIGHT, null, false),
+                        new PlotArea(null, [$grpSeries])
+                    );
+
+                    $grpChart->setTopLeftPosition('J22');
+                    $grpChart->setBottomRightPosition('S40');
+
+                    $chartSheet->addChart($grpChart);
+                }                
+
+                /*
+                |==========================================================================
+                | NEW SHEET : TOTAL RWK BY NAME
+                | Summary of RWK QTY by RWK NAME only (process is NOT considered)
+                |==========================================================================
+                */
+
+                $rwkSheetTitle = 'TOTAL RWK BY NAME';
+
+                $rwkSheet = $spreadsheet->createSheet();
+                $rwkSheet->setTitle($rwkSheetTitle);
+
+                /* ---------- SHEET TITLE ---------- */
+
+                $rwkSheet->mergeCells('A1:C1');
+
+                $rwkSheet->setCellValue('A1', 'TOTAL RWK BY NAME');
+
+                $rwkSheet->getStyle('A1')->getFont()
+                    ->setBold(true)
+                    ->setSize(16);
+
+                $rwkSheet->getStyle('A1')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_LEFT)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                /* ---------- HEADER ---------- */
+
+                $rwkSheet->setCellValue('A3', 'RWK NAME');
+                $rwkSheet->setCellValue('B3', 'RWK QTY');
+                $rwkSheet->setCellValue('C3', 'RWK RATIO');
+
+                $rwkSheet->getStyle('A3:C3')->getFont()->setBold(true);
+
+                $rwkSheet->getStyle('A3:C3')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                /* ---------- DATA (largest RWK QTY first) ---------- */
+
+                arsort($rwkNameTotals);
+
+                $rwkRow = 4;
+
+                foreach ($rwkNameTotals as $rwkName => $rwkQty) {
+
+                    $rwkSheet->setCellValue("A{$rwkRow}", $rwkName);
+                    $rwkSheet->setCellValue("B{$rwkRow}", $rwkQty);
+                    $rwkSheet->setCellValue(
+                        "C{$rwkRow}",
+                        $totalInQty > 0 ? $rwkQty / $totalInQty : 0
+                    );
+
+                    $rwkSheet->getStyle("B{$rwkRow}")
+                        ->getNumberFormat()
+                        ->setFormatCode('#,##0');
+
+                    $rwkSheet->getStyle("C{$rwkRow}")
+                        ->getNumberFormat()
+                        ->setFormatCode('0.00%');
+
+                    $rwkRow++;
+                }
+
+                $rwkLastDataRow = $rwkRow - 1;
+
+                /* ---------- TOTAL ROW + BORDERS ---------- */
+
+                if ($rwkLastDataRow >= 4) {
+
+                    $rwkSheet->setCellValue("A{$rwkRow}", 'TOTAL');
+                    $rwkSheet->setCellValue("B{$rwkRow}", "=SUM(B4:B{$rwkLastDataRow})");
+                    $rwkSheet->setCellValue("C{$rwkRow}", "=SUM(C4:C{$rwkLastDataRow})");
+
+                    $rwkSheet->getStyle("B{$rwkRow}")
+                        ->getNumberFormat()
+                        ->setFormatCode('#,##0');
+
+                    $rwkSheet->getStyle("C{$rwkRow}")
+                        ->getNumberFormat()
+                        ->setFormatCode('0.00%');
+
+                    $rwkSheet->getStyle("A{$rwkRow}:C{$rwkRow}")
+                        ->getFont()->setBold(true);
+
+                    $rwkSheet->getStyle("A3:C{$rwkRow}")
+                        ->getBorders()
+                        ->getAllBorders()
+                        ->setBorderStyle(Border::BORDER_THIN);
+                }
+
+                /* ---------- AUTO SIZE ---------- */
+
+                $rwkSheet->getColumnDimension('A')->setAutoSize(true);
+                $rwkSheet->getColumnDimension('B')->setAutoSize(true);
+                $rwkSheet->getColumnDimension('C')->setAutoSize(true);
+
+                if ($rwkRow > 4) {
+                    $rwkSheet->getStyle("A4:C" . ($rwkRow - 1))
+                        ->getAlignment()
+                        ->setVertical(Alignment::VERTICAL_CENTER);
+                }                   
+
+                /* ---------- CHART (only when there is data) ---------- */
+
+                if ($rwkLastDataRow >= 4) {
+
+                    $rwkPointCount = $rwkLastDataRow - 3;
+
+                    $rwkLabels = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'{$rwkSheetTitle}'!\$B\$3",
+                            null,
+                            1
+                        )
+                    ];
+
+                    $rwkCategories = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'{$rwkSheetTitle}'!\$A\$4:\$A\${$rwkLastDataRow}",
+                            null,
+                            $rwkPointCount
+                        )
+                    ];
+
+                    $rwkValues = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_NUMBER,
+                            "'{$rwkSheetTitle}'!\$B\$4:\$B\${$rwkLastDataRow}",
+                            null,
+                            $rwkPointCount
+                        )
+                    ];
+
+                    $rwkSeries = new DataSeries(
+                        DataSeries::TYPE_BARCHART,
+                        DataSeries::GROUPING_CLUSTERED,
+                        range(0, count($rwkValues) - 1),
+                        $rwkLabels,
+                        $rwkCategories,
+                        $rwkValues
+                    );
+
+                    $rwkSeries->setPlotDirection(DataSeries::DIRECTION_COL);
+
+                    $rwkChart = new Chart(
+                        'rwk_total_by_name_chart',
+                        new Title('TOTAL RWK QTY BY RWK NAME'),
+                        new Legend(Legend::POSITION_RIGHT, null, false),
+                        new PlotArea(null, [$rwkSeries])
+                    );
+
+                    $rwkChart->setTopLeftPosition('E2');
+                    $rwkChart->setBottomRightPosition('O20');
+
+                    $rwkSheet->addChart($rwkChart);
+
+                    /* ---------- RWK RATIO CHART (below the QTY chart) ---------- */
+
+                    $ratioLabels = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'{$rwkSheetTitle}'!\$C\$3",
+                            null,
+                            1
+                        )
+                    ];
+
+                    $ratioCategories = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'{$rwkSheetTitle}'!\$A\$4:\$A\${$rwkLastDataRow}",
+                            null,
+                            $rwkPointCount
+                        )
+                    ];
+
+                    $ratioValues = [
+                        new DataSeriesValues(
+                            DataSeriesValues::DATASERIES_TYPE_NUMBER,
+                            "'{$rwkSheetTitle}'!\$C\$4:\$C\${$rwkLastDataRow}",
+                            '0.00%',
+                            $rwkPointCount
+                        )
+                    ];
+
+                    $ratioSeries = new DataSeries(
+                        DataSeries::TYPE_BARCHART,
+                        DataSeries::GROUPING_CLUSTERED,
+                        range(0, count($ratioValues) - 1),
+                        $ratioLabels,
+                        $ratioCategories,
+                        $ratioValues
+                    );
+
+                    $ratioSeries->setPlotDirection(DataSeries::DIRECTION_COL);
+
+                    $ratioChart = new Chart(
+                        'rwk_total_by_name_ratio_chart',
+                        new Title('RWK RATIO CHART'),
+                        new Legend(Legend::POSITION_RIGHT, null, false),
+                        new PlotArea(null, [$ratioSeries])
+                    );
+
+                    $ratioChart->setTopLeftPosition('E22');
+                    $ratioChart->setBottomRightPosition('O40');
+
+                    $rwkSheet->addChart($ratioChart);
+                }
 
 
                 /* ---------- FREEZE ---------- */
@@ -571,5 +964,5 @@ class RWKDetailPivotReportExcel implements
     public function charts()
     {
         return [];
-    }    
+    }
 }

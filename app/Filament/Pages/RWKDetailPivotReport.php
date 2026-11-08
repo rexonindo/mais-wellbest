@@ -21,15 +21,15 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
     use Tables\Concerns\InteractsWithTable;
 
     protected static ?string $navigationGroup = 'Reports';
-    protected static ?string $navigationLabel = 'RWK Detail Pivot By Process';
+    protected static ?string $navigationLabel = 'Rework Detail By Group';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 8;
     protected static ?string $slug = 'rwk-detail-pivot-report';
-    protected static ?string $title = 'RWK Detail Pivot By Process';
+    protected static ?string $title = 'Rework Detail By Group';
     protected static string $view = 'filament.pages.rwk-detail-pivot-report';
 
     // Values currently selected in the dropdowns (not yet applied)
-    public string $reportCategory = 'CATEGORY';
+    public string $reportGroup = 'CATEGORY';
     public string $reportType = 'CUTTING';
 
     // Values that were applied when OK was last clicked (drive the table)
@@ -45,7 +45,7 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
     ------------------------------------------------- */
     public function applyReport(): void
     {
-        $this->appliedCategory = $this->reportCategory;
+        $this->appliedCategory = $this->reportGroup;
         $this->appliedType     = $this->reportType;
         $this->appliedFilters  = $this->getTableFiltersForm()?->getState() ?? [];
         $this->reportApplied   = true;
@@ -242,11 +242,11 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
     protected function exportExcel()
     {
         $records        = $this->getTableRecords();
-        $reportCategory = strtoupper($this->appliedCategory);
+        $reportGroup = strtoupper($this->appliedCategory);
         $reportType     = strtoupper($this->appliedType);
-        $reportTitle    = 'RWK DETAIL REPORT BY ' . $reportCategory . ' - Start From Process : ' . $reportType;
-        $filename       = 'RWKDetailPivotReport_'
-            . $reportCategory . '_'
+        $reportTitle    = 'REWORK DETAIL GROUP BY ' . $reportGroup . ' - Start From Process : ' . $reportType;
+        $filename       = 'RWKDetailByGroup_'
+            . $reportGroup . '_'
             . $reportType . '_'
             . now()->format('Ymd_His')
             . '.xlsx';
@@ -254,7 +254,8 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
         return Excel::download(
             new \App\Exports\RWKDetailPivotReportExcel(
                 $records,
-                $reportTitle
+                $reportTitle,
+                $reportGroup
             ),
             $filename,
             \Maatwebsite\Excel\Excel::XLSX,
@@ -265,17 +266,17 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
     protected function exportPdf()
     {
         $records        = $this->getTableRecords();
-        $reportCategory = strtoupper($this->appliedCategory);
+        $reportGroup = strtoupper($this->appliedCategory);
         $reportType     = strtoupper($this->appliedType);
-        $filename       = 'RWKDetailPivotReport_'
-            . $reportCategory . '_'
+        $filename       = 'RWKDetailByGroup_'
+            . $reportGroup . '_'
             . $reportType . '_'
             . now()->format('Ymd_His')
             . '.pdf';
 
         $pdf = Pdf::loadView('pdf.rwk-detail-pivot-report', [
             'data'           => $records,
-            'reportCategory' => $reportCategory,
+            'reportGroup' => $reportGroup,
             'reportType'     => $reportType,
         ])->setPaper('a3', 'landscape');
 

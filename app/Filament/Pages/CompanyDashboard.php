@@ -9,10 +9,13 @@ use Illuminate\Support\Facades\DB;
 class CompanyDashboard extends Page
 {
     protected static ?string $title = 'Dashboard';
+    protected static bool $shouldShowTitle = false;
+    protected static ?string $navigationLabel = 'Dashboard';
     protected static string $view = 'filament.pages.company-dashboard';
     protected static ?string $navigationIcon = 'heroicon-o-home';
     protected static ?string $slug = '/company-dashboard';
     protected static bool $shouldRegisterNavigation = true;
+    protected static ?int $navigationSort = 2;    
 
     /** Processes that are not production output (e.g. incoming material warehouse). */
     private const EXCLUDED_PROCESSES = ['P000'];
@@ -23,12 +26,13 @@ class CompanyDashboard extends Page
     public function getTitle(): string
     {
         return '';
-    }
+    }    
 
     // Existing cards
     public $ttlProduct;
     public $ttlMachine;
     public $ttlPlanQty;
+    public $ttlInQty;
     public $ttlOutQty;
     public $ttlOSQty;
 
@@ -46,19 +50,21 @@ class CompanyDashboard extends Page
     public array $customerRows = [];
     public array $itemOptions = [];
     public array $customerOptions = [];
+    public array $groupRows = [];
 
     public function mount()
     {
         $this->ttlProduct = DB::table('current_total_product_view')->value('ttl_product');
         $this->ttlMachine = DB::table('current_total_machine_view')->value('ttl_machine');
         $this->ttlPlanQty = DB::table('current_production_qty_view')->value('ttl_plan_qty');
+        $this->ttlInQty  = DB::table('current_production_qty_view')->value('ttl_in_qty');
         $this->ttlOutQty  = DB::table('current_production_qty_view')->value('ttl_out_qty');
         $this->ttlOSQty   = DB::table('current_production_qty_view')->value('ttl_os_qty');
 
         $this->dateTo   = now()->toDateString();
         $this->dateFrom = now()->subDays(29)->toDateString();
 
-        $this->itemOptions = DB::table('mais_wellbest.prod_yield_view')
+        $this->itemOptions = DB::table('prod_yield_view')
             ->select('itm_cd', DB::raw('MAX(itm_cd) as itm_cd'))
             ->groupBy('itm_cd')
             ->orderBy('itm_cd')
@@ -66,7 +72,7 @@ class CompanyDashboard extends Page
             ->map(fn ($r) => ['code' => $r->itm_cd, 'name' => $r->itm_cd])
             ->all();
 
-        $this->customerOptions = DB::table('mais_wellbest.prod_yield_view')
+        $this->customerOptions = DB::table('prod_yield_view')
             ->selectRaw("DISTINCT COALESCE(NULLIF(TRIM(cust_nm), ''), 'Unassigned') as cust")
             ->orderBy('cust')
             ->pluck('cust')
@@ -103,21 +109,23 @@ class CompanyDashboard extends Page
             [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
         }
 
-        $query = DB::table('mais_wellbest.prod_yield_view')
+        $query = DB::table('prod_yield_view')
             ->select(
                 DB::raw('DATE(end_time) as d'),
                 'itm_cd',
                 DB::raw('MAX(itm_cd) as itm_cd'),
+                DB::raw("COALESCE(NULLIF(TRIM(itm_grp), ''), 'Unassigned') as grp"),
                 DB::raw("COALESCE(NULLIF(TRIM(cust_nm), ''), 'Unassigned') as cust"),
                 'proc_cd',
                 DB::raw('MAX(TRIM(proc_nm)) as proc_nm'),
                 DB::raw('SUM(in_qty_pcs) as in_qty'),
                 DB::raw('SUM(out_qty_pcs) as out_qty'),
-                DB::raw('SUM(ng_qty_pcs) as ng_qty')
+                DB::raw('SUM(ng_qty_pcs) as ng_qty'),
+                DB::raw('SUM(rwk_qty_pcs) as rwk_qty')
             )
             ->whereBetween('end_time', [$from, $to])
             ->whereNotIn('proc_cd', self::EXCLUDED_PROCESSES)
-            ->groupBy(DB::raw('DATE(end_time)'), 'itm_cd', 'cust', 'proc_cd');
+            ->groupBy(DB::raw('DATE(end_time)'), 'itm_cd', 'cust', 'grp', 'proc_cd');
 
         if ($this->itemFilter !== '' && $this->itemFilter !== null) {
             $query->where('itm_cd', $this->itemFilter);
@@ -143,6 +151,7 @@ class CompanyDashboard extends Page
         $outByDay = [];
         $ngByDay = [];
         $ngRateByDay = [];
+        $rwkRateByDay = [];
         $finalByDay = $finalRows->groupBy('d');
         $allByDay = $rows->groupBy('d');
         $cursor = $from->copy();
@@ -152,6 +161,7 @@ class CompanyDashboard extends Page
             $out = (int) ($finalByDay[$key] ?? collect())->sum('out_qty');
             $ng  = (int) ($allByDay[$key] ?? collect())->sum('ng_qty');
             $in  = (int) ($allByDay[$key] ?? collect())->sum('in_qty');
+            $rwk = (int) ($allByDay[$key] ?? collect())->sum('rwk_qty');            
             if ($out > 0) {
                 $activeDays++;
             }
@@ -159,6 +169,7 @@ class CompanyDashboard extends Page
             $outByDay[]    = $out;
             $ngByDay[]     = $ng;
             $ngRateByDay[] = $in > 0 ? round($ng / $in * 100, 2) : 0;
+            $rwkRateByDay[] = $in > 0 ? round($rwk / $in * 100, 2) : 0;
             $cursor->addDay();
         }
 
@@ -182,13 +193,16 @@ class CompanyDashboard extends Page
             $in  = (int) $g->sum('in_qty');
             $out = (int) $g->sum('out_qty');
             $ng  = (int) $g->sum('ng_qty');
+            $rwk = (int) $g->sum('rwk_qty');
             return [
-                'code'    => $code,
-                'name'    => $g->first()->proc_nm,
-                'in'      => $in,
-                'out'     => $out,
-                'ng'      => $ng,
-                'ng_rate' => $in > 0 ? round($ng / $in * 100, 2) : 0,
+                'code'     => $code,
+                'name'     => $g->first()->proc_nm,
+                'in'       => $in,
+                'out'      => $out,
+                'ng'       => $ng,
+                'rwk'      => $rwk,
+                'ng_rate'  => $in > 0 ? round($ng / $in * 100, 2) : 0,
+                'rwk_rate' => $in > 0 ? round($rwk / $in * 100, 2) : 0,
             ];
         })->sortKeys()->values()->all();
 
@@ -205,6 +219,19 @@ class CompanyDashboard extends Page
                 'ng_rate'  => $in > 0 ? round($ng / $in * 100, 2) : 0,
             ];
         })->sortByDesc('output')->values()->all();
+
+        // ----- Per PCB group -----
+        $this->groupRows = $rows->groupBy('grp')->map(function ($g, $name) {
+            $in = (int) $g->sum('in_qty');
+            $ng = (int) $g->sum('ng_qty');
+            $rwk = (int) $g->sum('rwk_qty');
+            return [
+                'name'    => $name,
+                'ng'      => $ng,
+                'ng_rate' => $in > 0 ? round($ng / $in * 100, 2) : 0,
+                'rwk_rate' => $in > 0 ? round($rwk / $in * 100, 2) : 0,
+            ];
+        })->sortByDesc('ng')->values()->all();        
 
         $ngItems = collect($this->itemRows)->where('ng', '>', 0)->values();
 
@@ -223,6 +250,7 @@ class CompanyDashboard extends Page
                 'output' => $outByDay,
                 'ng'     => $ngByDay,
                 'rate'   => $ngRateByDay,
+                'rwk_rate' => $rwkRateByDay,
             ],
             'items' => [
                 'labels' => collect($this->itemRows)->pluck('name')->all(),
@@ -232,7 +260,21 @@ class CompanyDashboard extends Page
                 'labels' => collect($this->processRows)->map(fn ($p) => $p['code'] . ' ' . $p['name'])->all(),
                 'ng'     => collect($this->processRows)->pluck('ng')->all(),
                 'rate'   => collect($this->processRows)->pluck('ng_rate')->all(),
+                'rwk_rate' => collect($this->processRows)->pluck('rwk_rate')->all(),
             ],
+            'processOutput' => [
+                'labels'   => collect($this->processRows)->map(fn ($p) => $p['code'] . ' ' . $p['name'])->all(),
+                'in'       => collect($this->processRows)->pluck('in')->all(),
+                'out'      => collect($this->processRows)->pluck('out')->all(),
+                'ng_rate'  => collect($this->processRows)->pluck('ng_rate')->all(),
+                'rwk_rate' => collect($this->processRows)->pluck('rwk_rate')->all(),
+            ],            
+            'pcbGroup' => [
+                'labels' => collect($this->groupRows)->pluck('name')->all(),
+                'ng'     => collect($this->groupRows)->pluck('ng')->all(),
+                'rate'   => collect($this->groupRows)->pluck('ng_rate')->all(),
+                'rwk_rate' => collect($this->groupRows)->pluck('rwk_rate')->all(),
+            ],            
             'ngItems' => [
                 'labels' => $ngItems->pluck('name')->all(),
                 'values' => $ngItems->pluck('ng')->all(),

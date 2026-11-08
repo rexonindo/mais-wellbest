@@ -19,11 +19,11 @@ class RWKStatusPivotReport extends FBasePageResource implements HasTable
     use Tables\Concerns\InteractsWithTable;
 
     protected static ?string $navigationGroup = 'Reports';
-    protected static ?string $navigationLabel = 'RWK Status Pivot By Process';
+    protected static ?string $navigationLabel = 'RWK Status By Process';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 9;
     protected static ?string $slug = 'rwk-status-pivot-report';
-    protected static ?string $title = 'RWK Status Pivot By Process';        
+    protected static ?string $title = 'RWK Status By Process';        
     protected static string $view = 'filament.pages.rwk-status-pivot-report';
 
     protected array $dynamicColumns = [];
@@ -161,7 +161,7 @@ class RWKStatusPivotReport extends FBasePageResource implements HasTable
     protected function exportExcel()
     {
         $records = $this->getTableRecords(); // <- call SP with filters
-        $filename = 'RWKStatusPivotReport_' . now()->format('Ymd_His') . '.xlsx';
+        $filename = 'RWKStatusByProcess_' . now()->format('Ymd_His') . '.xlsx';
         return Excel::download(
             new \App\Exports\RWKStatusPivotReportExcel($records),
             $filename
@@ -177,7 +177,7 @@ class RWKStatusPivotReport extends FBasePageResource implements HasTable
 
         return response()->streamDownload(
             fn () => print($pdf->output()),
-            'RWKStatusPivot' . now()->format('Ymd_His') . '.pdf'
+            'RWKStatusByProcess_' . now()->format('Ymd_His') . '.pdf'
         );
     }        
 }

@@ -22,7 +22,7 @@ class NGStatusPivotReportExcel implements
     protected string $reportTitle;
     protected array $columns = [];
 
-    public function __construct(Collection $data, string $reportTitle = 'NG Status Pivot By Process')
+    public function __construct(Collection $data, string $reportTitle = 'NG Status By Process')
     {
         $this->data = $data;
         $this->reportTitle = $reportTitle;
@@ -67,7 +67,7 @@ class NGStatusPivotReportExcel implements
 
     public function title(): string
     {
-        return 'NG Status Pivot By Process';
+        return 'NG Status By Process';
     }
 
     /* ---------------------------------

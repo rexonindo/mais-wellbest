@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        DB::statement("CREATE VIEW `ng_detail_2nd_view` AS select `mais_wellbest`.`a`.`wo_no` AS `wo_no`,`mais_wellbest`.`a`.`itm_cd` AS `itm_cd`,`mais_wellbest`.`a`.`itm_type` AS `itm_type`,`mais_wellbest`.`a`.`itm_grp` AS `itm_grp`,`mais_wellbest`.`a`.`end_time` AS `end_time`,ifnull(`mais_wellbest`.`a`.`in_qty`,0) AS `in_qty`,`b`.`seq_no` AS `seq_no`,`b`.`proc_cd` AS `proc_cd`,`b`.`proc_nm` AS `proc_nm`,`b`.`division` AS `division`,ifnull(`b`.`ng_nm`,'') AS `ng_nm`,ifnull(`b`.`ng_cat`,'') AS `ng_cat`,ifnull(`b`.`ng_qty`,0) AS `ng_qty`,ifnull(`mais_wellbest`.`c`.`out_qty`,0) AS `fgs_qty` from ((`mais_wellbest`.`prodlog_process_2nd_view` `a` left join (select `mais_wellbest`.`prdlog_ng_view`.`wo_no` AS `wo_no`,`mais_wellbest`.`prdlog_ng_view`.`itm_cd` AS `itm_cd`,`mais_wellbest`.`prdlog_ng_view`.`seq_no` AS `seq_no`,`mais_wellbest`.`prdlog_ng_view`.`proc_cd` AS `proc_cd`,`mais_wellbest`.`prdlog_ng_view`.`proc_nm` AS `proc_nm`,`mais_wellbest`.`prdlog_ng_view`.`division` AS `division`,`mais_wellbest`.`prdlog_ng_view`.`ng_nm` AS `ng_nm`,`mais_wellbest`.`prdlog_ng_view`.`ng_cat` AS `ng_cat`,`mais_wellbest`.`prdlog_ng_view`.`ng_qty` AS `ng_qty` from `mais_wellbest`.`prdlog_ng_view`) `b` on(((`mais_wellbest`.`a`.`wo_no` = `b`.`wo_no`) and (`mais_wellbest`.`a`.`itm_cd` = `b`.`itm_cd`) and (`b`.`seq_no` >= `mais_wellbest`.`a`.`seq_no`)))) left join `mais_wellbest`.`prodlog_process_last_view` `c` on(((`mais_wellbest`.`a`.`wo_no` = `mais_wellbest`.`c`.`wo_no`) and (`mais_wellbest`.`a`.`itm_cd` = `mais_wellbest`.`c`.`itm_cd`) and (`mais_wellbest`.`a`.`itm_type` = `mais_wellbest`.`c`.`itm_type`))))");
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        DB::statement("DROP VIEW IF EXISTS `ng_detail_2nd_view`");
+    }
+};

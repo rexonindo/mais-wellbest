@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>NG Status Pivot By Process</title>
+    <title>NG Status By Process</title>
 
     <style>
         body {
@@ -47,7 +47,7 @@
 </head>
 <body>
 
-<h2 style="text-align:left;">NG Detail Pivot By Process</h2>
+<h2 style="text-align:left;">NG Detail By Process</h2>
 
 @php
     // Get ONLY actual row data

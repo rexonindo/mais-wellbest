@@ -22,11 +22,11 @@ class WOProgressPivotReport extends FBasePageResource implements HasTable, HasFo
     use Forms\Concerns\InteractsWithForms;
 
     protected static ?string $navigationGroup = 'Reports';
-    protected static ?string $navigationLabel = 'WO Progress Pivot By Process';
+    protected static ?string $navigationLabel = 'WO Progress By Process';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?int $navigationSort = 5;
     protected static ?string $slug = 'wo-progress-pivot-report';
-    protected static ?string $title = 'WO Progress Pivot By Process';
+    protected static ?string $title = 'Work Order Progress By Process';
     protected static string $view = 'filament.pages.wo-progress-pivot-report';
 
 
@@ -170,7 +170,7 @@ class WOProgressPivotReport extends FBasePageResource implements HasTable, HasFo
 
         return Excel::download(
             new \App\Exports\WOProgressPivotReportExcel($records),
-            'WOProgressPivotReport_' . now()->format('Ymd_His') . '.xlsx'
+            'WOProgressByProcess_' . now()->format('Ymd_His') . '.xlsx'
         );
     }
 

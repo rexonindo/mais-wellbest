@@ -38,11 +38,11 @@ class ManageProductRoute extends FBasePageResource implements HasTable
     }
 
     /**
-     * Lookup for P/N Type: SELECT itm_type FROM mais_wellbest.itm_type_view
+     * Lookup for P/N Type: SELECT itm_type FROM itm_type_view
      */
     protected function getItmTypeOptions(): array
     {
-        return DB::table('mais_wellbest.itm_type_view')
+        return DB::table('itm_type_view')
             ->whereNotNull('itm_type')
             ->where('itm_type', '<>', '')
             ->distinct()

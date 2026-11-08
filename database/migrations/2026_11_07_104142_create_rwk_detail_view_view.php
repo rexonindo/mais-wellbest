@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        DB::statement("CREATE VIEW `rwk_detail_view` AS select `mais_wellbest`.`b`.`wo_no` AS `wo_no`,`mais_wellbest`.`b`.`itm_cd` AS `itm_cd`,`mais_wellbest`.`b`.`itm_type` AS `itm_type`,`mais_wellbest`.`b`.`seq_no` AS `seq_no`,ifnull(`mais_wellbest`.`b`.`rmks`,'-') AS `rmks`,`mais_wellbest`.`b`.`proc_nm` AS `proc_nm`,`mais_wellbest`.`b`.`in_qty` AS `in_qty`,`mais_wellbest`.`b`.`out_qty` AS `out_qty`,`a`.`rwk_nm` AS `rwk_nm`,`a`.`rwk_qty` AS `rwk_qty`,`mais_wellbest`.`b`.`end_time` AS `end_time` from (`mais_wellbest`.`prdrwk_tbl` `a` join `mais_wellbest`.`wo_progress_view` `b` on((`a`.`id_prd` = `mais_wellbest`.`b`.`id_prd`)))");
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        DB::statement("DROP VIEW IF EXISTS `rwk_detail_view`");
+    }
+};

@@ -25,12 +25,13 @@ class ProductRouteResource extends BaseResource
     protected static ?string $title = 'Manage Process Flow';
     protected static ?int $navigationSort = 3;
 
+
     /**
-     * Lookup for P/N Type: SELECT itm_type FROM mais_wellbest.itm_type_view
+     * Lookup for P/N Type: SELECT itm_type FROM itm_type_view
      */
     protected static function getItmTypeOptions(): array
     {
-        return DB::table('mais_wellbest.itm_type_view')
+        return DB::table('itm_type_view')
             ->whereNotNull('itm_type')
             ->where('itm_type', '<>', '')
             ->distinct()

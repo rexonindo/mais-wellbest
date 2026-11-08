@@ -21,15 +21,15 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     use Tables\Concerns\InteractsWithTable;
 
     protected static ?string $navigationGroup = 'Reports';
-    protected static ?string $navigationLabel = 'NG Detail Pivot By Process';
+    protected static ?string $navigationLabel = 'NG Detail By Group';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 8;
     protected static ?string $slug = 'ng-detail-pivot-report';
-    protected static ?string $title = 'NG Detail Pivot By Process';
+    protected static ?string $title = 'NG Detail By Group';
     protected static string $view = 'filament.pages.ng-detail-pivot-report';
 
     // Values currently selected in the dropdowns (not yet applied)
-    public string $reportCategory = 'CATEGORY';
+    public string $reportGroup = 'CATEGORY';
     public string $reportType = 'CUTTING';
 
     // Values that were applied when OK was last clicked (drive the table)
@@ -45,7 +45,7 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     ------------------------------------------------- */
     public function applyReport(): void
     {
-        $this->appliedCategory = $this->reportCategory;
+        $this->appliedCategory = $this->reportGroup;
         $this->appliedType     = $this->reportType;
         $this->appliedFilters  = $this->getTableFiltersForm()?->getState() ?? [];
         $this->reportApplied   = true;
@@ -242,11 +242,11 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     protected function exportExcel()
     {
         $records        = $this->getTableRecords();
-        $reportCategory = strtoupper($this->appliedCategory);
+        $reportGroup = strtoupper($this->appliedCategory);
         $reportType     = strtoupper($this->appliedType);
-        $reportTitle    = 'NG DETAIL REPORT BY ' . $reportCategory . ' - Start From Process : ' . $reportType;
-        $filename       = 'NGDetailPivotReport_'
-            . $reportCategory . '_'
+        $reportTitle    = 'NG DETAIL GROUP BY ' . $reportGroup . ' - Start From Process : ' . $reportType;
+        $filename       = 'NGDetailByGroup_'
+            . $reportGroup . '_'
             . $reportType . '_'
             . now()->format('Ymd_His')
             . '.xlsx';
@@ -254,7 +254,8 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
         return Excel::download(
             new \App\Exports\NGDetailPivotReportExcel(
                 $records,
-                $reportTitle
+                $reportTitle,
+                $reportGroup
             ),
             $filename,
             \Maatwebsite\Excel\Excel::XLSX,
@@ -265,17 +266,17 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
     protected function exportPdf()
     {
         $records        = $this->getTableRecords();
-        $reportCategory = strtoupper($this->appliedCategory);
+        $reportGroup = strtoupper($this->appliedCategory);
         $reportType     = strtoupper($this->appliedType);
-        $filename       = 'NGDetailPivotReport_'
-            . $reportCategory . '_'
+        $filename       = 'NGDetailByGroup_'
+            . $reportGroup . '_'
             . $reportType . '_'
             . now()->format('Ymd_His')
             . '.pdf';
 
         $pdf = Pdf::loadView('pdf.ng-detail-pivot-report', [
             'data'           => $records,
-            'reportCategory' => $reportCategory,
+            'reportGroup' => $reportGroup,
             'reportType'     => $reportType,
         ])->setPaper('a3', 'landscape');
 

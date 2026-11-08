@@ -6,6 +6,8 @@ use App\Http\Controllers\WorkOrderLabelController;
 use App\Http\Controllers\ProcessLabelController;
 use App\Http\Controllers\MachineLabelController;
 
+Route::view('/app-expired', 'app-expired')->name('app.expired');
+
 Route::get('/', function () {
     return redirect('/wellbest/login');
 });

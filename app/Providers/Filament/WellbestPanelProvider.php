@@ -24,6 +24,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
+use App\Http\Responses\CompanyLoginResponse;
+use Filament\Http\Responses\Auth\Contracts\LoginResponse;
+
 class WellbestPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -81,12 +84,19 @@ class WellbestPanelProvider extends PanelProvider
                 HTML             
             )
             ->bootUsing(function () {
+                // Register PWA assets
                 FilamentAsset::register([
                     \Filament\Support\Assets\Js::make(
                         'pwa-js',
-                        asset('build/assets/pwa-DwUm5zTl.js') 
+                        asset('build/assets/pwa-DwUm5zTl.js')
                     ),
                 ], 'wellbest-pwa');
+
+                // Customize login redirect
+                app()->bind(
+                    \Filament\Http\Responses\Auth\Contracts\LoginResponse::class,
+                    \App\Http\Responses\CompanyLoginResponse::class
+                );
             })
             ->login()
             ->sidebarCollapsibleOnDesktop()
@@ -97,7 +107,7 @@ class WellbestPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
@@ -114,6 +124,7 @@ class WellbestPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \App\Http\Middleware\CheckAppActivation::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
