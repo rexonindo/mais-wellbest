@@ -20,13 +20,4 @@
             background: white;
         }
     </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            setTimeout(() => {
-                if (window.Alpine) {
-                    Alpine.store('sidebar').isOpen = false;
-                }
-            }, 200);
-        });
-    </script>
 </x-filament-panels::page>

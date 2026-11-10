@@ -17,14 +17,13 @@ class NGLogReport extends FBasePageResource implements HasTable
 {
     use Tables\Concerns\InteractsWithTable;
 
-
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'NG Log Report';
-    protected static ?int $navigationSort = 6;    
-    // protected static ?string $slug = 'wo-status-report';
-    // protected static ?string $title = 'Work Order Status Report';
-    protected static string $view = 'filament.pages.ng-log-report';
+    protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';
+    protected static ?int $navigationSort = 6;
+    protected static ?string $slug = 'ng-log-report';
+    protected static ?string $title = 'NG Log Report';
+    protected static string $view = 'filament.pages.ng-log-report';    
 
     public function table(Table $table): Table
     {

@@ -27,6 +27,10 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Http\Responses\CompanyLoginResponse;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
+
 class WellbestPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -100,6 +104,28 @@ class WellbestPanelProvider extends PanelProvider
             })
             ->login()
             ->sidebarCollapsibleOnDesktop()
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => Blade::render(<<<'HTML'
+                    <script>
+                        document.addEventListener('alpine:initialized', () => {
+                            const sidebar = Alpine.store('sidebar');
+                            if (!sidebar) return;
+
+                            const group = @js($isProduction ? 'production' : 'default');
+
+                            try {
+                                if (localStorage.getItem('sidebarRoleGroup') !== group) {
+                                    localStorage.setItem('sidebarRoleGroup', group);
+                                    group === 'production' ? sidebar.close() : sidebar.open();
+                                }
+                            } catch (e) {}
+                        });
+                    </script>
+                HTML, [
+                    'isProduction' => (bool) Auth::user()?->hasRole('production'),
+                ])
+            )
             ->brandName('MAIS - Wellbest')
             ->colors([
                 'primary' => Color::Amber,
@@ -124,7 +150,7 @@ class WellbestPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                \App\Http\Middleware\CheckAppActivation::class,
+                \App\Http\Middleware\CheckAppActivation::class,                
             ])
             ->authMiddleware([
                 Authenticate::class,

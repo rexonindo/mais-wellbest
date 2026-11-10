@@ -22,10 +22,10 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
 
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'Rework Detail By Group';
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 8;
-    protected static ?string $slug = 'rwk-detail-pivot-report';
+    protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
     protected static ?string $title = 'Rework Detail By Group';
+    protected static ?int $navigationSort = 8;
+    protected static ?string $slug = 'rwk-detail-pivot-report';    
     protected static string $view = 'filament.pages.rwk-detail-pivot-report';
 
     // Values currently selected in the dropdowns (not yet applied)

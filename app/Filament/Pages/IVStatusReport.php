@@ -21,10 +21,10 @@ class IVStatusReport extends FBasePageResource implements HasTable
 
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'Inventory Status Report';
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static ?string $navigationIcon = 'heroicon-o-cube';
+    protected static ?string $title = 'Inventory Status Report';
     protected static ?int $navigationSort = 1;
-    protected static ?string $slug = 'iv-status-report';
-    protected static ?string $title = 'Inventory Status Report';        
+    protected static ?string $slug = 'iv-status-report';            
     protected static string $view = 'filament.pages.iv-status-report';
 
     public function table(Table $table): Table

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\RwkResource\Pages;
 use App\Models\RWK;
 use Filament\Forms;
@@ -10,15 +11,12 @@ use Filament\Resources\Resource;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 
-class RwkResource extends Resource
+class RwkResource extends BaseResource
 {
     protected static ?string $model = Rwk::class;
-
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationLabel = 'RWK List';
-    protected static ?string $pluralModelLabel = 'RWK';
-    protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';    
-    protected static ?string $modelLabel = 'RWK';
+    protected static ?string $navigationLabel = 'Rework List';
+    protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';   
     protected static ?int $navigationSort = 9;
 
     public static function form(Form $form): Form

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\BaseResource;
 use App\Filament\Resources\NgResource\Pages;
 use App\Models\NG;
 use Filament\Forms;
@@ -10,15 +11,12 @@ use Filament\Resources\Resource;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 
-class NgResource extends Resource
+class NgResource extends BaseResource
 {
     protected static ?string $model = Ng::class;
-
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'NG List';
-    protected static ?string $pluralModelLabel = 'NG';
-    protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';    
-    protected static ?string $modelLabel = 'NG';
+    protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';   
     protected static ?int $navigationSort = 8;
 
     public static function form(Form $form): Form

@@ -23,10 +23,10 @@ class WOProgressPivotReport extends FBasePageResource implements HasTable, HasFo
 
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'WO Progress By Process';
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 5;
-    protected static ?string $slug = 'wo-progress-pivot-report';
+    protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
     protected static ?string $title = 'Work Order Progress By Process';
+    protected static ?int $navigationSort = 5;
+    protected static ?string $slug = 'wo-progress-pivot-report';    
     protected static string $view = 'filament.pages.wo-progress-pivot-report';
 
 

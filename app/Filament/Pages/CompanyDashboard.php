@@ -12,7 +12,7 @@ class CompanyDashboard extends Page
     protected static bool $shouldShowTitle = false;
     protected static ?string $navigationLabel = 'Dashboard';
     protected static string $view = 'filament.pages.company-dashboard';
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
     protected static ?string $slug = '/company-dashboard';
     protected static bool $shouldRegisterNavigation = true;
     protected static ?int $navigationSort = 2;    

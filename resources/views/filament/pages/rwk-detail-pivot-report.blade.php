@@ -131,13 +131,16 @@
         .fi-page-content > * { margin-block: 0 !important; }
     </style>
 
+<!--     
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => {
-                if (window.Alpine && Alpine.store('sidebar')) {
+                if (window.Alpine) {
                     Alpine.store('sidebar').isOpen = false;
                 }
             }, 200);
         });
     </script>
+-->
+
 </x-filament-panels::page>

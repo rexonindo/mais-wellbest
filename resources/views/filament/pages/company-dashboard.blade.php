@@ -38,6 +38,13 @@
     @endonce
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(() => {
+                if (window.Alpine) {
+                    Alpine.store('sidebar').isOpen = false;
+                }
+            }, 200);
+        });
         window.cdCharts = function (initial) {
             let charts = {}; // kept outside Alpine reactivity on purpose
 

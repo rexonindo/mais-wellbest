@@ -40,13 +40,20 @@
         .cd-row-alert { background: rgba(220,38,38,.08); }
     </style>
 
-    <?php if (! $__env->hasRenderedOnce('98f80a27-b058-4552-be6a-1191c2ec2cf8')): $__env->markAsRenderedOnce('98f80a27-b058-4552-be6a-1191c2ec2cf8'); ?>
+    <?php if (! $__env->hasRenderedOnce('dea02766-ccae-4964-9556-4d3b549fdaf9')): $__env->markAsRenderedOnce('dea02766-ccae-4964-9556-4d3b549fdaf9'); ?>
         <link rel="stylesheet" href="<?php echo e(asset('css/flatpickr.min.css')); ?>">
         <script src="<?php echo e(asset('js/flatpickr.min.js')); ?>"></script>
         <script src="<?php echo e(asset('js/chart.umd.min.js')); ?>"></script>        
     <?php endif; ?>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(() => {
+                if (window.Alpine) {
+                    Alpine.store('sidebar').isOpen = false;
+                }
+            }, 200);
+        });
         window.cdCharts = function (initial) {
             let charts = {}; // kept outside Alpine reactivity on purpose
 

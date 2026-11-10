@@ -22,10 +22,10 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
 
     protected static ?string $navigationGroup = 'Reports';
     protected static ?string $navigationLabel = 'NG Detail By Group';
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 8;
-    protected static ?string $slug = 'ng-detail-pivot-report';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-group';
     protected static ?string $title = 'NG Detail By Group';
+    protected static ?int $navigationSort = 8;
+    protected static ?string $slug = 'ng-detail-pivot-report';    
     protected static string $view = 'filament.pages.ng-detail-pivot-report';
 
     // Values currently selected in the dropdowns (not yet applied)

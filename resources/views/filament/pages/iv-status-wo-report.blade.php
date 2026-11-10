@@ -20,6 +20,7 @@
             background: white;
         }
     </style>
+<!--     
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => {
@@ -29,4 +30,6 @@
             }, 200);
         });
     </script>
+-->
+
 </x-filament-panels::page>
