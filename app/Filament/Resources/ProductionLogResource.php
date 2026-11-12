@@ -105,19 +105,6 @@ class ProductionLogResource extends BaseResource
                             ->columnSpanFull()
                             ->searchable()
                             ->live()
-                            /*
-                            ->extraAttributes([
-                                'x-on:keydown.enter.prevent' => <<<'JS'
-                                    const input = $el.querySelector('input');
-                                    if (!input) return;
-                                    const barcode = input.value.trim();
-                                    if (!barcode) return;
-                                    $wire.dispatchFormEvent('work-order-barcode-scanned', {
-                                        barcode: barcode
-                                    });
-                                JS,
-                            ])
-                            */    
                             ->dehydrated(false)
                             ->placeholder(fn (callable $get) => $get('proc_cd')
                                 ? 'Type WO No / Part No to search'
@@ -163,7 +150,7 @@ class ProductionLogResource extends BaseResource
                                         // First process: same rule as your afterStateUpdated (qty comes from shoot_qty)
                                         $availPcs = floatval($row->shoot_qty ?? 0);
                                     } else {
-                                        $avail    = \DB::select('CALL get_wo_available_qty(?, ?)', [$row->wo_no, $procCd]);
+                                        $avail    = \DB::select('CALL get_wo_available_qty_next_proc(?, ?)', [$row->wo_no, $procCd]);
                                         $availPcs = floatval($avail[0]->avail_qty_pcs ?? 0);
                                     }
 
@@ -720,7 +707,7 @@ class ProductionLogResource extends BaseResource
         if ((int) $seqNo === 1) {
             $qty = $woProc->shoot_qty ?? 0;
         } else {
-            $avail = \DB::select('CALL get_wo_available_qty(?, ?)', [$woNo, $procCd]);
+            $avail = \DB::select('CALL get_wo_available_qty_next_proc(?, ?)', [$woNo, $procCd]);
             $qty   = floatval($avail[0]->avail_qty_pcs ?? 0) / $cav;
         }
 
