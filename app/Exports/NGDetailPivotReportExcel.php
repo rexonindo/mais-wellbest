@@ -19,6 +19,8 @@ use PhpOffice\PhpSpreadsheet\Chart\Legend;
 use PhpOffice\PhpSpreadsheet\Chart\PlotArea;
 use PhpOffice\PhpSpreadsheet\Chart\Title;
 
+use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\RichText\RichText;
 
 class NGDetailPivotReportExcel implements
     FromCollection,
@@ -30,21 +32,45 @@ class NGDetailPivotReportExcel implements
     protected Collection $data;
     protected string $reportTitle;
     protected string $reportGroup;    
+    protected ?string $dateFrom = null;
+    protected ?string $dateTo = null;
     protected array $columns = [];
+
 
     public function __construct(
         Collection $data,
         string $reportTitle = 'NG DETAIL BY GROUP',
-        string $reportGroup = 'CATEGORY'
+        string $reportGroup = 'CATEGORY',
+        ?string $dateFrom = null,
+        ?string $dateTo = null
     ) {
         $this->data = $data;
         $this->reportTitle = $reportTitle;
         $this->reportGroup = $reportGroup;
+        $this->dateFrom = $dateFrom;
+        $this->dateTo = $dateTo;
         if ($data->isNotEmpty()) {
             $this->columns = array_keys(
                 $data->first()->getAttributes()
             );
         }
+    }
+
+    protected function getPrintDateText(): string
+    {
+        $fmt = fn ($d) => Carbon::parse($d)->format('d-M-Y');
+
+        if ($this->dateFrom && $this->dateTo) {
+            return 'Print Date : ' . $fmt($this->dateFrom) . ' until ' . $fmt($this->dateTo);
+        }
+        if ($this->dateFrom) {
+            return 'Print Date : ' . $fmt($this->dateFrom) . ' until -';
+        }
+        if ($this->dateTo) {
+            return 'Print Date : - until ' . $fmt($this->dateTo);
+        }
+
+        return 'Print Date : All dates';
     }
 
     /* ---------------------------------
@@ -159,15 +185,23 @@ class NGDetailPivotReportExcel implements
 
                 $sheet->mergeCells("A1:{$lastColumn}1");
 
-                $sheet->setCellValue('A1', $this->reportTitle);
+                // Two lines in A1: bold title + smaller date range
+                $rich = new RichText();
 
-                $sheet->getStyle('A1')->getFont()
-                    ->setSize(14)
-                    ->setBold(true);
+                $titleRun = $rich->createTextRun($this->reportTitle);
+                $titleRun->getFont()->setBold(true)->setSize(14);
+
+                $dateRun = $rich->createTextRun("\n" . $this->getPrintDateText());
+                $dateRun->getFont()->setBold(false)->setSize(11);
+
+                $sheet->getCell('A1')->setValue($rich);
 
                 $sheet->getStyle('A1')->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
+                    ->setVertical(Alignment::VERTICAL_CENTER)
+                    ->setWrapText(true);
+
+                $sheet->getRowDimension(1)->setRowHeight(40);
 
                 /* ---------- HEADER ---------- */
 

@@ -24,7 +24,7 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
     protected static ?string $navigationLabel = 'Rework Detail By Group';
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
     protected static ?string $title = 'Rework Detail By Group';
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 9;
     protected static ?string $slug = 'rwk-detail-pivot-report';    
     protected static string $view = 'filament.pages.rwk-detail-pivot-report';
 
@@ -241,11 +241,17 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
 
     protected function exportExcel()
     {
-        $records        = $this->getTableRecords();
+        $records     = $this->getTableRecords();
         $reportGroup = strtoupper($this->appliedCategory);
-        $reportType     = strtoupper($this->appliedType);
-        $reportTitle    = 'REWORK DETAIL GROUP BY ' . $reportGroup . ' - Start From Process : ' . $reportType;
-        $filename       = 'RWKDetailByGroup_'
+        $reportType  = strtoupper($this->appliedType);
+        $reportTitle = 'REWORK DETAIL GROUP BY ' . $reportGroup . ' - Start From Process : ' . $reportType;
+
+        // Same source the table uses (live filter state)
+        $filters  = $this->tableFilters ?? [];
+        $dateFrom = $filters['end_date']['end_date_1'] ?? null;
+        $dateTo   = $filters['end_date']['end_date_2'] ?? null;
+
+        $filename = 'RWKDetailByGroup_'
             . $reportGroup . '_'
             . $reportType . '_'
             . now()->format('Ymd_His')
@@ -255,13 +261,15 @@ class RWKDetailPivotReport extends FBasePageResource implements HasTable
             new \App\Exports\RWKDetailPivotReportExcel(
                 $records,
                 $reportTitle,
-                $reportGroup
+                $reportGroup,
+                $dateFrom,
+                $dateTo
             ),
             $filename,
             \Maatwebsite\Excel\Excel::XLSX,
             ['charts' => true]
         );
-    }
+    }   
 
     protected function exportPdf()
     {

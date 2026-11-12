@@ -22,7 +22,7 @@ class NGStatusPivotReport extends FBasePageResource implements HasTable
     protected static ?string $navigationLabel = 'NG Status By Process';
     protected static ?string $navigationIcon = 'heroicon-o-chart-pie';
     protected static ?string $title = 'NG Status By Process';
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 8;
     protected static ?string $slug = 'ng-status-pivot-report';            
     protected static string $view = 'filament.pages.ng-status-pivot-report';
 

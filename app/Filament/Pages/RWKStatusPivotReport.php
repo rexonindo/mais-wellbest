@@ -22,7 +22,7 @@ class RWKStatusPivotReport extends FBasePageResource implements HasTable
     protected static ?string $navigationLabel = 'Rework Status By Process';
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path';
     protected static ?string $title = 'Rework Status By Process';
-    protected static ?int $navigationSort = 9;
+    protected static ?int $navigationSort = 10;
     protected static ?string $slug = 'rwk-status-pivot-report';            
     protected static string $view = 'filament.pages.rwk-status-pivot-report';
 

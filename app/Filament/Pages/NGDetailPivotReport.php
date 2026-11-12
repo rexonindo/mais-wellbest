@@ -241,11 +241,17 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
 
     protected function exportExcel()
     {
-        $records        = $this->getTableRecords();
+        $records     = $this->getTableRecords();
         $reportGroup = strtoupper($this->appliedCategory);
-        $reportType     = strtoupper($this->appliedType);
-        $reportTitle    = 'NG DETAIL GROUP BY ' . $reportGroup . ' - Start From Process : ' . $reportType;
-        $filename       = 'NGDetailByGroup_'
+        $reportType  = strtoupper($this->appliedType);
+        $reportTitle = 'NG DETAIL GROUP BY ' . $reportGroup . ' - Start From Process : ' . $reportType;
+
+        // Same source the table uses (live filter state)
+        $filters  = $this->tableFilters ?? [];
+        $dateFrom = $filters['end_date']['end_date_1'] ?? null;
+        $dateTo   = $filters['end_date']['end_date_2'] ?? null;
+
+        $filename = 'NGDetailByGroup_'
             . $reportGroup . '_'
             . $reportType . '_'
             . now()->format('Ymd_His')
@@ -255,13 +261,15 @@ class NGDetailPivotReport extends FBasePageResource implements HasTable
             new \App\Exports\NGDetailPivotReportExcel(
                 $records,
                 $reportTitle,
-                $reportGroup
+                $reportGroup,
+                $dateFrom,
+                $dateTo
             ),
             $filename,
             \Maatwebsite\Excel\Excel::XLSX,
             ['charts' => true]
         );
-    }
+    }    
 
     protected function exportPdf()
     {
