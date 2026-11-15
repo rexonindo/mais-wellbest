@@ -18,9 +18,9 @@ use PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues;
 use PhpOffice\PhpSpreadsheet\Chart\Legend;
 use PhpOffice\PhpSpreadsheet\Chart\PlotArea;
 use PhpOffice\PhpSpreadsheet\Chart\Title;
-
-use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
+use PhpOffice\PhpSpreadsheet\Chart\Layout;
+use Carbon\Carbon;
 
 class NGDetailPivotReportExcel implements
     FromCollection,
@@ -36,6 +36,7 @@ class NGDetailPivotReportExcel implements
     protected ?string $dateTo = null;
     protected array $columns = [];
 
+    protected float $ngStandard = 0.009; // 0.90%
 
     public function __construct(
         Collection $data,
@@ -286,6 +287,8 @@ class NGDetailPivotReportExcel implements
                         );
                     }
                 }
+
+
 
                 /* ---------- AUTO SIZE ---------- */
 
@@ -570,6 +573,33 @@ class NGDetailPivotReportExcel implements
                 if ($prevDiv !== null && $prevDiv !== '' && ($chartRow - 1) > $divStartRow) {
                     $chartSheet->mergeCells("A{$divStartRow}:A" . ($chartRow - 1));
                 }
+
+                /* ---------- TOTAL ROW + STANDARD COLUMN ---------- */
+
+                $grandNgQty   = array_sum($groupTotals);
+                $grandNgRatio = $totalInQty > 0 ? $grandNgQty / $totalInQty : 0;
+
+                if ($chartRow > 4) {
+
+                    $chartSheet->setCellValue("A{$chartRow}", 'TOTAL');
+                    $chartSheet->setCellValue("C{$chartRow}", $grandNgQty);
+                    $chartSheet->setCellValue("D{$chartRow}", $grandNgRatio);
+
+                    $chartSheet->getStyle("C{$chartRow}")->getNumberFormat()->setFormatCode('#,##0');
+                    $chartSheet->getStyle("D{$chartRow}")->getNumberFormat()->setFormatCode('0.00%');
+                    $chartSheet->getStyle("A{$chartRow}:E{$chartRow}")->getFont()->setBold(true);
+
+                    $chartRow++;
+                }
+
+                $chartSheet->setCellValue('E3', 'STANDARD (0.90%)');
+                $chartSheet->getStyle('E3')->getFont()->setBold(true);
+
+                for ($r = 4; $r < $chartRow; $r++) {
+                    $chartSheet->setCellValue("E{$r}", $this->ngStandard);
+                    $chartSheet->getStyle("E{$r}")->getNumberFormat()->setFormatCode('0.00%');
+                }
+
                 /*
                 |--------------------------------------------------------------------------
                 | Auto Size
@@ -580,12 +610,13 @@ class NGDetailPivotReportExcel implements
                 $chartSheet->getColumnDimension('B')->setAutoSize(true);
                 $chartSheet->getColumnDimension('C')->setAutoSize(true);
                 $chartSheet->getColumnDimension('D')->setAutoSize(true);
+                $chartSheet->getColumnDimension('E')->setAutoSize(true);
 
                 if ($chartRow > 4) {
-                    $chartSheet->getStyle("A4:D" . ($chartRow - 1))
+                    $chartSheet->getStyle("A4:E" . ($chartRow - 1))
                         ->getAlignment()
                         ->setVertical(Alignment::VERTICAL_CENTER);
-                    $chartSheet->getStyle("A3:D" . ($chartRow - 1))
+                    $chartSheet->getStyle("A3:E" . ($chartRow - 1))
                         ->getBorders()
                         ->getAllBorders()
                         ->setBorderStyle(Border::BORDER_THIN);
@@ -606,51 +637,46 @@ class NGDetailPivotReportExcel implements
                     )
                 ];
 
+                $lastRow = $chartRow - 1;
+                $count   = $chartRow - 4;
+
                 $xAxisTickValues = [
-                    new DataSeriesValues(
-                        DataSeriesValues::DATASERIES_TYPE_STRING,
-                        "'TOTAL NG BY GROUP'!\$B\$4:\$B\$" . ($chartRow - 1),
-                        null,
-                        ($chartRow - 2)
-                    )
+                    new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING,
+                        "'TOTAL NG BY GROUP'!\$B\$4:\$B\${$lastRow}", null, $count)
                 ];
 
-                $dataSeriesValues = [
-                    new DataSeriesValues(
-                        DataSeriesValues::DATASERIES_TYPE_NUMBER,
-                        "'TOTAL NG BY GROUP'!\$D\$4:\$D\$" . ($chartRow - 1),
-                        '0.00%',
-                        ($chartRow - 2)
-                    )
-                ];
-
-                /*
-                |--------------------------------------------------------------------------
-                | Plot
-                |--------------------------------------------------------------------------
-                */
-
-                $series = new DataSeries(
+                /* Bar series: NG RATIO */
+                $barSeries = new DataSeries(
                     DataSeries::TYPE_BARCHART,
                     DataSeries::GROUPING_CLUSTERED,
-                    range(0, count($dataSeriesValues) - 1),
-                    $dataSeriesLabels,
+                    [0],
+                    [new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING, "'TOTAL NG BY GROUP'!\$D\$3", null, 1)],
                     $xAxisTickValues,
-                    $dataSeriesValues
+                    [new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_NUMBER,
+                        "'TOTAL NG BY GROUP'!\$D\$4:\$D\${$lastRow}", '0.00%', $count)]
                 );
+                $barSeries->setPlotDirection(DataSeries::DIRECTION_COL);
 
-                $series->setPlotDirection(
-                    DataSeries::DIRECTION_COL
+                /* Line series: STANDARD 0.90% */
+                $stdValues = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_NUMBER,
+                    "'TOTAL NG BY GROUP'!\$E\$4:\$E\${$lastRow}", '0.00%', $count);
+                $stdValues->setPointMarker('square');
+
+                $lineSeries = new DataSeries(
+                    DataSeries::TYPE_LINECHART,
+                    DataSeries::GROUPING_STANDARD,
+                    [1],
+                    [new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING, "'TOTAL NG BY GROUP'!\$E\$3", null, 1)],
+                    $xAxisTickValues,
+                    [$stdValues]
                 );
+                $lineSeries->setPlotDirection(DataSeries::DIRECTION_COL);
+                $lineSeries->setSmoothLine(false);
 
-                $plotArea = new PlotArea(null, [$series]);
+                $plotArea = new PlotArea(null, [$barSeries, $lineSeries]);
 
-                $legend = new Legend(
-                    Legend::POSITION_RIGHT,
-                    null,
-                    false
-                );
-
+                $legend = new Legend(Legend::POSITION_BOTTOM, null, false);
+   
                 $title = new Title('NG RATIO CHART');
 
                 $chart = new Chart(
@@ -666,8 +692,8 @@ class NGDetailPivotReportExcel implements
                 |--------------------------------------------------------------------------
                 */
 
-                $chart->setTopLeftPosition('J2');
-                $chart->setBottomRightPosition('S20');
+                $chart->setTopLeftPosition('L2');
+                $chart->setBottomRightPosition('U20');
 
                 /*
                 |--------------------------------------------------------------------------
@@ -681,12 +707,12 @@ class NGDetailPivotReportExcel implements
 
                 arsort($groupTotals);
 
-                $chartSheet->setCellValue('F3', $this->reportGroup);
-                $chartSheet->setCellValue('G3', 'NG QTY');
-                $chartSheet->setCellValue('H3', 'NG RATIO');
+                $chartSheet->setCellValue('G3', $this->reportGroup);
+                $chartSheet->setCellValue('H3', 'NG QTY');
+                $chartSheet->setCellValue('I3', 'NG RATIO');
 
-                $chartSheet->getStyle('F3:H3')->getFont()->setBold(true);
-                $chartSheet->getStyle('F3:H3')->getAlignment()
+                $chartSheet->getStyle('G3:I3')->getFont()->setBold(true);
+                $chartSheet->getStyle('G3:I3')->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
@@ -694,86 +720,91 @@ class NGDetailPivotReportExcel implements
 
                 foreach ($groupTotals as $grpName => $grpQty) {
 
-                    $chartSheet->setCellValue("F{$grpRow}", $grpName);
-                    $chartSheet->setCellValue("G{$grpRow}", $grpQty);
+                    $chartSheet->setCellValue("G{$grpRow}", $grpName);
+                    $chartSheet->setCellValue("H{$grpRow}", $grpQty);
                     $chartSheet->setCellValue(
-                        "H{$grpRow}",
+                        "I{$grpRow}",
                         $totalInQty > 0 ? $grpQty / $totalInQty : 0
                     );
 
-                    $chartSheet->getStyle("G{$grpRow}")
-                        ->getNumberFormat()->setFormatCode('#,##0');
                     $chartSheet->getStyle("H{$grpRow}")
+                        ->getNumberFormat()->setFormatCode('#,##0');
+                    $chartSheet->getStyle("I{$grpRow}")
                         ->getNumberFormat()->setFormatCode('0.00%');
 
                     $grpRow++;
                 }
 
+                /* TOTAL row */
+                $chartSheet->setCellValue("G{$grpRow}", 'TOTAL');
+                $chartSheet->setCellValue("H{$grpRow}", array_sum($groupTotals));
+                $chartSheet->setCellValue("I{$grpRow}", $totalInQty > 0 ? array_sum($groupTotals) / $totalInQty : 0);
+                $chartSheet->getStyle("H{$grpRow}")->getNumberFormat()->setFormatCode('#,##0');
+                $chartSheet->getStyle("I{$grpRow}")->getNumberFormat()->setFormatCode('0.00%');
+                $chartSheet->getStyle("G{$grpRow}:J{$grpRow}")->getFont()->setBold(true);
+                $grpRow++;
+
+                /* STANDARD column */
+                $chartSheet->setCellValue('J3', 'STANDARD (0.90%)');
+                $chartSheet->getStyle('J3')->getFont()->setBold(true);
+                for ($r = 4; $r < $grpRow; $r++) {
+                    $chartSheet->setCellValue("J{$r}", $this->ngStandard);
+                    $chartSheet->getStyle("J{$r}")->getNumberFormat()->setFormatCode('0.00%');
+                }
+
                 $grpLast = $grpRow - 1;
 
-                $chartSheet->getColumnDimension('F')->setAutoSize(true);
                 $chartSheet->getColumnDimension('G')->setAutoSize(true);
                 $chartSheet->getColumnDimension('H')->setAutoSize(true);
+                $chartSheet->getColumnDimension('I')->setAutoSize(true);
+                $chartSheet->getColumnDimension('J')->setAutoSize(true);
 
                 if ($grpLast >= 4) {
 
-                    $chartSheet->getStyle("F3:H{$grpLast}")
-                        ->getBorders()
-                        ->getAllBorders()
-                        ->setBorderStyle(Border::BORDER_THIN);
+                    $chartSheet->getStyle("G3:J{$grpLast}")
+                        ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
                     $grpCount = $grpLast - 3;
 
-                    $grpLabels = [
-                        new DataSeriesValues(
-                            DataSeriesValues::DATASERIES_TYPE_STRING,
-                            "'TOTAL NG BY GROUP'!\$H\$3",
-                            null,
-                            1
-                        )
-                    ];
-
                     $grpCategories = [
-                        new DataSeriesValues(
-                            DataSeriesValues::DATASERIES_TYPE_STRING,
-                            "'TOTAL NG BY GROUP'!\$F\$4:\$F\${$grpLast}",
-                            null,
-                            $grpCount
-                        )
+                        new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING,
+                            "'TOTAL NG BY GROUP'!\$G\$4:\$G\${$grpLast}", null, $grpCount)
                     ];
 
-                    $grpValues = [
-                        new DataSeriesValues(
-                            DataSeriesValues::DATASERIES_TYPE_NUMBER,
-                            "'TOTAL NG BY GROUP'!\$H\$4:\$H\${$grpLast}",
-                            '0.00%',
-                            $grpCount
-                        )
-                    ];
-
-                    $grpSeries = new DataSeries(
-                        DataSeries::TYPE_BARCHART,
-                        DataSeries::GROUPING_CLUSTERED,
-                        range(0, count($grpValues) - 1),
-                        $grpLabels,
+                    $grpBar = new DataSeries(
+                        DataSeries::TYPE_BARCHART, DataSeries::GROUPING_CLUSTERED, [0],
+                        [new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING, "'TOTAL NG BY GROUP'!\$I\$3", null, 1)],
                         $grpCategories,
-                        $grpValues
+                        [new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_NUMBER,
+                            "'TOTAL NG BY GROUP'!\$I\$4:\$I\${$grpLast}", '0.00%', $grpCount)]
                     );
+                    $grpBar->setPlotDirection(DataSeries::DIRECTION_COL);
 
-                    $grpSeries->setPlotDirection(DataSeries::DIRECTION_COL);
+                    $grpStdValues = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_NUMBER,
+                        "'TOTAL NG BY GROUP'!\$J\$4:\$J\${$grpLast}", '0.00%', $grpCount);
+                    $grpStdValues->setPointMarker('square');
+
+                    $grpLine = new DataSeries(
+                        DataSeries::TYPE_LINECHART, DataSeries::GROUPING_STANDARD, [1],
+                        [new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING, "'TOTAL NG BY GROUP'!\$J\$3", null, 1)],
+                        $grpCategories,
+                        [$grpStdValues]
+                    );
+                    $grpLine->setPlotDirection(DataSeries::DIRECTION_COL);
+                    $grpLine->setSmoothLine(false);
 
                     $grpChart = new Chart(
                         'ng_ratio_by_group_chart',
                         new Title('NG RATIO BY ' . $this->reportGroup),
-                        new Legend(Legend::POSITION_RIGHT, null, false),
-                        new PlotArea(null, [$grpSeries])
+                        new Legend(Legend::POSITION_BOTTOM, null, false),
+                        new PlotArea(null, [$grpBar, $grpLine])
                     );
 
-                    $grpChart->setTopLeftPosition('J22');
-                    $grpChart->setBottomRightPosition('S40');
+                    $grpChart->setTopLeftPosition('L22');
+                    $grpChart->setBottomRightPosition('U40');
 
                     $chartSheet->addChart($grpChart);
-                }                
+                }
 
                 /*
                 |==========================================================================
