@@ -51,6 +51,8 @@ class CompanyDashboard extends Page
     public array $itemOptions = [];
     public array $customerOptions = [];
     public array $groupRows = [];
+    public array $ngCatRows = [];
+    public array $ngCatSumRows = [];    
 
     public function mount()
     {
@@ -231,7 +233,29 @@ class CompanyDashboard extends Page
                 'ng_rate' => $in > 0 ? round($ng / $in * 100, 2) : 0,
                 'rwk_rate' => $in > 0 ? round($rwk / $in * 100, 2) : 0,
             ];
-        })->sortByDesc('ng')->values()->all();        
+        })->sortByDesc('ng')->values()->all();
+        
+        // ----- NG ratio by category (stored procedures) -----
+        $pFrom = $from->format('Y-m-d H:i:s');
+        $pTo   = $to->format('Y-m-d H:i:s');
+
+        $this->ngCatRows = collect(DB::select('CALL ng_detail_ratio_by_category(?, ?)', [$pFrom, $pTo]))
+            ->map(fn ($r) => [
+                'cat'   => (string) $r->ng_cat,
+                'name'  => (string) $r->ng_nm,
+                'qty'   => (int) $r->ng_qty,
+                'ratio' => round(((float) ($r->ng_ratio ?? 0)) * 100, 2),
+                'std'   => round(((float) $r->ng_std) * 100, 2),
+            ])->all();
+
+        // Same as the Excel: largest category first
+        $this->ngCatSumRows = collect(DB::select('CALL ng_detail_ratio_by_category_sum(?, ?)', [$pFrom, $pTo]))
+            ->map(fn ($r) => [
+                'cat'   => (string) $r->ng_cat,
+                'qty'   => (int) $r->ng_qty,
+                'ratio' => round(((float) ($r->ng_ratio ?? 0)) * 100, 2),
+                'std'   => round(((float) $r->ng_std) * 100, 2),
+            ])->sortByDesc('qty')->values()->all();        
 
         $ngItems = collect($this->itemRows)->where('ng', '>', 0)->values();
 
@@ -268,6 +292,19 @@ class CompanyDashboard extends Page
                 'out'      => collect($this->processRows)->pluck('out')->all(),
                 'ng_rate'  => collect($this->processRows)->pluck('ng_rate')->all(),
                 'rwk_rate' => collect($this->processRows)->pluck('rwk_rate')->all(),
+            ],            
+            'ngCategory' => [
+                'labels' => collect($this->ngCatRows)->pluck('name')->all(),
+                'cats'   => collect($this->ngCatRows)->pluck('cat')->all(),
+                'qty'    => collect($this->ngCatRows)->pluck('qty')->all(),
+                'ratio'  => collect($this->ngCatRows)->pluck('ratio')->all(),
+                'std'    => collect($this->ngCatRows)->pluck('std')->all(),
+            ],
+            'ngCategorySum' => [
+                'labels' => collect($this->ngCatSumRows)->pluck('cat')->all(),
+                'qty'    => collect($this->ngCatSumRows)->pluck('qty')->all(),
+                'ratio'  => collect($this->ngCatSumRows)->pluck('ratio')->all(),
+                'std'    => collect($this->ngCatSumRows)->pluck('std')->all(),
             ],            
             'pcbGroup' => [
                 'labels' => collect($this->groupRows)->pluck('name')->all(),

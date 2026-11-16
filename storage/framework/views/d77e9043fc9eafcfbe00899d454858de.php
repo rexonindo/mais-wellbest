@@ -40,7 +40,7 @@
         .cd-row-alert { background: rgba(220,38,38,.08); }
     </style>
 
-    <?php if (! $__env->hasRenderedOnce('dea02766-ccae-4964-9556-4d3b549fdaf9')): $__env->markAsRenderedOnce('dea02766-ccae-4964-9556-4d3b549fdaf9'); ?>
+    <?php if (! $__env->hasRenderedOnce('b7178641-d21f-49bb-bb7d-6b9c0cd999d4')): $__env->markAsRenderedOnce('b7178641-d21f-49bb-bb7d-6b9c0cd999d4'); ?>
         <link rel="stylesheet" href="<?php echo e(asset('css/flatpickr.min.css')); ?>">
         <script src="<?php echo e(asset('js/flatpickr.min.js')); ?>"></script>
         <script src="<?php echo e(asset('js/chart.umd.min.js')); ?>"></script>        
@@ -111,6 +111,75 @@
                     data: { labels: d.items.labels, datasets: [{ label: 'Output (pcs)', data: d.items.output, backgroundColor: '#10b981' }] },
                     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
                 });
+
+                // ---- NG Ratio By Category (per NG name, bars coloured by category) ----
+                const catPalette = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#eab308', '#06b6d4', '#ef4444', '#64748b'];
+                const catColor = {};
+                (d.ngCategory.cats || []).forEach(c => {
+                    if (!(c in catColor)) catColor[c] = catPalette[Object.keys(catColor).length % catPalette.length];
+                });
+
+                make('cdNgCategory', {
+                    type: 'bar',
+                    data: {
+                        labels: d.ngCategory.labels,
+                        datasets: [
+                            { type: 'bar',  label: 'NG ratio (%)', data: d.ngCategory.ratio,
+                              backgroundColor: d.ngCategory.cats.map(c => catColor[c]), order: 2 },
+                            { type: 'line', label: 'Standard (0.90%)', data: d.ngCategory.std,
+                              borderColor: '#dc2626', backgroundColor: '#dc2626',
+                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
+                        ],
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: {
+                                title: (items) => `${d.ngCategory.cats[items[0].dataIndex]} - ${items[0].label}`,
+                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
+                                afterLabel: (c) => c.datasetIndex === 0
+                                    ? `NG Qty: ${Number(d.ngCategory.qty[c.dataIndex]).toLocaleString()}` : '',
+                            } },
+                        },
+                        scales: {
+                            x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 30 } },
+                            y: { beginAtZero: true, title: { display: true, text: 'NG ratio %' },
+                                 ticks: { callback: v => v + '%' } },
+                        },
+                    },
+                });
+
+                // ---- NG Ratio By Category Sum ----
+                make('cdNgCategorySum', {
+                    type: 'bar',
+                    data: {
+                        labels: d.ngCategorySum.labels,
+                        datasets: [
+                            { type: 'bar',  label: 'NG ratio (%)', data: d.ngCategorySum.ratio, backgroundColor: '#3b82f6', order: 2 },
+                            { type: 'line', label: 'Standard (0.90%)', data: d.ngCategorySum.std,
+                              borderColor: '#dc2626', backgroundColor: '#dc2626',
+                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
+                        ],
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: {
+                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
+                                afterLabel: (c) => c.datasetIndex === 0
+                                    ? `NG Qty: ${Number(d.ngCategorySum.qty[c.dataIndex]).toLocaleString()}` : '',
+                            } },
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'NG ratio %' },
+                                 ticks: { callback: v => v + '%' } },
+                        },
+                    },
+                });                
 
                 make('cdPcbGroup', {
                     type: 'bar',
@@ -343,6 +412,16 @@
                 <div class="cd-title">NG Share by Product</div>
                 <div class="cd-chart" wire:ignore><canvas id="cdNgItems"></canvas></div>
             </div>
+        </div>
+
+        <div class="cd-card">
+            <div class="cd-title">NG Ratio By Category</div>
+            <div class="cd-chart" wire:ignore><canvas id="cdNgCategory"></canvas></div>
+        </div>
+
+        <div class="cd-card">
+            <div class="cd-title">NG Ratio By Category Sum</div>
+            <div class="cd-chart" wire:ignore><canvas id="cdNgCategorySum"></canvas></div>
         </div>
 
         <div class="cd-card">
