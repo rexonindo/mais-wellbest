@@ -15,6 +15,16 @@ class CompanyWelcome extends Page
     protected static bool $shouldRegisterNavigation = true;
     protected static ?int $navigationSort = 1;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return ! (auth()->user()?->hasRole('dashboard') ?? false);
+    }
+
+    public static function canAccess(): bool
+    {
+        return ! (auth()->user()?->hasRole('dashboard') ?? false);
+    }
+
     public function getTitle(): string
     {
         return '';

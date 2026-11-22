@@ -97,16 +97,40 @@ class WellbestPanelProvider extends PanelProvider
                 ], 'wellbest-pwa');
 
                 // Customize login redirect
-                app()->bind(
-                    \Filament\Http\Responses\Auth\Contracts\LoginResponse::class,
-                    \App\Http\Responses\CompanyLoginResponse::class
-                );
+                app()->bind(LoginResponse::class, function () {
+                    return new class implements LoginResponse {
+                        public function toResponse($request): \Illuminate\Http\RedirectResponse|\Livewire\Features\SupportRedirects\Redirector
+                        {
+                            if ($request->user()?->hasRole('dashboard')) {
+                                return redirect('/wellbest/company-dashboard-a');
+                            }
+
+                            // Everyone else keeps the existing behavior
+                            return app(\App\Http\Responses\CompanyLoginResponse::class)->toResponse($request);
+                        }
+                    };
+                });
             })
             ->login()
             ->sidebarCollapsibleOnDesktop()
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => Blade::render(<<<'HTML'
+                    @if ($isDashboard)
+                        <style>
+                            .fi-sidebar,
+                            .fi-sidebar-close-overlay,
+                            .fi-topbar-open-sidebar-btn,
+                            .fi-topbar-close-sidebar-btn,
+                            .fi-topbar-open-collapse-sidebar-btn,
+                            .fi-topbar-close-collapse-sidebar-btn {
+                                display: none !important;
+                            }
+                            .fi-main-ctn {
+                                padding-inline-start: 0 !important;
+                            }
+                        </style>
+                    @endif                
                     <script>
                         document.addEventListener('alpine:initialized', () => {
                             const sidebar = Alpine.store('sidebar');
@@ -124,6 +148,7 @@ class WellbestPanelProvider extends PanelProvider
                     </script>
                 HTML, [
                     'isProduction' => (bool) Auth::user()?->hasRole('production'),
+                    'isDashboard'  => (bool) Auth::user()?->hasRole('dashboard'),
                 ])
             )
             ->brandName('MAIS - Wellbest')

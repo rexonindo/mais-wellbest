@@ -22,6 +22,16 @@ class CompanyDashboard extends Page
 
     /** NG rate (%) above which a row is highlighted red. */
     private const NG_ALERT_PCT = 1.0;
+    
+    public static function shouldRegisterNavigation(): bool
+    {
+        return ! (auth()->user()?->hasRole('dashboard') ?? false);
+    }
+
+    public static function canAccess(): bool
+    {
+        return ! (auth()->user()?->hasRole('dashboard') ?? false);
+    }
 
     public function getTitle(): string
     {
@@ -29,12 +39,27 @@ class CompanyDashboard extends Page
     }    
 
     // Existing cards
-    public $ttlProduct;
-    public $ttlMachine;
-    public $ttlPlanQty;
-    public $ttlInQty;
-    public $ttlOutQty;
-    public $ttlOSQty;
+    public $ttlProductSINGLE;
+    public $ttlMachineSINGLE;
+    public $ttlPlanQtySINGLE;
+    public $ttlInQtySINGLE;
+    public $ttlOutQtySINGLE;
+    public $ttlWIPQtySINGLE;
+    public $ttlOSQtySINGLE;
+
+    public $ttlProductDOUBLE;
+    public $ttlMachineDOUBLE;
+    public $ttlPlanQtyDOUBLE;
+    public $ttlInQtyDOUBLE;
+    public $ttlOutQtyDOUBLE;
+    public $ttlWIPQtyDOUBLE;
+    public $ttlOSQtyDOUBLE;
+
+    public $ttlPlanQtyWO;
+    public $ttlInQtyWO;
+    public $ttlOutQtyWO; 
+    public $ttlOSQtyWO;
+    public $ttlNotInQtyWO;
 
     // Filters
     public $dateFrom;
@@ -56,12 +81,52 @@ class CompanyDashboard extends Page
 
     public function mount()
     {
-        $this->ttlProduct = DB::table('current_total_product_view')->value('ttl_product');
-        $this->ttlMachine = DB::table('current_total_machine_view')->value('ttl_machine');
-        $this->ttlPlanQty = DB::table('current_production_qty_view')->value('ttl_plan_qty');
-        $this->ttlInQty  = DB::table('current_production_qty_view')->value('ttl_in_qty');
-        $this->ttlOutQty  = DB::table('current_production_qty_view')->value('ttl_out_qty');
-        $this->ttlOSQty   = DB::table('current_production_qty_view')->value('ttl_os_qty');
+        // --- Production Performance Single --------------------------------------------
+        $productCount = DB::table('current_total_product_grp_view')
+            ->where('itm_grp_surface', 'SINGLE')
+            ->first();
+        $this->ttlProductSINGLE = $productCount->ttl_product ?? 0;
+        $machineCount = DB::table('current_total_machine_grp_view')
+            ->where('itm_grp_surface', 'SINGLE')
+            ->first();
+        $this->ttlMachineSINGLE = $machineCount->ttl_machine ?? 0;
+        $productionQty = DB::table('current_total_production_qty_grp_view')
+            ->where('itm_grp_surface', 'SINGLE')
+            ->first();
+        $this->ttlPlanQtySINGLE = $productionQty->ttl_plan_qty ?? 0;
+        $this->ttlInQtySINGLE   = $productionQty->ttl_in_qty ?? 0;
+        $this->ttlOutQtySINGLE  = $productionQty->ttl_out_qty ?? 0;
+        $this->ttlWIPQtySINGLE  = $productionQty->ttl_wip_qty ?? 0; 
+        $this->ttlOSQtySINGLE   = $productionQty->ttl_os_qty ?? 0;
+
+        // --- Production Profarmance Double --------------------------------------------
+        $productCount = DB::table('current_total_product_grp_view')
+            ->where('itm_grp_surface', 'DOUBLE')
+            ->first();
+        $this->ttlProductDOUBLE = $productCount->ttl_product ?? 0;
+        $machineCount = DB::table('current_total_machine_grp_view')
+            ->where('itm_grp_surface', 'DOUBLE')
+            ->first();
+        $this->ttlMachineDOUBLE = $machineCount->ttl_machine ?? 0;
+        $productionQty = DB::table('current_total_production_qty_grp_view')
+            ->where('itm_grp_surface', 'DOUBLE')
+            ->first();
+        $this->ttlPlanQtyDOUBLE = $productionQty->ttl_plan_qty ?? 0;
+        $this->ttlInQtyDOUBLE   = $productionQty->ttl_in_qty ?? 0;
+        $this->ttlOutQtyDOUBLE  = $productionQty->ttl_out_qty ?? 0;
+        $this->ttlWIPQtyDOUBLE  = $productionQty->ttl_wip_qty ?? 0; 
+        $this->ttlOSQtyDOUBLE   = $productionQty->ttl_os_qty ?? 0;
+
+        // --- WO Order Progress --------------------------------------
+        $WOProgress = DB::table('current_total_wo_qty_view')            
+            ->first();
+        $this->ttlPlanQtyWO = $WOProgress->ttl_plan_qty ?? 0;
+        $this->ttlInQtyWO   = $WOProgress->ttl_in_qty ?? 0;
+        $this->ttlOutQtyWO  = $WOProgress->ttl_out_qty ?? 0; 
+        $this->ttlOSQtyWO   = $WOProgress->ttl_os_qty ?? 0;
+        $this->ttlNotInQtyWO = $WOProgress->ttl_notin_qty ?? 0;
+        
+        // ========================================================
 
         $this->dateTo   = now()->toDateString();
         $this->dateFrom = now()->subDays(29)->toDateString();
