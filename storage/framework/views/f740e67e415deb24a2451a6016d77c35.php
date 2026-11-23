@@ -343,7 +343,7 @@
 
     </style>
 
-    <?php if (! $__env->hasRenderedOnce('addfbb9b-0c9b-4bc5-bbff-612b28bfa24c')): $__env->markAsRenderedOnce('addfbb9b-0c9b-4bc5-bbff-612b28bfa24c'); ?>
+    <?php if (! $__env->hasRenderedOnce('ea521f31-ddc3-407e-9d8a-40c839a10f4c')): $__env->markAsRenderedOnce('ea521f31-ddc3-407e-9d8a-40c839a10f4c'); ?>
         <link rel="stylesheet" href="<?php echo e(asset('css/flatpickr.min.css')); ?>">
         <script src="<?php echo e(asset('js/flatpickr.min.js')); ?>"></script>
         <script src="<?php echo e(asset('js/chart.umd.min.js')); ?>"></script>        
@@ -351,7 +351,16 @@
 
     <script>
 
+        /* =========================================================
+        Dashboard rotator: switch to the next page on a fixed timer.
+        ========================================================= */
         document.addEventListener('DOMContentLoaded', function () {
+
+            // Clear stale values left by the old timer script
+            try {
+                localStorage.removeItem('dashboardLastSwitch');
+                localStorage.removeItem('dashboardLastRefresh');
+            } catch (e) {}
 
             const dashboardPages = [
                 '/wellbest/company-dashboard-a',
@@ -362,78 +371,18 @@
                 '/wellbest/company-dashboard-f'
             ];
 
-            const REFRESH_INTERVAL = 5 * 1000; // 5 seconds
-            const SWITCH_INTERVAL  = 30 * 1000; // 1 minutes
+            const SWITCH_MS = 30 * 1000;  // time on each page before switching
 
-            const currentPath = window.location.pathname;
+            const currentPath  = window.location.pathname.replace(/\/+$/, '');
+            const currentIndex = dashboardPages.indexOf(currentPath);
 
-            // Find current dashboard
-            let currentIndex = dashboardPages.indexOf(currentPath);
+            if (currentIndex === -1) return;
 
-            if (currentIndex === -1) {
-                return;
-            }
-
-            const now = Date.now();
-
-            // Initialize timers
-            if (localStorage.getItem('dashboardLastRefresh') === null) {
-                localStorage.setItem('dashboardLastRefresh', now);
-            }
-
-            if (localStorage.getItem('dashboardLastSwitch') === null) {
-                localStorage.setItem('dashboardLastSwitch', now);
-            }
-
-            // Check dashboard timers every second
-            setInterval(function () {
-
-                const lastRefresh = Number(
-                    localStorage.getItem('dashboardLastRefresh')
-                );
-
-                const lastSwitch = Number(
-                    localStorage.getItem('dashboardLastSwitch')
-                );
-
-                const currentTime = Date.now();
-
-                // Switch dashboard every 1 minutes
-                if (currentTime - lastSwitch >= SWITCH_INTERVAL) {
-
-                    const nextIndex =
-                        (currentIndex + 1) % dashboardPages.length;
-
-                    localStorage.setItem('dashboardLastSwitch', currentTime);
-                    localStorage.setItem('dashboardLastRefresh', currentTime);
-
-                    window.location.href = dashboardPages[nextIndex];
-
-                    return;
-                }
-
-                // Refresh current dashboard every 10 seconds
-                /*
-                if (currentTime - lastRefresh >= REFRESH_INTERVAL) {
-
-                    localStorage.setItem('dashboardLastRefresh', currentTime);
-                    window.location.reload();
-                }
-                */
-               
-            }, 1000);
-
+            setTimeout(function () {
+                window.location.href = dashboardPages[(currentIndex + 1) % dashboardPages.length];
+            }, SWITCH_MS);
         });
-
-        /*
-        document.addEventListener('livewire:init', () => {
-            setInterval(() => {
-                // Refresh current Filament / Livewire page
-                window.Livewire.find('<?php echo e($_instance->getId()); ?>').$refresh();
-            }, 5000); // 5 seconds
-        });
-        */
-
+        
         document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => {
                 if (window.Alpine) {
@@ -441,6 +390,7 @@
                 }
             }, 200);
         });
+
         window.cdCharts = function (initial) {
             let charts = {}; // kept outside Alpine reactivity on purpose
 
@@ -647,6 +597,7 @@
                 update(d) { render(d); },
             };
         };
+
         window.cdDatePicker = function (initial) {
             return {
                 value: initial,
@@ -795,5 +746,4 @@
 <?php if (isset($__componentOriginalbe23554f7bded3778895289146189db7)): ?>
 <?php $component = $__componentOriginalbe23554f7bded3778895289146189db7; ?>
 <?php unset($__componentOriginalbe23554f7bded3778895289146189db7); ?>
-<?php endif; ?>
-<?php /**PATH D:\website\mais-wellbest\resources\views/filament/pages/company-dashboard-a.blade.php ENDPATH**/ ?>
+<?php endif; ?><?php /**PATH D:\website\mais-wellbest\resources\views/filament/pages/company-dashboard-a.blade.php ENDPATH**/ ?>

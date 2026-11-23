@@ -330,7 +330,16 @@
 
     <script>
 
+        /* =========================================================
+        Dashboard rotator: switch to the next page on a fixed timer.
+        ========================================================= */
         document.addEventListener('DOMContentLoaded', function () {
+
+            // Clear stale values left by the old timer script
+            try {
+                localStorage.removeItem('dashboardLastSwitch');
+                localStorage.removeItem('dashboardLastRefresh');
+            } catch (e) {}
 
             const dashboardPages = [
                 '/wellbest/company-dashboard-a',
@@ -341,69 +350,18 @@
                 '/wellbest/company-dashboard-f'
             ];
 
-            const REFRESH_INTERVAL = 5 * 1000; // 5 seconds
-            const SWITCH_INTERVAL  = 15 * 1000; // 1 minutes
+            const SWITCH_MS = 15 * 1000;  // time on each page before switching
 
-            const currentPath = window.location.pathname;
+            const currentPath  = window.location.pathname.replace(/\/+$/, '');
+            const currentIndex = dashboardPages.indexOf(currentPath);
 
-            // Find current dashboard
-            let currentIndex = dashboardPages.indexOf(currentPath);
+            if (currentIndex === -1) return;
 
-            if (currentIndex === -1) {
-                return;
-            }
-
-            const now = Date.now();
-
-            // Initialize timers
-            if (localStorage.getItem('dashboardLastRefresh') === null) {
-                localStorage.setItem('dashboardLastRefresh', now);
-            }
-
-            if (localStorage.getItem('dashboardLastSwitch') === null) {
-                localStorage.setItem('dashboardLastSwitch', now);
-            }
-
-            // Check dashboard timers every second
-            setInterval(function () {
-
-                const lastRefresh = Number(
-                    localStorage.getItem('dashboardLastRefresh')
-                );
-
-                const lastSwitch = Number(
-                    localStorage.getItem('dashboardLastSwitch')
-                );
-
-                const currentTime = Date.now();
-
-                // Switch dashboard every 1 minutes
-                if (currentTime - lastSwitch >= SWITCH_INTERVAL) {
-
-                    const nextIndex =
-                        (currentIndex + 1) % dashboardPages.length;
-
-                    localStorage.setItem('dashboardLastSwitch', currentTime);
-                    localStorage.setItem('dashboardLastRefresh', currentTime);
-
-                    window.location.href = dashboardPages[nextIndex];
-
-                    return;
-                }
-
-                // Refresh current dashboard every 10 seconds
-                /*
-                if (currentTime - lastRefresh >= REFRESH_INTERVAL) {
-
-                    localStorage.setItem('dashboardLastRefresh', currentTime);
-                    window.location.reload();
-                }
-                */
-
-            }, 1000);
-
+            setTimeout(function () {
+                window.location.href = dashboardPages[(currentIndex + 1) % dashboardPages.length];
+            }, SWITCH_MS);
         });
-
+        
         /*
         document.addEventListener('livewire:init', () => {
             setInterval(() => {
