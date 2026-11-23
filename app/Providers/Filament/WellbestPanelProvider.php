@@ -118,6 +118,7 @@ class WellbestPanelProvider extends PanelProvider
                 fn (): string => Blade::render(<<<'HTML'
                     @if ($isDashboard)
                         <style>
+                            .fi-topbar,
                             .fi-sidebar,
                             .fi-sidebar-close-overlay,
                             .fi-topbar-open-sidebar-btn,
@@ -128,6 +129,10 @@ class WellbestPanelProvider extends PanelProvider
                             }
                             .fi-main-ctn {
                                 padding-inline-start: 0 !important;
+                            }
+                            /* topbar height is given back to the dashboard */
+                            .cd-wrap {
+                                height: calc(100vh - 1.5rem) !important;
                             }
                         </style>
                     @endif                

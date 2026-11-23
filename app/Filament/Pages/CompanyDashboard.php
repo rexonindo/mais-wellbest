@@ -55,6 +55,14 @@ class CompanyDashboard extends Page
     public $ttlWIPQtyDOUBLE;
     public $ttlOSQtyDOUBLE;
 
+    public $ttlProductOTHER;
+    public $ttlMachineOTHER;
+    public $ttlPlanQtyOTHER;
+    public $ttlInQtyOTHER;
+    public $ttlOutQtyOTHER;
+    public $ttlWIPQtyOTHER;
+    public $ttlOSQtyOTHER;
+
     public $ttlPlanQtyWO;
     public $ttlInQtyWO;
     public $ttlOutQtyWO; 
@@ -116,6 +124,24 @@ class CompanyDashboard extends Page
         $this->ttlOutQtyDOUBLE  = $productionQty->ttl_out_qty ?? 0;
         $this->ttlWIPQtyDOUBLE  = $productionQty->ttl_wip_qty ?? 0; 
         $this->ttlOSQtyDOUBLE   = $productionQty->ttl_os_qty ?? 0;
+
+        // --- Production Profarmance Other --------------------------------------------
+        $productCount = DB::table('current_total_product_grp_view')
+            ->where('itm_grp_surface', 'OTHER')
+            ->first();
+        $this->ttlProductOTHER = $productCount->ttl_product ?? 0;
+        $machineCount = DB::table('current_total_machine_grp_view')
+            ->where('itm_grp_surface', 'OTHER')
+            ->first();
+        $this->ttlMachineOTHER = $machineCount->ttl_machine ?? 0;
+        $productionQty = DB::table('current_total_production_qty_grp_view')
+            ->where('itm_grp_surface', 'OTHER')
+            ->first();
+        $this->ttlPlanQtyOTHER = $productionQty->ttl_plan_qty ?? 0;
+        $this->ttlInQtyOTHER   = $productionQty->ttl_in_qty ?? 0;
+        $this->ttlOutQtyOTHER  = $productionQty->ttl_out_qty ?? 0;
+        $this->ttlWIPQtyOTHER  = $productionQty->ttl_wip_qty ?? 0; 
+        $this->ttlOSQtyOTHER   = $productionQty->ttl_os_qty ?? 0;        
 
         // --- WO Order Progress --------------------------------------
         $WOProgress = DB::table('current_total_wo_qty_view')            
