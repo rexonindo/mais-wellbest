@@ -155,7 +155,7 @@
 
         /* ===== Fit-to-one-page overrides ===== */
         .cd-wrap {
-            height: calc(100vh - 5rem);      /* 5rem ≈ Filament topbar + page padding; tweak if needed */
+            height: calc(100vh - 1.5rem);   /* topbar is hidden for the dashboard role */
             display: flex;
             flex-direction: column;
             padding: 0 8px;
@@ -165,52 +165,52 @@
         .cd-dashboard-heading { flex: 0 0 auto; margin: 0 0 4px; }
 
         .cd-main-title {
-            font-size: clamp(16px, 2.6vh, 24px);
+            font-size: clamp(16px, 2.8vh, 26px);
             padding: 2px 0 6px;
             margin: 0 0 4px;
         }
         .cd-main-title::after { height: 3px; margin: 5px auto 0; }
         .cd-main-subtitle {
-            font-size: clamp(9px, 1.2vh, 11px);
-            margin: -2px 0 4px;
+            font-size: clamp(9px, 1.3vh, 12px);
+            margin: -2px 0 6px;
         }
 
-        /* 4 sections share the remaining height equally */
-        .cd-section {
+        /* the two cards share the remaining height, one above the other */
+        .cd-wrap > .cd-cards {
             flex: 1 1 0;
             min-height: 0;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .cd-wrap > .cd-cards > .cd-card {
             display: flex;
             flex-direction: column;
-            padding: 6px 10px;
-            margin-bottom: 6px;
-        }
-        .cd-section:last-child { margin-bottom: 0; }
-        .cd-section-header { flex: 0 0 auto; margin-bottom: 4px; padding-bottom: 2px; }
-        .cd-section-title   { font-size: clamp(11px, 1.7vh, 14px); }
-        .cd-section-caption { font-size: clamp(9px, 1.2vh, 11px); margin-top: 0; }
-
-        /* cards fill the section height */
-        .cd-section .cd-grid.cd-g5 { flex: 1 1 0; min-height: 0; gap: 8px; }
-        .cd-section .cd-card {
             min-height: 0;
-            padding: .25rem .75rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            padding: .4rem .75rem;
         }
-        .cd-section .cd-label { font-size: clamp(.6rem, 1.3vh, .75rem); margin-bottom: 2px; }
-        .cd-section .cd-value { font-size: clamp(1.1rem, 3.4vh, 1.9rem); margin-top: 0; line-height: 1.1; }
-
-        /* Short screens: drop the captions to save space */
-        @media (max-height: 800px) {
-            .cd-section-caption { display: none; }
+        .cd-wrap > .cd-cards .cd-title {
+            flex: 0 0 auto;
+            margin-bottom: .2rem;
+            font-size: clamp(.8rem, 1.8vh, 1rem);
         }
 
-        /* Phones / narrow screens: allow normal scrolling instead */
+        /* each chart fills its card (overrides the old 300px) */
+        .cd-wrap > .cd-cards .cd-chart {
+            flex: 1 1 0;
+            min-height: 0;
+            height: auto;
+            position: relative;
+        }
+
+        /* phones / narrow screens: normal scrolling */
         @media (max-width: 768px) {
             .cd-wrap { height: auto; overflow: visible; }
-            .cd-section { flex: none; }
-        }
+            .cd-wrap > .cd-cards { display: block; }
+            .cd-wrap > .cd-cards > .cd-card { margin-bottom: 8px; }
+            .cd-wrap > .cd-cards .cd-chart { flex: none; height: 300px; }
+        }        
 
     </style>
 
