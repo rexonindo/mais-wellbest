@@ -161,9 +161,18 @@
             .cd-main-title::after { width: 100px; }
             .cd-grid.cd-g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
+
+        /* extra space above the second block's title */
+        .cd-wrap + .cd-wrap {
+            margin-top: 40px;          /* gap after the Customer Summary cards */
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;   /* optional divider line, remove if you don't want it */
+        }
+        .dark .cd-wrap + .cd-wrap { border-top-color: #27272a; }
+
     </style>
 
-    <?php if (! $__env->hasRenderedOnce('5e7c6afc-db0a-4829-a7db-02ba1a2f5ce0')): $__env->markAsRenderedOnce('5e7c6afc-db0a-4829-a7db-02ba1a2f5ce0'); ?>
+    <?php if (! $__env->hasRenderedOnce('256c0c39-a3bf-441d-ac84-4958976dbe65')): $__env->markAsRenderedOnce('256c0c39-a3bf-441d-ac84-4958976dbe65'); ?>
         <link rel="stylesheet" href="<?php echo e(asset('css/flatpickr.min.css')); ?>">
         <script src="<?php echo e(asset('js/flatpickr.min.js')); ?>"></script>
         <script src="<?php echo e(asset('js/chart.umd.min.js')); ?>"></script>        
