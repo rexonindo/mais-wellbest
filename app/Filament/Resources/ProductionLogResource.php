@@ -508,9 +508,13 @@ class ProductionLogResource extends BaseResource
             ->columns([
                 Tables\Columns\TextColumn::make('wo_no')
                     ->label('WO No')
+                    ->extraHeaderAttributes(['class' => 'sticky-col sticky-col-1'])
+                    ->extraCellAttributes(['class' => 'sticky-col sticky-col-1'])
                     ->searchable(),
                 Tables\Columns\TextColumn::make('itm_cd')
                     ->label('Part No')
+                    ->extraHeaderAttributes(['class' => 'sticky-col sticky-col-2'])
+                    ->extraCellAttributes(['class' => 'sticky-col sticky-col-2'])                    
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('item.itm_nm')

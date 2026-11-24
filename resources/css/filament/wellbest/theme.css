@@ -2,3 +2,34 @@
 
 @config 'tailwind.config.js';
 
+/* Freeze the first columns */
+.fi-ta-table th.sticky-col,
+.fi-ta-table td.sticky-col {
+    position: sticky;
+    z-index: 5;
+    background-color: white;
+}
+
+.dark .fi-ta-table th.sticky-col,
+.dark .fi-ta-table td.sticky-col {
+    background-color: rgb(24 24 27); /* gray-900 */
+}
+
+/* Width of WO No column must match the left offset of Part No */
+.fi-ta-table .sticky-col-1 {
+    left: 0;
+    min-width: 120px;
+    max-width: 120px;
+}
+
+.fi-ta-table .sticky-col-2 {
+    left: 120px;
+    min-width: 140px;
+    box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.25); /* separator line */
+}
+
+/* Header must sit above body cells */
+.fi-ta-table th.sticky-col {
+    z-index: 6;
+}
+
