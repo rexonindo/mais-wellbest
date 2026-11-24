@@ -156,13 +156,14 @@
         /* =========================================================
            SCROLLING PAGE OVERRIDES
            This page is taller than the screen (auto-scroll rotator),
-           so every block must take its natural height. !important
-           beats any fixed-height rule coming from theme.css or a
-           render hook.
+           so every block must take its natural height. The wrappers
+           also carry the same rule as an inline style (see markup),
+           which wins over any stylesheet.
            ========================================================= */
         .cd-wrap {
             height: auto !important;
             min-height: 0 !important;
+            max-height: none !important;
             overflow: visible !important;
             display: block !important;
         }
@@ -508,7 +509,9 @@
     </script>
 
     {{-- ===== Block 1: Production Output By Customer ===== --}}
-    <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+    <div class="cd-wrap"
+         style="height:auto !important; min-height:0 !important; max-height:none !important; overflow:visible !important;"
+         x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
         <div class="cd-dashboard-heading">
             <h2 class="cd-main-title">
                 PRODUCTION OUTPUT BY CUSTOMER
@@ -547,7 +550,8 @@
     </div>
 
     {{-- ===== Block 2: Part Number And Process Summary (tables only, no x-data) ===== --}}
-    <div class="cd-wrap">
+    <div class="cd-wrap"
+         style="height:auto !important; min-height:0 !important; max-height:none !important; overflow:visible !important;">
         <div class="cd-dashboard-heading">
             <h2 class="cd-main-title">
                 PART NUMBER AND PROCESS SUMMARY

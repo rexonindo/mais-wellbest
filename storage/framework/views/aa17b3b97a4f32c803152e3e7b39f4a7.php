@@ -165,13 +165,14 @@
         /* =========================================================
            SCROLLING PAGE OVERRIDES
            This page is taller than the screen (auto-scroll rotator),
-           so every block must take its natural height. !important
-           beats any fixed-height rule coming from theme.css or a
-           render hook.
+           so every block must take its natural height. The wrappers
+           also carry the same rule as an inline style (see markup),
+           which wins over any stylesheet.
            ========================================================= */
         .cd-wrap {
             height: auto !important;
             min-height: 0 !important;
+            max-height: none !important;
             overflow: visible !important;
             display: block !important;
         }
@@ -200,7 +201,7 @@
         .dark .cd-wrap + .cd-wrap { border-top-color: #27272a; }
     </style>
 
-    <?php if (! $__env->hasRenderedOnce('f0451d99-3424-47ab-b82b-a975ce8d052c')): $__env->markAsRenderedOnce('f0451d99-3424-47ab-b82b-a975ce8d052c'); ?>
+    <?php if (! $__env->hasRenderedOnce('d99363ba-192e-4406-9e22-3dcea8b007d5')): $__env->markAsRenderedOnce('d99363ba-192e-4406-9e22-3dcea8b007d5'); ?>
         <link rel="stylesheet" href="<?php echo e(asset('css/flatpickr.min.css')); ?>">
         <script src="<?php echo e(asset('js/flatpickr.min.js')); ?>"></script>
         <script src="<?php echo e(asset('js/chart.umd.min.js')); ?>"></script>
@@ -517,7 +518,9 @@
     </script>
 
     
-    <div class="cd-wrap" x-data="cdCharts(<?php echo \Illuminate\Support\Js::from($charts)->toHtml() ?>)" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+    <div class="cd-wrap"
+         style="height:auto !important; min-height:0 !important; max-height:none !important; overflow:visible !important;"
+         x-data="cdCharts(<?php echo \Illuminate\Support\Js::from($charts)->toHtml() ?>)" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
         <div class="cd-dashboard-heading">
             <h2 class="cd-main-title">
                 PRODUCTION OUTPUT BY CUSTOMER
@@ -556,7 +559,8 @@
     </div>
 
     
-    <div class="cd-wrap">
+    <div class="cd-wrap"
+         style="height:auto !important; min-height:0 !important; max-height:none !important; overflow:visible !important;">
         <div class="cd-dashboard-heading">
             <h2 class="cd-main-title">
                 PART NUMBER AND PROCESS SUMMARY
