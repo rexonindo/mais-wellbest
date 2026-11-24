@@ -153,13 +153,10 @@
             .cd-grid.cd-g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
-        /* extra space above the second block's title */
+        /* second and later blocks: undo the pull-up and add space between them */
         .cd-wrap + .cd-wrap {
-            margin-top: 40px;          /* gap after the Customer Summary cards */
-            padding-top: 24px;
-            border-top: 1px solid #e5e7eb;   /* optional divider line, remove if you don't want it */
+            margin-top: 16px;
         }
-        .dark .cd-wrap + .cd-wrap { border-top-color: #27272a; }
 
     </style>
 
