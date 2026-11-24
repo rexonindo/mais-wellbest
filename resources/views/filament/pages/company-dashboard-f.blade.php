@@ -153,24 +153,55 @@
             .cd-grid.cd-g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
-        /* extra space above the second block's title */
+        /* =========================================================
+           SCROLLING PAGE OVERRIDES
+           This page is taller than the screen (auto-scroll rotator),
+           so every block must take its natural height. !important
+           beats any fixed-height rule coming from theme.css or a
+           render hook.
+           ========================================================= */
+        .cd-wrap {
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            display: block !important;
+        }
+        .cd-wrap > .cd-grid.cd-g2 {
+            display: grid !important;
+            grid-template-rows: none !important;
+            align-items: start !important;
+        }
+        .cd-wrap > .cd-grid.cd-g2 > .cd-card {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+        }
+        .cd-wrap .cd-chart {
+            height: 300px !important;
+            flex: none !important;
+        }
+
+        /* space between the first block and the second block's title */
         .cd-wrap + .cd-wrap {
-            margin-top: 20px;          /* gap after the Customer Summary cards */
+            margin-top: 40px !important;
             padding-top: 24px;
-            border-top: 1px solid #e5e7eb;   /* optional divider line, remove if you don't want it */
+            border-top: 1px solid #e5e7eb;   /* optional divider, delete if not wanted */
         }
         .dark .cd-wrap + .cd-wrap { border-top-color: #27272a; }
-
     </style>
 
     @once
         <link rel="stylesheet" href="{{ asset('css/flatpickr.min.css') }}">
         <script src="{{ asset('js/flatpickr.min.js') }}"></script>
-        <script src="{{ asset('js/chart.umd.min.js') }}"></script>        
+        <script src="{{ asset('js/chart.umd.min.js') }}"></script>
     @endonce
 
     <script>
 
+        /* =========================================================
+        Dashboard rotator: auto-scroll down, then switch to next page.
+        ========================================================= */
         document.addEventListener('DOMContentLoaded', function () {
 
             const dashboardPages = [
@@ -235,8 +266,8 @@
             };
 
             setTimeout(tick, START_DELAY);
-        });    
-           
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => {
                 if (window.Alpine) {
@@ -244,6 +275,7 @@
                 }
             }, 200);
         });
+
         window.cdCharts = function (initial) {
             let charts = {}; // kept outside Alpine reactivity on purpose
 
@@ -270,7 +302,7 @@
                         interaction: { mode: 'index', intersect: false },
                         scales: {
                             y:  { beginAtZero: true, title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },                        
+                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
                         },
                     },
                 });
@@ -369,7 +401,7 @@
                                  ticks: { callback: v => v + '%' } },
                         },
                     },
-                });                
+                });
 
                 make('cdPcbGroup', {
                     type: 'bar',
@@ -389,7 +421,7 @@
                             y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
                         },
                     },
-                });                
+                });
 
                 make('cdProcess', {
                     type: 'bar',
@@ -450,6 +482,7 @@
                 update(d) { render(d); },
             };
         };
+
         window.cdDatePicker = function (initial) {
             return {
                 value: initial,
@@ -471,10 +504,10 @@
                     start();
                 },
             };
-        };        
+        };
     </script>
 
-    {{-- ===== Production Output and Work Order ===== --}}
+    {{-- ===== Block 1: Production Output By Customer ===== --}}
     <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
         <div class="cd-dashboard-heading">
             <h2 class="cd-main-title">
@@ -485,7 +518,6 @@
             </div>
         </div>
 
-        {{-- ADD HERE --}}
         <div class="cd-grid cd-g2">
             <div class="cd-card">
                 <div class="cd-title">Output &amp; NG Rate by Customer</div>
@@ -514,7 +546,8 @@
         </div>
     </div>
 
-    <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+    {{-- ===== Block 2: Part Number And Process Summary (tables only, no x-data) ===== --}}
+    <div class="cd-wrap">
         <div class="cd-dashboard-heading">
             <h2 class="cd-main-title">
                 PART NUMBER AND PROCESS SUMMARY
@@ -522,8 +555,8 @@
             <div class="cd-main-subtitle">
                 CURRENT MONTH PRODUCTION MONITORING
             </div>
-        </div>    
-        {{-- Tables --}}
+        </div>
+
         <div class="cd-grid cd-g2">
             <div class="cd-card">
                 <div class="cd-title">Part Number Summary</div>
@@ -565,8 +598,6 @@
                 </table>
             </div>
         </div>
-
-
     </div>
 
 </x-filament::page>
