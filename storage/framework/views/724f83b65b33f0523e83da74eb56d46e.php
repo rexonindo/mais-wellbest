@@ -1,4 +1,13 @@
-<x-filament::page>
+<?php if (isset($component)) { $__componentOriginalbe23554f7bded3778895289146189db7 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalbe23554f7bded3778895289146189db7 = $attributes; } ?>
+<?php $component = Filament\View\LegacyComponents\Page::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('filament::page'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Filament\View\LegacyComponents\Page::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
 
     <style>
         /* ===== Layout ===== */
@@ -153,56 +162,27 @@
             .cd-grid.cd-g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
-        /* =========================================================
-           SCROLLING PAGE OVERRIDES
-           This page is taller than the screen (auto-scroll rotator),
-           so every block must take its natural height. !important
-           beats any fixed-height rule coming from theme.css or a
-           render hook.
-           ========================================================= */
-        .cd-wrap {
-            height: auto !important;
-            min-height: 0 !important;
-            overflow: visible !important;
-            display: block !important;
-        }
-        .cd-wrap > .cd-grid.cd-g2 {
-            display: grid !important;
-            grid-template-rows: none !important;
-            align-items: start !important;
-        }
-        .cd-wrap > .cd-grid.cd-g2 > .cd-card {
-            display: block !important;
-            height: auto !important;
-            min-height: 0 !important;
-            overflow: visible !important;
-        }
-        .cd-wrap .cd-chart {
-            height: 300px !important;
-            flex: none !important;
-        }
-
-        /* space between the first block and the second block's title */
-        .cd-wrap + .cd-wrap {
-            margin-top: 40px !important;
-            padding-top: 24px;
-            border-top: 1px solid #e5e7eb;   /* optional divider, delete if not wanted */
-        }
-        .dark .cd-wrap + .cd-wrap { border-top-color: #27272a; }
     </style>
 
-    @once
-        <link rel="stylesheet" href="{{ asset('css/flatpickr.min.css') }}">
-        <script src="{{ asset('js/flatpickr.min.js') }}"></script>
-        <script src="{{ asset('js/chart.umd.min.js') }}"></script>
-    @endonce
+    <?php if (! $__env->hasRenderedOnce('5704d580-863e-4ea4-8e8d-15b366b5a093')): $__env->markAsRenderedOnce('5704d580-863e-4ea4-8e8d-15b366b5a093'); ?>
+        <link rel="stylesheet" href="<?php echo e(asset('css/flatpickr.min.css')); ?>">
+        <script src="<?php echo e(asset('js/flatpickr.min.js')); ?>"></script>
+        <script src="<?php echo e(asset('js/chart.umd.min.js')); ?>"></script>        
+    <?php endif; ?>
+
+    <?php
+        $isDashboardUser = auth()->check() && auth()->user()->hasRole('dashboard');
+    ?>    
 
     <script>
 
         /* =========================================================
-        Dashboard rotator: auto-scroll down, then switch to next page.
+        Dashboard rotator: only for users with the "dashboard" role.
         ========================================================= */
         document.addEventListener('DOMContentLoaded', function () {
+
+            const ROTATE_ENABLED = <?php echo json_encode($isDashboardUser, 15, 512) ?>;
+            if (!ROTATE_ENABLED) return;   // other roles stay on the page
 
             const dashboardPages = [
                 '/wellbest/company-dashboard-a',
@@ -228,21 +208,16 @@
                 window.location.href = dashboardPages[(currentIndex + 1) % dashboardPages.length];
             };
 
-            // Safety net: never get stuck on one page
-            setTimeout(goNext, MAX_PAGE_MS);
+            setTimeout(goNext, MAX_PAGE_MS);   // never get stuck on one page
 
             const getScroller = () => {
                 const root = document.scrollingElement || document.documentElement;
                 if (root.scrollHeight > root.clientHeight + 1) return root;
 
-                const candidates = document.querySelectorAll(
-                    '.fi-layout, .fi-main, .fi-main-ctn, .fi-page, main'
-                );
+                const candidates = document.querySelectorAll('.fi-layout, .fi-main, .fi-main-ctn, .fi-page, main');
                 for (const el of candidates) {
                     const oy = getComputedStyle(el).overflowY;
-                    if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
-                        return el;
-                    }
+                    if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
                 }
                 return root;
             };
@@ -251,23 +226,24 @@
                 const el = getScroller();
                 const maxScroll = el.scrollHeight - el.clientHeight;
 
-                // Page fits on screen: just wait, then switch
-                if (maxScroll <= 1) {
-                    return setTimeout(goNext, FIT_DWELL_MS);
-                }
-
-                // Reached the bottom: pause, then go to the next dashboard
-                if (el.scrollTop >= maxScroll - 2) {
-                    return setTimeout(goNext, END_PAUSE_MS);
-                }
+                if (maxScroll <= 1) return setTimeout(goNext, FIT_DWELL_MS);          // fits on screen
+                if (el.scrollTop >= maxScroll - 2) return setTimeout(goNext, END_PAUSE_MS); // at bottom
 
                 el.scrollBy({ top: STEP_PX, behavior: 'smooth' });
                 setTimeout(tick, TICK_MS);
             };
 
             setTimeout(tick, START_DELAY);
+        });        
+        /*
+        document.addEventListener('livewire:init', () => {
+            setInterval(() => {
+                // Refresh current Filament / Livewire page
+                window.Livewire.find('<?php echo e($_instance->getId()); ?>').$refresh();
+            }, 5000); // 5 seconds
         });
-
+        */
+       
         document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => {
                 if (window.Alpine) {
@@ -275,7 +251,6 @@
                 }
             }, 200);
         });
-
         window.cdCharts = function (initial) {
             let charts = {}; // kept outside Alpine reactivity on purpose
 
@@ -287,52 +262,6 @@
             };
 
             const render = (d) => {
-                make('cdDaily', {
-                    type: 'bar',
-                    data: {
-                        labels: d.daily.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'Output (pcs)', data: d.daily.output, backgroundColor: '#3b82f6', yAxisID: 'y', order: 2 },
-                            { type: 'line', label: 'NG rate (%)',  data: d.daily.rate, borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1', tension: .3, order: 1 },
-                            { type: 'line', label: 'RWK rate (%)', data: d.daily.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y:  { beginAtZero: true, title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
-                        },
-                    },
-                });
-
-                make('cdProcessOutput', {
-                    type: 'bar',
-                    data: {
-                        labels: d.processOutput.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'In Qty (pcs)',  data: d.processOutput.in,  backgroundColor: '#60a5fa', yAxisID: 'y',  order: 3 },
-                            { type: 'bar',  label: 'Out Qty (pcs)', data: d.processOutput.out, backgroundColor: '#34d399', yAxisID: 'y',  order: 3 },
-                            { type: 'line', label: 'NG ratio (%)',  data: d.processOutput.ng_rate,  borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1', tension: .3, order: 1 },
-                            { type: 'line', label: 'RWK ratio (%)', data: d.processOutput.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y:  { beginAtZero: true, position: 'left', title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Ratio %' } },
-                        },
-                    },
-                });
-
-                make('cdItems', {
-                    type: 'bar',
-                    data: { labels: d.items.labels, datasets: [{ label: 'Output (pcs)', data: d.items.output, backgroundColor: '#10b981' }] },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
-                });
 
                 // ---- NG Ratio By Category (per NG name, bars coloured by category) ----
                 const catPalette = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#eab308', '#06b6d4', '#ef4444', '#64748b'];
@@ -341,6 +270,7 @@
                     if (!(c in catColor)) catColor[c] = catPalette[Object.keys(catColor).length % catPalette.length];
                 });
 
+                // ---- NG Ratio By Category ----
                 make('cdNgCategory', {
                     type: 'bar',
                     data: {
@@ -401,73 +331,70 @@
                                  ticks: { callback: v => v + '%' } },
                         },
                     },
-                });
+                });                
 
-                make('cdPcbGroup', {
+                // ---- RWK Ratio By Category ----
+                make('cdRwkCategory', {
                     type: 'bar',
                     data: {
-                        labels: d.pcbGroup.labels,
+                        labels: d.ngCategory.labels,
                         datasets: [
-                            { type: 'bar',  label: 'NG (pcs)',     data: d.pcbGroup.ng,       backgroundColor: '#f87171', yAxisID: 'y',  order: 2 },
-                            { type: 'line', label: 'NG ratio (%)',  data: d.pcbGroup.rate,     borderColor: '#7f1d1d', backgroundColor: '#7f1d1d', yAxisID: 'y1', tension: .3, order: 1 },
-                            { type: 'line', label: 'RWK ratio (%)', data: d.pcbGroup.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
+                            { type: 'bar',  label: 'RWK ratio (%)', data: d.rwkCategory.ratio,
+                              backgroundColor: d.rwkCategory.cats.map(c => catColor[c]), order: 2 },
+                            { type: 'line', label: 'Standard (0.90%)', data: d.rwkCategory.std,
+                              borderColor: '#dc2626', backgroundColor: '#dc2626',
+                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
                         ],
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: {
+                                title: (items) => `${d.rwkCategory.cats[items[0].dataIndex]} - ${items[0].label}`,
+                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
+                                afterLabel: (c) => c.datasetIndex === 0
+                                    ? `RWK Qty: ${Number(d.rwkCategory.qty[c.dataIndex]).toLocaleString()}` : '',
+                            } },
+                        },
                         scales: {
-                            y:  { beginAtZero: true, position: 'left', title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
+                            x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 30 } },
+                            y: { beginAtZero: true, title: { display: true, text: 'RWK ratio %' },
+                                 ticks: { callback: v => v + '%' } },
                         },
                     },
                 });
 
-                make('cdProcess', {
+                // ---- RWK Ratio By Category Sum ----
+                make('cdRwkCategorySum', {
                     type: 'bar',
                     data: {
-                        labels: d.process.labels,
+                        labels: d.rwkCategorySum.labels,
                         datasets: [
-                            { type: 'bar',  label: 'NG (pcs)',      data: d.process.ng,       backgroundColor: '#f87171', yAxisID: 'y',  order: 2 },
-                            { type: 'line', label: 'NG rate (%)',   data: d.process.rate,     borderColor: '#7f1d1d', backgroundColor: '#7f1d1d', yAxisID: 'y1', order: 1 },
-                            { type: 'line', label: 'RWK rate (%)',  data: d.process.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', order: 1 },
+                            { type: 'bar',  label: 'NG ratio (%)', data: d.rwkCategorySum.ratio, backgroundColor: '#3b82f6', order: 2 },
+                            { type: 'line', label: 'Standard (0.90%)', data: d.rwkCategorySum.std,
+                              borderColor: '#dc2626', backgroundColor: '#dc2626',
+                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
                         ],
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: {
+                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
+                                afterLabel: (c) => c.datasetIndex === 0
+                                    ? `RWK Qty: ${Number(d.rwkCategorySum.qty[c.dataIndex]).toLocaleString()}` : '',
+                            } },
+                        },
                         scales: {
-                            y:  { beginAtZero: true },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
+                            y: { beginAtZero: true, title: { display: true, text: 'RWK ratio %' },
+                                 ticks: { callback: v => v + '%' } },
                         },
                     },
-                });
-
-                make('cdNgItems', {
-                    type: 'doughnut',
-                    data: {
-                        labels: d.ngItems.labels,
-                        datasets: [{ data: d.ngItems.values, backgroundColor: ['#ef4444', '#f97316', '#eab308', '#8b5cf6', '#06b6d4', '#64748b'] }],
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
-                });
-
-                make('cdCustomer', {
-                    type: 'bar',
-                    data: {
-                        labels: d.customer.labels,
-                        datasets: [
-                            { type: 'bar', label: 'Output (pcs)', data: d.customer.output, backgroundColor: '#6366f1', yAxisID: 'y' },
-                            { type: 'line', label: 'NG rate (%)', data: d.customer.rate, borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1' },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        scales: {
-                            y:  { beginAtZero: true },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } },
-                        },
-                    },
-                });
+                });                
 
             };
 
@@ -482,7 +409,6 @@
                 update(d) { render(d); },
             };
         };
-
         window.cdDatePicker = function (initial) {
             return {
                 value: initial,
@@ -504,100 +430,52 @@
                     start();
                 },
             };
-        };
+        };        
     </script>
 
-    {{-- ===== Block 1: Production Output By Customer ===== --}}
-    <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+    
+    <div class="cd-wrap" x-data="cdCharts(<?php echo \Illuminate\Support\Js::from($charts)->toHtml() ?>)" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
         <div class="cd-dashboard-heading">
-            <h2 class="cd-main-title">
-                PRODUCTION OUTPUT BY CUSTOMER
-            </h2>
-            <div class="cd-main-subtitle">
-                CURRENT MONTH PRODUCTION MONITORING
+            <h2 class="cd-main-title">NG RATIO BY CATEGORY</h2>
+            <div class="cd-main-subtitle">CURRENT MONTH PRODUCTION MONITORING</div>
+        </div>
+        <div class="cd-cards">
+            <div class="cd-card">
+                <div class="cd-title">Detail</div>
+                <div class="cd-chart" wire:ignore><canvas id="cdNgCategory"></canvas></div>
+            </div>
+
+            <div class="cd-card">
+                <div class="cd-title">Summary</div>
+                <div class="cd-chart" wire:ignore><canvas id="cdNgCategorySum"></canvas></div>
             </div>
         </div>
-
-        <div class="cd-grid cd-g2">
+        <div class="cd-dashboard-heading cd-heading-gap"
+            style="margin-top:40px !important; padding-top:24px;">
+            <h2 class="cd-main-title">REWORK RATIO BY CATEGORY</h2>
+            <div class="cd-main-subtitle">CURRENT MONTH PRODUCTION MONITORING</div>
+        </div>
+        <div class="cd-cards">
             <div class="cd-card">
-                <div class="cd-title">Output &amp; NG Rate by Customer</div>
-                <div class="cd-chart" wire:ignore><canvas id="cdCustomer"></canvas></div>
+                <div class="cd-title">Detail</div>
+                <div class="cd-chart" wire:ignore><canvas id="cdRwkCategory"></canvas></div>
             </div>
 
             <div class="cd-card">
-                <div class="cd-title">Customer Summary</div>
-                <table class="cd-table">
-                    <thead><tr><th>Customer</th><th class="num">Part Number</th><th class="num">Output</th><th class="num">NG</th><th class="num">NG %</th></tr></thead>
-                    <tbody>
-                    @forelse ($customerRows as $r)
-                        <tr class="{{ $r['ng_rate'] > $kpi['alert_pct'] ? 'cd-row-alert' : '' }}">
-                            <td>{{ $r['name'] }}</td>
-                            <td class="num">{{ $r['products'] }}</td>
-                            <td class="num">{{ number_format($r['output']) }}</td>
-                            <td class="num">{{ number_format($r['ng']) }}</td>
-                            <td class="num">{{ number_format($r['ng_rate'], 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5">No data in this period.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
+                <div class="cd-title">Summary</div>
+                <div class="cd-chart" wire:ignore><canvas id="cdRwkCategorySum"></canvas></div>
             </div>
         </div>
     </div>
 
-    {{-- ===== Block 2: Part Number And Process Summary (tables only, no x-data) ===== --}}
-    <div class="cd-wrap">
-        <div class="cd-dashboard-heading">
-            <h2 class="cd-main-title">
-                PART NUMBER AND PROCESS SUMMARY
-            </h2>
-            <div class="cd-main-subtitle">
-                CURRENT MONTH PRODUCTION MONITORING
-            </div>
-        </div>
-
-        <div class="cd-grid cd-g2">
-            <div class="cd-card">
-                <div class="cd-title">Part Number Summary</div>
-                <table class="cd-table">
-                    <thead><tr><th>Part Number</th><th>Last process</th><th class="num">Output</th><th class="num">NG</th><th class="num">NG %</th></tr></thead>
-                    <tbody>
-                    @forelse ($itemRows as $r)
-                        <tr class="{{ $r['ng_rate'] > $kpi['alert_pct'] ? 'cd-row-alert' : '' }}">
-                            <td>{{ $r['name'] }}</td>
-                            <td>{{ $r['final'] }}</td>
-                            <td class="num">{{ number_format($r['output']) }}</td>
-                            <td class="num">{{ number_format($r['ng']) }}</td>
-                            <td class="num">{{ number_format($r['ng_rate'], 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5">No data in this period.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="cd-card">
-                <div class="cd-title">Process Summary</div>
-                <table class="cd-table">
-                    <thead><tr><th>Process</th><th class="num">Input</th><th class="num">Output</th><th class="num">NG</th><th class="num">NG %</th></tr></thead>
-                    <tbody>
-                    @forelse ($processRows as $r)
-                        <tr class="{{ $r['ng_rate'] > $kpi['alert_pct'] ? 'cd-row-alert' : '' }}">
-                            <td>{{ $r['code'] }} {{ $r['name'] }}</td>
-                            <td class="num">{{ number_format($r['in']) }}</td>
-                            <td class="num">{{ number_format($r['out']) }}</td>
-                            <td class="num">{{ number_format($r['ng']) }}</td>
-                            <td class="num">{{ number_format($r['ng_rate'], 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5">No data in this period.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-</x-filament::page>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalbe23554f7bded3778895289146189db7)): ?>
+<?php $attributes = $__attributesOriginalbe23554f7bded3778895289146189db7; ?>
+<?php unset($__attributesOriginalbe23554f7bded3778895289146189db7); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalbe23554f7bded3778895289146189db7)): ?>
+<?php $component = $__componentOriginalbe23554f7bded3778895289146189db7; ?>
+<?php unset($__componentOriginalbe23554f7bded3778895289146189db7); ?>
+<?php endif; ?>
+<?php /**PATH D:\website\mais-wellbest\resources\views/filament/pages/company-dashboard-e.blade.php ENDPATH**/ ?>

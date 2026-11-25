@@ -85,7 +85,9 @@ class CompanyDashboard extends Page
     public array $customerOptions = [];
     public array $groupRows = [];
     public array $ngCatRows = [];
-    public array $ngCatSumRows = [];    
+    public array $ngCatSumRows = [];
+    public array $rwkCatRows = [];
+    public array $rwkCatSumRows = [];    
 
     public function mount()
     {
@@ -202,6 +204,7 @@ class CompanyDashboard extends Page
             [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
         }
 
+        // ======================================================================================================
         $query = DB::table('prod_yield_view')
             ->select(
                 DB::raw('DATE(end_time) as d'),
@@ -229,6 +232,9 @@ class CompanyDashboard extends Page
         }
 
         $rows = $query->get();
+        
+        // ======================================================================================================
+
 
         // Factory output = out qty of the LAST process each product reached
         // (summing every process would count the same pieces many times).
@@ -281,6 +287,17 @@ class CompanyDashboard extends Page
             ];
         })->sortByDesc('output')->values()->all();
 
+        $ngItems = collect($this->itemRows)->where('ng', '>', 0)->values();
+
+        $this->kpi = [
+            'output'      => $totalOut,
+            'avg_daily'   => $activeDays > 0 ? (int) round($totalOut / $activeDays) : 0,
+            'ng'          => $totalNg,
+            'ng_rate'     => $totalIn > 0 ? round($totalNg / $totalIn * 100, 2) : 0,
+            'items'       => count($this->itemRows),
+            'alert_pct'   => self::NG_ALERT_PCT,
+        ];
+
         // ----- Per process -----
         $this->processRows = $rows->groupBy('proc_cd')->map(function ($g, $code) {
             $in  = (int) $g->sum('in_qty');
@@ -329,8 +346,14 @@ class CompanyDashboard extends Page
         // ----- NG ratio by category (stored procedures) -----
         $pFrom = $from->format('Y-m-d H:i:s');
         $pTo   = $to->format('Y-m-d H:i:s');
+        $pItem = (string) ($this->itemFilter ?? '');
+        $pCust = (string) ($this->customerFilter ?? '');
 
-        $this->ngCatRows = collect(DB::select('CALL ng_detail_ratio_by_category(?, ?)', [$pFrom, $pTo]))
+        // ----NG------------------------------------------------------------
+        $this->ngCatRows = collect(DB::select(
+            'CALL ng_detail_ratio_by_category_dash(?, ?, ?, ?)',
+            [$pFrom, $pTo, $pItem, $pCust]
+        ))
             ->map(fn ($r) => [
                 'cat'   => (string) $r->ng_cat,
                 'name'  => (string) $r->ng_nm,
@@ -339,26 +362,42 @@ class CompanyDashboard extends Page
                 'std'   => round(((float) $r->ng_std) * 100, 2),
             ])->all();
 
-        // Same as the Excel: largest category first
-        $this->ngCatSumRows = collect(DB::select('CALL ng_detail_ratio_by_category_sum(?, ?)', [$pFrom, $pTo]))
+        $this->ngCatSumRows = collect(DB::select(
+            'CALL ng_detail_ratio_by_category_sum_dash(?, ?, ?, ?)',
+            [$pFrom, $pTo, $pItem, $pCust]
+        ))
             ->map(fn ($r) => [
                 'cat'   => (string) $r->ng_cat,
                 'qty'   => (int) $r->ng_qty,
                 'ratio' => round(((float) ($r->ng_ratio ?? 0)) * 100, 2),
                 'std'   => round(((float) $r->ng_std) * 100, 2),
-            ])->sortByDesc('qty')->values()->all();        
+            ])->sortByDesc('qty')->values()->all();
 
-        $ngItems = collect($this->itemRows)->where('ng', '>', 0)->values();
+        // ----RWK------------------------------------------------------------          
+        $this-> rwkCatRows = collect(DB::select(
+            'CALL rwk_detail_ratio_by_category_dash(?, ?, ?, ?)',
+            [$pFrom, $pTo, $pItem, $pCust]
+        ))
+            ->map(fn ($r) => [
+                'cat'   => (string) $r->rwk_cat,
+                'name'  => (string) $r->rwk_nm,
+                'qty'   => (int) $r->rwk_qty,
+                'ratio' => round(((float) ($r->rwk_ratio ?? 0)) * 100, 2),
+                'std'   => round(((float) $r->rwk_std) * 100, 2),
+            ])->all();
 
-        $this->kpi = [
-            'output'      => $totalOut,
-            'avg_daily'   => $activeDays > 0 ? (int) round($totalOut / $activeDays) : 0,
-            'ng'          => $totalNg,
-            'ng_rate'     => $totalIn > 0 ? round($totalNg / $totalIn * 100, 2) : 0,
-            'items'       => count($this->itemRows),
-            'alert_pct'   => self::NG_ALERT_PCT,
-        ];
+        $this->rwkCatSumRows = collect(DB::select(
+            'CALL rwk_detail_ratio_by_category_sum_dash(?, ?, ?, ?)',
+            [$pFrom, $pTo, $pItem, $pCust]
+        ))
+            ->map(fn ($r) => [
+                'cat'   => (string) $r->rwk_cat,
+                'qty'   => (int) $r->rwk_qty,
+                'ratio' => round(((float) ($r->rwk_ratio ?? 0)) * 100, 2),
+                'std'   => round(((float) $r->rwk_std) * 100, 2),
+            ])->sortByDesc('qty')->values()->all();
 
+        // ------------------------------------------------------------------
         $this->charts = [
             'daily' => [
                 'labels' => $labels,
@@ -396,7 +435,20 @@ class CompanyDashboard extends Page
                 'qty'    => collect($this->ngCatSumRows)->pluck('qty')->all(),
                 'ratio'  => collect($this->ngCatSumRows)->pluck('ratio')->all(),
                 'std'    => collect($this->ngCatSumRows)->pluck('std')->all(),
-            ],            
+            ],
+            'rwkCategory' => [
+                'labels' => collect($this->rwkCatRows)->pluck('name')->all(),
+                'cats'   => collect($this->rwkCatRows)->pluck('cat')->all(),
+                'qty'    => collect($this->rwkCatRows)->pluck('qty')->all(),
+                'ratio'  => collect($this->rwkCatRows)->pluck('ratio')->all(),
+                'std'    => collect($this->rwkCatRows)->pluck('std')->all(),
+            ],
+            'rwkCategorySum' => [
+                'labels' => collect($this->rwkCatSumRows)->pluck('cat')->all(),
+                'qty'    => collect($this->rwkCatSumRows)->pluck('qty')->all(),
+                'ratio'  => collect($this->rwkCatSumRows)->pluck('ratio')->all(),
+                'std'    => collect($this->rwkCatSumRows)->pluck('std')->all(),
+            ],
             'pcbGroup' => [
                 'labels' => collect($this->groupRows)->pluck('name')->all(),
                 'ng'     => collect($this->groupRows)->pluck('ng')->all(),

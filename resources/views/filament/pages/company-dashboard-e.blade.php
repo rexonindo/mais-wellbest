@@ -153,65 +153,6 @@
             .cd-grid.cd-g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
-        /* ===== Fit-to-one-page overrides ===== */
-        .cd-wrap {
-            height: calc(100vh - 1.5rem);   /* topbar is hidden for the dashboard role */
-            display: flex;
-            flex-direction: column;
-            padding: 0 8px;
-            margin-top: -10px;
-            overflow: hidden;
-        }
-        .cd-dashboard-heading { flex: 0 0 auto; margin: 0 0 4px; }
-
-        .cd-main-title {
-            font-size: clamp(16px, 2.8vh, 26px);
-            padding: 2px 0 6px;
-            margin: 0 0 4px;
-        }
-        .cd-main-title::after { height: 3px; margin: 5px auto 0; }
-        .cd-main-subtitle {
-            font-size: clamp(9px, 1.3vh, 12px);
-            margin: -2px 0 6px;
-        }
-
-        /* the two cards share the remaining height, one above the other */
-        .cd-wrap > .cd-cards {
-            flex: 1 1 0;
-            min-height: 0;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            grid-template-rows: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-        }
-        .cd-wrap > .cd-cards > .cd-card {
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            padding: .4rem .75rem;
-        }
-        .cd-wrap > .cd-cards .cd-title {
-            flex: 0 0 auto;
-            margin-bottom: .2rem;
-            font-size: clamp(.8rem, 1.8vh, 1rem);
-        }
-
-        /* each chart fills its card (overrides the old 300px) */
-        .cd-wrap > .cd-cards .cd-chart {
-            flex: 1 1 0;
-            min-height: 0;
-            height: auto;
-            position: relative;
-        }
-
-        /* phones / narrow screens: normal scrolling */
-        @media (max-width: 768px) {
-            .cd-wrap { height: auto; overflow: visible; }
-            .cd-wrap > .cd-cards { display: block; }
-            .cd-wrap > .cd-cards > .cd-card { margin-bottom: 8px; }
-            .cd-wrap > .cd-cards .cd-chart { flex: none; height: 300px; }
-        }        
-
     </style>
 
     @once
@@ -220,18 +161,19 @@
         <script src="{{ asset('js/chart.umd.min.js') }}"></script>        
     @endonce
 
+    @php
+        $isDashboardUser = auth()->check() && auth()->user()->hasRole('dashboard');
+    @endphp    
+
     <script>
 
         /* =========================================================
-        Dashboard rotator: switch to the next page on a fixed timer.
+        Dashboard rotator: only for users with the "dashboard" role.
         ========================================================= */
         document.addEventListener('DOMContentLoaded', function () {
 
-            // Clear stale values left by the old timer script
-            try {
-                localStorage.removeItem('dashboardLastSwitch');
-                localStorage.removeItem('dashboardLastRefresh');
-            } catch (e) {}
+            const ROTATE_ENABLED = @json($isDashboardUser);
+            if (!ROTATE_ENABLED) return;   // other roles stay on the page
 
             const dashboardPages = [
                 '/wellbest/company-dashboard-a',
@@ -242,18 +184,48 @@
                 '/wellbest/company-dashboard-f'
             ];
 
-            const SWITCH_MS = 15 * 1000;  // time on each page before switching
+            const STEP_PX      = 40;      // pixels per tick
+            const TICK_MS      = 1000;    // scroll every 1 second
+            const START_DELAY  = 1500;    // wait for charts to render
+            const END_PAUSE_MS = 3000;    // pause at the bottom before switching
+            const FIT_DWELL_MS = 30000;   // time on a page that fits on screen
+            const MAX_PAGE_MS  = 120000;  // safety: always switch after this long
 
             const currentPath  = window.location.pathname.replace(/\/+$/, '');
             const currentIndex = dashboardPages.indexOf(currentPath);
 
-            if (currentIndex === -1) return;
-
-            setTimeout(function () {
+            const goNext = () => {
+                if (currentIndex === -1) return;
                 window.location.href = dashboardPages[(currentIndex + 1) % dashboardPages.length];
-            }, SWITCH_MS);
-        });
-        
+            };
+
+            setTimeout(goNext, MAX_PAGE_MS);   // never get stuck on one page
+
+            const getScroller = () => {
+                const root = document.scrollingElement || document.documentElement;
+                if (root.scrollHeight > root.clientHeight + 1) return root;
+
+                const candidates = document.querySelectorAll('.fi-layout, .fi-main, .fi-main-ctn, .fi-page, main');
+                for (const el of candidates) {
+                    const oy = getComputedStyle(el).overflowY;
+                    if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
+                }
+                return root;
+            };
+
+            const tick = () => {
+                const el = getScroller();
+                const maxScroll = el.scrollHeight - el.clientHeight;
+
+                if (maxScroll <= 1) return setTimeout(goNext, FIT_DWELL_MS);          // fits on screen
+                if (el.scrollTop >= maxScroll - 2) return setTimeout(goNext, END_PAUSE_MS); // at bottom
+
+                el.scrollBy({ top: STEP_PX, behavior: 'smooth' });
+                setTimeout(tick, TICK_MS);
+            };
+
+            setTimeout(tick, START_DELAY);
+        });        
         /*
         document.addEventListener('livewire:init', () => {
             setInterval(() => {
@@ -281,52 +253,6 @@
             };
 
             const render = (d) => {
-                make('cdDaily', {
-                    type: 'bar',
-                    data: {
-                        labels: d.daily.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'Output (pcs)', data: d.daily.output, backgroundColor: '#3b82f6', yAxisID: 'y', order: 2 },
-                            { type: 'line', label: 'NG rate (%)',  data: d.daily.rate, borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1', tension: .3, order: 1 },
-                            { type: 'line', label: 'RWK rate (%)', data: d.daily.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y:  { beginAtZero: true, title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },                        
-                        },
-                    },
-                });
-
-                make('cdProcessOutput', {
-                    type: 'bar',
-                    data: {
-                        labels: d.processOutput.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'In Qty (pcs)',  data: d.processOutput.in,  backgroundColor: '#60a5fa', yAxisID: 'y',  order: 3 },
-                            { type: 'bar',  label: 'Out Qty (pcs)', data: d.processOutput.out, backgroundColor: '#34d399', yAxisID: 'y',  order: 3 },
-                            { type: 'line', label: 'NG ratio (%)',  data: d.processOutput.ng_rate,  borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1', tension: .3, order: 1 },
-                            { type: 'line', label: 'RWK ratio (%)', data: d.processOutput.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y:  { beginAtZero: true, position: 'left', title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Ratio %' } },
-                        },
-                    },
-                });
-
-                make('cdItems', {
-                    type: 'bar',
-                    data: { labels: d.items.labels, datasets: [{ label: 'Output (pcs)', data: d.items.output, backgroundColor: '#10b981' }] },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
-                });
 
                 // ---- NG Ratio By Category (per NG name, bars coloured by category) ----
                 const catPalette = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#eab308', '#06b6d4', '#ef4444', '#64748b'];
@@ -335,6 +261,7 @@
                     if (!(c in catColor)) catColor[c] = catPalette[Object.keys(catColor).length % catPalette.length];
                 });
 
+                // ---- NG Ratio By Category ----
                 make('cdNgCategory', {
                     type: 'bar',
                     data: {
@@ -397,71 +324,68 @@
                     },
                 });                
 
-                make('cdPcbGroup', {
+                // ---- RWK Ratio By Category ----
+                make('cdRwkCategory', {
                     type: 'bar',
                     data: {
-                        labels: d.pcbGroup.labels,
+                        labels: d.ngCategory.labels,
                         datasets: [
-                            { type: 'bar',  label: 'NG (pcs)',     data: d.pcbGroup.ng,       backgroundColor: '#f87171', yAxisID: 'y',  order: 2 },
-                            { type: 'line', label: 'NG ratio (%)',  data: d.pcbGroup.rate,     borderColor: '#7f1d1d', backgroundColor: '#7f1d1d', yAxisID: 'y1', tension: .3, order: 1 },
-                            { type: 'line', label: 'RWK ratio (%)', data: d.pcbGroup.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
+                            { type: 'bar',  label: 'RWK ratio (%)', data: d.rwkCategory.ratio,
+                              backgroundColor: d.rwkCategory.cats.map(c => catColor[c]), order: 2 },
+                            { type: 'line', label: 'Standard (0.90%)', data: d.rwkCategory.std,
+                              borderColor: '#dc2626', backgroundColor: '#dc2626',
+                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
                         ],
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: {
+                                title: (items) => `${d.rwkCategory.cats[items[0].dataIndex]} - ${items[0].label}`,
+                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
+                                afterLabel: (c) => c.datasetIndex === 0
+                                    ? `RWK Qty: ${Number(d.rwkCategory.qty[c.dataIndex]).toLocaleString()}` : '',
+                            } },
+                        },
                         scales: {
-                            y:  { beginAtZero: true, position: 'left', title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
+                            x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 30 } },
+                            y: { beginAtZero: true, title: { display: true, text: 'RWK ratio %' },
+                                 ticks: { callback: v => v + '%' } },
+                        },
+                    },
+                });
+
+                // ---- RWK Ratio By Category Sum ----
+                make('cdRwkCategorySum', {
+                    type: 'bar',
+                    data: {
+                        labels: d.rwkCategorySum.labels,
+                        datasets: [
+                            { type: 'bar',  label: 'NG ratio (%)', data: d.rwkCategorySum.ratio, backgroundColor: '#3b82f6', order: 2 },
+                            { type: 'line', label: 'Standard (0.90%)', data: d.rwkCategorySum.std,
+                              borderColor: '#dc2626', backgroundColor: '#dc2626',
+                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
+                        ],
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: {
+                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
+                                afterLabel: (c) => c.datasetIndex === 0
+                                    ? `RWK Qty: ${Number(d.rwkCategorySum.qty[c.dataIndex]).toLocaleString()}` : '',
+                            } },
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'RWK ratio %' },
+                                 ticks: { callback: v => v + '%' } },
                         },
                     },
                 });                
-
-                make('cdProcess', {
-                    type: 'bar',
-                    data: {
-                        labels: d.process.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'NG (pcs)',      data: d.process.ng,       backgroundColor: '#f87171', yAxisID: 'y',  order: 2 },
-                            { type: 'line', label: 'NG rate (%)',   data: d.process.rate,     borderColor: '#7f1d1d', backgroundColor: '#7f1d1d', yAxisID: 'y1', order: 1 },
-                            { type: 'line', label: 'RWK rate (%)',  data: d.process.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        scales: {
-                            y:  { beginAtZero: true },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
-                        },
-                    },
-                });
-
-                make('cdNgItems', {
-                    type: 'doughnut',
-                    data: {
-                        labels: d.ngItems.labels,
-                        datasets: [{ data: d.ngItems.values, backgroundColor: ['#ef4444', '#f97316', '#eab308', '#8b5cf6', '#06b6d4', '#64748b'] }],
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
-                });
-
-                make('cdCustomer', {
-                    type: 'bar',
-                    data: {
-                        labels: d.customer.labels,
-                        datasets: [
-                            { type: 'bar', label: 'Output (pcs)', data: d.customer.output, backgroundColor: '#6366f1', yAxisID: 'y' },
-                            { type: 'line', label: 'NG rate (%)', data: d.customer.rate, borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1' },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        scales: {
-                            y:  { beginAtZero: true },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } },
-                        },
-                    },
-                });
 
             };
 
@@ -500,22 +424,37 @@
         };        
     </script>
 
-    {{-- ===== Production Output and Work Order ===== --}}
+    {{-- ===== NG & RWK RATIO BY CATEGORY ===== --}}
     <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
         <div class="cd-dashboard-heading">
             <h2 class="cd-main-title">NG RATIO BY CATEGORY</h2>
             <div class="cd-main-subtitle">CURRENT MONTH PRODUCTION MONITORING</div>
         </div>
-
         <div class="cd-cards">
             <div class="cd-card">
-                <div class="cd-title">NG Ratio By Category</div>
+                <div class="cd-title">Detail</div>
                 <div class="cd-chart" wire:ignore><canvas id="cdNgCategory"></canvas></div>
             </div>
 
             <div class="cd-card">
-                <div class="cd-title">NG Ratio By Category Sum</div>
+                <div class="cd-title">Summary</div>
                 <div class="cd-chart" wire:ignore><canvas id="cdNgCategorySum"></canvas></div>
+            </div>
+        </div>
+        <div class="cd-dashboard-heading cd-heading-gap"
+            style="margin-top:40px !important; padding-top:24px;">
+            <h2 class="cd-main-title">REWORK RATIO BY CATEGORY</h2>
+            <div class="cd-main-subtitle">CURRENT MONTH PRODUCTION MONITORING</div>
+        </div>
+        <div class="cd-cards">
+            <div class="cd-card">
+                <div class="cd-title">Detail</div>
+                <div class="cd-chart" wire:ignore><canvas id="cdRwkCategory"></canvas></div>
+            </div>
+
+            <div class="cd-card">
+                <div class="cd-title">Summary</div>
+                <div class="cd-chart" wire:ignore><canvas id="cdRwkCategorySum"></canvas></div>
             </div>
         </div>
     </div>

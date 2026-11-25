@@ -25,12 +25,12 @@ class CompanyDashboardD extends Page
     
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->hasRole('dashboard') ?? false;
+        return auth()->user()?->hasRole(['dashboard', 'admin']) ?? false;
     }
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasRole('dashboard') ?? false;
+        return auth()->user()?->hasRole(['dashboard', 'admin']) ?? false;
     }
 
     public function getTitle(): string
@@ -58,26 +58,6 @@ class CompanyDashboardD extends Page
 
     public function mount()
     {
-        // --- Production Performance Single --------------------------------------------
-        $productCount = DB::table('current_total_product_grp_view')
-            ->where('itm_grp_surface', 'SINGLE')
-            ->first();
-        $this->ttlProductSINGLE = $productCount->ttl_product ?? 0;
-        $machineCount = DB::table('current_total_machine_grp_view')
-            ->where('itm_grp_surface', 'SINGLE')
-            ->first();
-        $this->ttlMachineSINGLE = $machineCount->ttl_machine ?? 0;
-        $productionQty = DB::table('current_total_production_qty_grp_view')
-            ->where('itm_grp_surface', 'SINGLE')
-            ->first();
-        $this->ttlPlanQtySINGLE = $productionQty->ttl_plan_qty ?? 0;
-        $this->ttlInQtySINGLE   = $productionQty->ttl_in_qty ?? 0;
-        $this->ttlOutQtySINGLE  = $productionQty->ttl_out_qty ?? 0;
-        $this->ttlWIPQtySINGLE  = $productionQty->ttl_wip_qty ?? 0; 
-        $this->ttlOSQtySINGLE   = $productionQty->ttl_os_qty ?? 0;
-     
-        // ========================================================
-
         $this->dateTo   = now()->toDateString();
         $this->dateFrom = now()->subDays(29)->toDateString();
 
@@ -222,56 +202,7 @@ class CompanyDashboardD extends Page
                 'rwk_rate' => $in > 0 ? round($rwk / $in * 100, 2) : 0,
             ];
         })->sortKeys()->values()->all();
-
-        // ----- Per customer -----
-        $this->customerRows = $rows->groupBy('cust')->map(function ($g, $name) use ($finalProc) {
-            $in  = (int) $g->sum('in_qty');
-            $ng  = (int) $g->sum('ng_qty');
-            $out = (int) $g->filter(fn ($r) => $r->proc_cd === $finalProc[$r->itm_cd])->sum('out_qty');
-            return [
-                'name'     => $name,
-                'products' => $g->pluck('itm_cd')->unique()->count(),
-                'output'   => $out,
-                'ng'       => $ng,
-                'ng_rate'  => $in > 0 ? round($ng / $in * 100, 2) : 0,
-            ];
-        })->sortByDesc('output')->values()->all();
-
-        // ----- Per PCB group -----
-        $this->groupRows = $rows->groupBy('grp')->map(function ($g, $name) {
-            $in = (int) $g->sum('in_qty');
-            $ng = (int) $g->sum('ng_qty');
-            $rwk = (int) $g->sum('rwk_qty');
-            return [
-                'name'    => $name,
-                'ng'      => $ng,
-                'ng_rate' => $in > 0 ? round($ng / $in * 100, 2) : 0,
-                'rwk_rate' => $in > 0 ? round($rwk / $in * 100, 2) : 0,
-            ];
-        })->sortByDesc('ng')->values()->all();
-        
-        // ----- NG ratio by category (stored procedures) -----
-        $pFrom = $from->format('Y-m-d H:i:s');
-        $pTo   = $to->format('Y-m-d H:i:s');
-
-        $this->ngCatRows = collect(DB::select('CALL ng_detail_ratio_by_category(?, ?)', [$pFrom, $pTo]))
-            ->map(fn ($r) => [
-                'cat'   => (string) $r->ng_cat,
-                'name'  => (string) $r->ng_nm,
-                'qty'   => (int) $r->ng_qty,
-                'ratio' => round(((float) ($r->ng_ratio ?? 0)) * 100, 2),
-                'std'   => round(((float) $r->ng_std) * 100, 2),
-            ])->all();
-
-        // Same as the Excel: largest category first
-        $this->ngCatSumRows = collect(DB::select('CALL ng_detail_ratio_by_category_sum(?, ?)', [$pFrom, $pTo]))
-            ->map(fn ($r) => [
-                'cat'   => (string) $r->ng_cat,
-                'qty'   => (int) $r->ng_qty,
-                'ratio' => round(((float) ($r->ng_ratio ?? 0)) * 100, 2),
-                'std'   => round(((float) $r->ng_std) * 100, 2),
-            ])->sortByDesc('qty')->values()->all();        
-
+       
         $ngItems = collect($this->itemRows)->where('ng', '>', 0)->values();
 
         $this->kpi = [
@@ -284,30 +215,10 @@ class CompanyDashboardD extends Page
         ];
 
         $this->charts = [
-            'daily' => [
-                'labels' => $labels,
-                'output' => $outByDay,
-                'ng'     => $ngByDay,
-                'rate'   => $ngRateByDay,
-                'rwk_rate' => $rwkRateByDay,
-            ],
             'items' => [
                 'labels' => collect($this->itemRows)->pluck('name')->all(),
                 'output' => collect($this->itemRows)->pluck('output')->all(),
             ],
-            'process' => [
-                'labels' => collect($this->processRows)->map(fn ($p) => $p['code'] . ' ' . $p['name'])->all(),
-                'ng'     => collect($this->processRows)->pluck('ng')->all(),
-                'rate'   => collect($this->processRows)->pluck('ng_rate')->all(),
-                'rwk_rate' => collect($this->processRows)->pluck('rwk_rate')->all(),
-            ],
-            'processOutput' => [
-                'labels'   => collect($this->processRows)->map(fn ($p) => $p['code'] . ' ' . $p['name'])->all(),
-                'in'       => collect($this->processRows)->pluck('in')->all(),
-                'out'      => collect($this->processRows)->pluck('out')->all(),
-                'ng_rate'  => collect($this->processRows)->pluck('ng_rate')->all(),
-                'rwk_rate' => collect($this->processRows)->pluck('rwk_rate')->all(),
-            ],            
             'ngCategory' => [
                 'labels' => collect($this->ngCatRows)->pluck('name')->all(),
                 'cats'   => collect($this->ngCatRows)->pluck('cat')->all(),
@@ -315,18 +226,6 @@ class CompanyDashboardD extends Page
                 'ratio'  => collect($this->ngCatRows)->pluck('ratio')->all(),
                 'std'    => collect($this->ngCatRows)->pluck('std')->all(),
             ],
-            'ngCategorySum' => [
-                'labels' => collect($this->ngCatSumRows)->pluck('cat')->all(),
-                'qty'    => collect($this->ngCatSumRows)->pluck('qty')->all(),
-                'ratio'  => collect($this->ngCatSumRows)->pluck('ratio')->all(),
-                'std'    => collect($this->ngCatSumRows)->pluck('std')->all(),
-            ],            
-            'pcbGroup' => [
-                'labels' => collect($this->groupRows)->pluck('name')->all(),
-                'ng'     => collect($this->groupRows)->pluck('ng')->all(),
-                'rate'   => collect($this->groupRows)->pluck('ng_rate')->all(),
-                'rwk_rate' => collect($this->groupRows)->pluck('rwk_rate')->all(),
-            ],            
             'ngItems' => [
                 'labels' => $ngItems->pluck('name')->all(),
                 'values' => $ngItems->pluck('ng')->all(),

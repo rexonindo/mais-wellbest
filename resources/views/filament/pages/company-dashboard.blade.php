@@ -204,8 +204,7 @@
                     data: {
                         labels: d.processOutput.labels,
                         datasets: [
-                            { type: 'bar',  label: 'In Qty (pcs)',  data: d.processOutput.in,  backgroundColor: '#60a5fa', yAxisID: 'y',  order: 3 },
-                            { type: 'bar',  label: 'Out Qty (pcs)', data: d.processOutput.out, backgroundColor: '#34d399', yAxisID: 'y',  order: 3 },
+                            { type: 'bar',  label: 'Out Qty (pcs)', data: d.processOutput.out, backgroundColor: '#60a5fa', yAxisID: 'y',  order: 3 },
                             { type: 'line', label: 'NG ratio (%)',  data: d.processOutput.ng_rate,  borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1', tension: .3, order: 1 },
                             { type: 'line', label: 'RWK ratio (%)', data: d.processOutput.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
                         ],
@@ -226,13 +225,13 @@
                     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
                 });
 
-                // ---- NG Ratio By Category (per NG name, bars coloured by category) ----
                 const catPalette = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#eab308', '#06b6d4', '#ef4444', '#64748b'];
                 const catColor = {};
                 (d.ngCategory.cats || []).forEach(c => {
                     if (!(c in catColor)) catColor[c] = catPalette[Object.keys(catColor).length % catPalette.length];
                 });
 
+                // ---- NG Ratio By Category ----
                 make('cdNgCategory', {
                     type: 'bar',
                     data: {
@@ -295,6 +294,70 @@
                     },
                 });                
 
+                // ---- RWK Ratio By Category ----
+                make('cdRwkCategory', {
+                    type: 'bar',
+                    data: {
+                        labels: d.rwkCategory.labels,
+                        datasets: [
+                            { type: 'bar',  label: 'RWK ratio (%)', data: d.rwkCategory.ratio,
+                              backgroundColor: d.rwkCategory.cats.map(c => catColor[c]), order: 2 },
+                            { type: 'line', label: 'Standard (0.90%)', data: d.rwkCategory.std,
+                              borderColor: '#dc2626', backgroundColor: '#dc2626',
+                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
+                        ],
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: {
+                                title: (items) => `${d.rwkCategory.cats[items[0].dataIndex]} - ${items[0].label}`,
+                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
+                                afterLabel: (c) => c.datasetIndex === 0
+                                    ? `RWK Qty: ${Number(d.rwkCategory.qty[c.dataIndex]).toLocaleString()}` : '',
+                            } },
+                        },
+                        scales: {
+                            x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 30 } },
+                            y: { beginAtZero: true, title: { display: true, text: 'RWK ratio %' },
+                                 ticks: { callback: v => v + '%' } },
+                        },
+                    },
+                });
+
+                // ---- RWK Ratio By Category Sum ----
+                make('cdRwkCategorySum', {
+                    type: 'bar',
+                    data: {
+                        labels: d.rwkCategorySum.labels,
+                        datasets: [
+                            { type: 'bar',  label: 'RWK ratio (%)', data: d.rwkCategorySum.ratio, backgroundColor: '#3b82f6', order: 2 },
+                            { type: 'line', label: 'Standard (0.90%)', data: d.rwkCategorySum.std,
+                              borderColor: '#dc2626', backgroundColor: '#dc2626',
+                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
+                        ],
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: {
+                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
+                                afterLabel: (c) => c.datasetIndex === 0
+                                    ? `RWK Qty: ${Number(d.rwkCategorySum.qty[c.dataIndex]).toLocaleString()}` : '',
+                            } },
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'RWK ratio %' },
+                                 ticks: { callback: v => v + '%' } },
+                        },
+                    },
+                });
+                
+                /*
                 make('cdPcbGroup', {
                     type: 'bar',
                     data: {
@@ -314,7 +377,7 @@
                         },
                     },
                 });                
-
+*/
                 make('cdProcess', {
                     type: 'bar',
                     data: {
@@ -547,10 +610,10 @@
         </div>        
     </div>
 
-    {{-- ===== Production Output & NG Analysis ===== --}}
+    {{-- ===== PRODUCTION OUTPUT, NG and REWORK ANALYSIS DASHBOARD ===== --}}
     <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
-        <h2 class="text-center text-3xl font-bold mt-0 mb-8">Production Output, NG and Rework Analysis Dashboard</h2>        
-
+        <h2 class="text-center text-3xl font-bold mt-0 mb-8">PRODUCTION OUTPUT, NG and REWORK ANALYSIS DASHBOARD</h2>
+        <div class="cd-main-subtitle">Please select the option :</div>
         {{-- Filters --}}
         <div class="cd-card">
             <div class="cd-filters">
@@ -592,147 +655,193 @@
             </div>
         </div>
 
-        {{-- Production & NG KPIs --}}
-        <div class="cd-grid cd-g5">
-            <div class="cd-card">
-                <div class="cd-label">Factory Output</div>
-                <div class="cd-value">{{ number_format($kpi['output']) }}</div>
-                <div class="cd-sub">pcs, at last process of each Part Number</div>
+        {{-- ===== PRODUCTION, NG and KPIs ===== --}}
+        <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+            <div class="cd-dashboard-heading cd-heading-gap" style="margin-top:40px !important; padding-top:24px;">
+                <h2 class="cd-main-title">PRODUCTION, NG and KPIs</h2>
             </div>
-            <div class="cd-card">
-                <div class="cd-label">Avg Daily Output</div>
-                <div class="cd-value">{{ number_format($kpi['avg_daily']) }}</div>
-                <div class="cd-sub">pcs per production day</div>
-            </div>
-            <div class="cd-card">
-                <div class="cd-label">Total NG</div>
-                <div class="cd-value cd-bad">{{ number_format($kpi['ng']) }}</div>
-                <div class="cd-sub">pcs, all processes</div>
-            </div>
-            <div class="cd-card">
-                <div class="cd-label">NG Rate</div>
-                <div class="cd-value {{ $kpi['ng_rate'] > $kpi['alert_pct'] ? 'cd-bad' : 'cd-ok' }}">{{ number_format($kpi['ng_rate'], 2) }}%</div>
-                <div class="cd-sub">NG ÷ input, target ≤ {{ $kpi['alert_pct'] }}%</div>
-            </div>
-            <div class="cd-card">
-                <div class="cd-label">Part Number Produced</div>
-                <div class="cd-value">{{ $kpi['items'] }}</div>
-                <div class="cd-sub">in selected period</div>
-            </div>
-        </div>
-
-        {{-- Charts --}}
-        <div class="cd-card">
-            <div class="cd-title">Daily Output, NG and Rework Rate</div>
-            <div class="cd-chart" wire:ignore><canvas id="cdDaily"></canvas></div>
-        </div>
-
-        <div class="cd-card">
-            <div class="cd-title">Output By Process</div>
-            <div class="cd-chart" wire:ignore><canvas id="cdProcessOutput"></canvas></div>
-        </div>        
-
-        <div class="cd-grid cd-g2">
-            <div class="cd-card">
-                <div class="cd-title">Output by Part Number</div>
-                <div class="cd-chart" wire:ignore><canvas id="cdItems"></canvas></div>
-            </div>
-            <div class="cd-card">
-                <div class="cd-title">NG Share by Part Number</div>
-                <div class="cd-chart" wire:ignore><canvas id="cdNgItems"></canvas></div>
+            <div class="cd-grid cd-g5">
+                <div class="cd-card">
+                    <div class="cd-label">Factory Output</div>
+                    <div class="cd-value">{{ number_format($kpi['output']) }}</div>
+                    <div class="cd-sub">pcs, at last process of each Part Number</div>
+                </div>
+                <div class="cd-card">
+                    <div class="cd-label">Avg Daily Output</div>
+                    <div class="cd-value">{{ number_format($kpi['avg_daily']) }}</div>
+                    <div class="cd-sub">pcs per production day</div>
+                </div>
+                <div class="cd-card">
+                    <div class="cd-label">Total NG</div>
+                    <div class="cd-value cd-bad">{{ number_format($kpi['ng']) }}</div>
+                    <div class="cd-sub">pcs, all processes</div>
+                </div>
+                <div class="cd-card">
+                    <div class="cd-label">NG Rate</div>
+                    <div class="cd-value {{ $kpi['ng_rate'] > $kpi['alert_pct'] ? 'cd-bad' : 'cd-ok' }}">{{ number_format($kpi['ng_rate'], 2) }}%</div>
+                    <div class="cd-sub">NG ÷ input, target ≤ {{ $kpi['alert_pct'] }}%</div>
+                </div>
+                <div class="cd-card">
+                    <div class="cd-label">Part Number Produced</div>
+                    <div class="cd-value">{{ $kpi['items'] }}</div>
+                    <div class="cd-sub">in selected period</div>
+                </div>
             </div>
         </div>
 
-        <div class="cd-card">
-            <div class="cd-title">NG Ratio By Category</div>
-            <div class="cd-chart" wire:ignore><canvas id="cdNgCategory"></canvas></div>
-        </div>
-
-        <div class="cd-card">
-            <div class="cd-title">NG Ratio By Category Sum</div>
-            <div class="cd-chart" wire:ignore><canvas id="cdNgCategorySum"></canvas></div>
-        </div>
-
-        <div class="cd-card">
-            <div class="cd-title">NG and Rework by PCB Group</div>
-            <div class="cd-chart" wire:ignore><canvas id="cdPcbGroup"></canvas></div>
-        </div>        
-
-        <div class="cd-card">
-            <div class="cd-title">NG and Rework by Process</div>
-            <div class="cd-chart" wire:ignore><canvas id="cdProcess"></canvas></div>
-        </div>
-
-        {{-- ADD HERE --}}
-        <div class="cd-grid cd-g2">
+        {{-- ===== DAILY OUPUT, NG AND REWORK RATE ===== --}}
+        <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+            <div class="cd-dashboard-heading cd-heading-gap" style="margin-top:40px !important; padding-top:24px;">
+                <h2 class="cd-main-title">DAILY OUPUT, NG AND REWORK RATE</h2>
+            </div>    
             <div class="cd-card">
-                <div class="cd-title">Output &amp; NG Rate by Customer</div>
-                <div class="cd-chart" wire:ignore><canvas id="cdCustomer"></canvas></div>
-            </div>
-
-            <div class="cd-card">
-                <div class="cd-title">Customer Summary</div>
-                <table class="cd-table">
-                    <thead><tr><th>Customer</th><th class="num">Part Number</th><th class="num">Output</th><th class="num">NG</th><th class="num">NG %</th></tr></thead>
-                    <tbody>
-                    @forelse ($customerRows as $r)
-                        <tr class="{{ $r['ng_rate'] > $kpi['alert_pct'] ? 'cd-row-alert' : '' }}">
-                            <td>{{ $r['name'] }}</td>
-                            <td class="num">{{ $r['products'] }}</td>
-                            <td class="num">{{ number_format($r['output']) }}</td>
-                            <td class="num">{{ number_format($r['ng']) }}</td>
-                            <td class="num">{{ number_format($r['ng_rate'], 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5">No data in this period.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
+                <div class="cd-title">Detail</div>
+                <div class="cd-chart" wire:ignore><canvas id="cdDaily"></canvas></div>
             </div>
         </div>
 
-        {{-- Tables --}}
-        <div class="cd-grid cd-g2">
+        {{-- ===== OUTPUT BY PROCESS ===== --}}
+        <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+            <div class="cd-dashboard-heading cd-heading-gap" style="margin-top:40px !important; padding-top:24px;">
+                <h2 class="cd-main-title">OUTPUT BY PROCESS</h2>
+            </div>                
             <div class="cd-card">
-                <div class="cd-title">Part Number Summary</div>
-                <table class="cd-table">
-                    <thead><tr><th>Part Number</th><th>Last process</th><th class="num">Output</th><th class="num">NG</th><th class="num">NG %</th></tr></thead>
-                    <tbody>
-                    @forelse ($itemRows as $r)
-                        <tr class="{{ $r['ng_rate'] > $kpi['alert_pct'] ? 'cd-row-alert' : '' }}">
-                            <td>{{ $r['name'] }}</td>
-                            <td>{{ $r['final'] }}</td>
-                            <td class="num">{{ number_format($r['output']) }}</td>
-                            <td class="num">{{ number_format($r['ng']) }}</td>
-                            <td class="num">{{ number_format($r['ng_rate'], 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5">No data in this period.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
+                <div class="cd-title">Detail</div>
+                <div class="cd-chart" wire:ignore><canvas id="cdProcessOutput"></canvas></div>
+            </div>        
+        </div>
 
-            <div class="cd-card">
-                <div class="cd-title">Process Summary</div>
-                <table class="cd-table">
-                    <thead><tr><th>Process</th><th class="num">Input</th><th class="num">Output</th><th class="num">NG</th><th class="num">NG %</th></tr></thead>
-                    <tbody>
-                    @forelse ($processRows as $r)
-                        <tr class="{{ $r['ng_rate'] > $kpi['alert_pct'] ? 'cd-row-alert' : '' }}">
-                            <td>{{ $r['code'] }} {{ $r['name'] }}</td>
-                            <td class="num">{{ number_format($r['in']) }}</td>
-                            <td class="num">{{ number_format($r['out']) }}</td>
-                            <td class="num">{{ number_format($r['ng']) }}</td>
-                            <td class="num">{{ number_format($r['ng_rate'], 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5">No data in this period.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
+        {{-- ===== OUTPUT AND NG SHARE BY PART NUMBER ===== --}}
+        <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+            <div class="cd-dashboard-heading cd-heading-gap" style="margin-top:40px !important; padding-top:24px;">
+                <h2 class="cd-main-title">OUTPUT AND NG SHARE BY PART NUMBER</h2>
+            </div> 
+            <div class="cd-grid cd-g2">
+                <div class="cd-card">
+                    <div class="cd-title">Output by Part Number</div>
+                    <div class="cd-chart" wire:ignore><canvas id="cdItems"></canvas></div>
+                </div>
+                <div class="cd-card">
+                    <div class="cd-title">NG Share by Part Number</div>
+                    <div class="cd-chart" wire:ignore><canvas id="cdNgItems"></canvas></div>
+                </div>
             </div>
         </div>
+
+        {{-- ===== NG & RWK RATIO BY CATEGORY ===== --}}
+        <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+            <div class="cd-dashboard-heading cd-heading-gap" style="margin-top:40px !important; padding-top:24px;">
+                <h2 class="cd-main-title">NG RATIO BY CATEGORY</h2>
+            </div>
+            <div class="cd-cards">
+                <div class="cd-card">
+                    <div class="cd-title">Detail</div>
+                    <div class="cd-chart" wire:ignore><canvas id="cdNgCategory"></canvas></div>
+                </div>
+
+                <div class="cd-card">
+                    <div class="cd-title">Summary</div>
+                    <div class="cd-chart" wire:ignore><canvas id="cdNgCategorySum"></canvas></div>
+                </div>
+            </div>
+
+            <div class="cd-dashboard-heading cd-heading-gap" style="margin-top:40px !important; padding-top:24px;">
+                <h2 class="cd-main-title">REWORK RATIO BY CATEGORY</h2>
+            </div>
+            <div class="cd-cards">
+                <div class="cd-card">
+                    <div class="cd-title">Detail</div>
+                    <div class="cd-chart" wire:ignore><canvas id="cdRwkCategory"></canvas></div>
+                </div>
+                <div class="cd-card">
+                    <div class="cd-title">Summary</div>
+                    <div class="cd-chart" wire:ignore><canvas id="cdRwkCategorySum"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        {{-- PRODUCTION OUTPUT BY CUSTOMER --}}
+        <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+            <div class="cd-dashboard-heading cd-heading-gap" style="margin-top:40px !important; padding-top:24px;">
+                <h2 class="cd-main-title">PRODUCTION OUTPUT BY CUSTOMER</h2>
+            </div>        
+            <div class="cd-grid cd-g2">
+                <div class="cd-card">
+                    <div class="cd-title">Output &amp; NG Rate by Customer</div>
+                    <div class="cd-chart" wire:ignore><canvas id="cdCustomer"></canvas></div>
+                </div>
+
+                <div class="cd-card">
+                    <div class="cd-title">Customer Summary</div>
+                    <table class="cd-table">
+                        <thead><tr><th>Customer</th><th class="num">Part Number</th><th class="num">Output</th><th class="num">NG</th><th class="num">NG %</th></tr></thead>
+                        <tbody>
+                        @forelse ($customerRows as $r)
+                            <tr class="{{ $r['ng_rate'] > $kpi['alert_pct'] ? 'cd-row-alert' : '' }}">
+                                <td>{{ $r['name'] }}</td>
+                                <td class="num">{{ $r['products'] }}</td>
+                                <td class="num">{{ number_format($r['output']) }}</td>
+                                <td class="num">{{ number_format($r['ng']) }}</td>
+                                <td class="num">{{ number_format($r['ng_rate'], 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5">No data in this period.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- PRODUCTION OUTPUT BY PART NUMBER --}}
+        <div class="cd-wrap" x-data="cdCharts(@js($charts))" x-init="init()" @dashboard-updated.window="update($event.detail.charts)">
+            <div class="cd-dashboard-heading cd-heading-gap" style="margin-top:40px !important; padding-top:24px;">
+                <h2 class="cd-main-title">PRODUCTION OUTPUT BY PART NUMBER</h2>
+            </div>             
+
+            <div class="cd-grid cd-g2">
+                <div class="cd-card">
+                    <div class="cd-title">Part Number Summary</div>
+                    <table class="cd-table">
+                        <thead><tr><th>Part Number</th><th>Last process</th><th class="num">Output</th><th class="num">NG</th><th class="num">NG %</th></tr></thead>
+                        <tbody>
+                        @forelse ($itemRows as $r)
+                            <tr class="{{ $r['ng_rate'] > $kpi['alert_pct'] ? 'cd-row-alert' : '' }}">
+                                <td>{{ $r['name'] }}</td>
+                                <td>{{ $r['final'] }}</td>
+                                <td class="num">{{ number_format($r['output']) }}</td>
+                                <td class="num">{{ number_format($r['ng']) }}</td>
+                                <td class="num">{{ number_format($r['ng_rate'], 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5">No data in this period.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="cd-card">
+                    <div class="cd-title">Process Summary</div>
+                    <table class="cd-table">
+                        <thead><tr><th>Process</th><th class="num">Input</th><th class="num">Output</th><th class="num">NG</th><th class="num">NG %</th></tr></thead>
+                        <tbody>
+                        @forelse ($processRows as $r)
+                            <tr class="{{ $r['ng_rate'] > $kpi['alert_pct'] ? 'cd-row-alert' : '' }}">
+                                <td>{{ $r['code'] }} {{ $r['name'] }}</td>
+                                <td class="num">{{ number_format($r['in']) }}</td>
+                                <td class="num">{{ number_format($r['out']) }}</td>
+                                <td class="num">{{ number_format($r['ng']) }}</td>
+                                <td class="num">{{ number_format($r['ng_rate'], 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5">No data in this period.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 </x-filament::page>

@@ -221,12 +221,19 @@
         <script src="{{ asset('js/chart.umd.min.js') }}"></script>        
     @endonce
 
+    @php
+        $isDashboardUser = auth()->check() && auth()->user()->hasRole('dashboard');
+    @endphp    
+
     <script>
 
         /* =========================================================
-        Dashboard rotator: switch to the next page on a fixed timer.
+        Dashboard rotator: only for users with the "dashboard" role.
         ========================================================= */
         document.addEventListener('DOMContentLoaded', function () {
+
+            const ROTATE_ENABLED = @json($isDashboardUser);
+            if (!ROTATE_ENABLED) return;   // other roles stay on the page
 
             // Clear stale values left by the old timer script
             try {
@@ -243,7 +250,7 @@
                 '/wellbest/company-dashboard-f'
             ];
 
-            const SWITCH_MS = 15 * 1000;  // time on each page before switching
+            const SWITCH_MS = 30 * 1000;
 
             const currentPath  = window.location.pathname.replace(/\/+$/, '');
             const currentIndex = dashboardPages.indexOf(currentPath);
@@ -253,8 +260,8 @@
             setTimeout(function () {
                 window.location.href = dashboardPages[(currentIndex + 1) % dashboardPages.length];
             }, SWITCH_MS);
-        });
-
+        });   
+        
         /*
         document.addEventListener('livewire:init', () => {
             setInterval(() => {
@@ -301,169 +308,6 @@
                         },
                     },
                 });
-
-                make('cdProcessOutput', {
-                    type: 'bar',
-                    data: {
-                        labels: d.processOutput.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'In Qty (pcs)',  data: d.processOutput.in,  backgroundColor: '#60a5fa', yAxisID: 'y',  order: 3 },
-                            { type: 'bar',  label: 'Out Qty (pcs)', data: d.processOutput.out, backgroundColor: '#34d399', yAxisID: 'y',  order: 3 },
-                            { type: 'line', label: 'NG ratio (%)',  data: d.processOutput.ng_rate,  borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1', tension: .3, order: 1 },
-                            { type: 'line', label: 'RWK ratio (%)', data: d.processOutput.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y:  { beginAtZero: true, position: 'left', title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Ratio %' } },
-                        },
-                    },
-                });
-
-                make('cdItems', {
-                    type: 'bar',
-                    data: { labels: d.items.labels, datasets: [{ label: 'Output (pcs)', data: d.items.output, backgroundColor: '#10b981' }] },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
-                });
-
-                // ---- NG Ratio By Category (per NG name, bars coloured by category) ----
-                const catPalette = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#eab308', '#06b6d4', '#ef4444', '#64748b'];
-                const catColor = {};
-                (d.ngCategory.cats || []).forEach(c => {
-                    if (!(c in catColor)) catColor[c] = catPalette[Object.keys(catColor).length % catPalette.length];
-                });
-
-                make('cdNgCategory', {
-                    type: 'bar',
-                    data: {
-                        labels: d.ngCategory.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'NG ratio (%)', data: d.ngCategory.ratio,
-                              backgroundColor: d.ngCategory.cats.map(c => catColor[c]), order: 2 },
-                            { type: 'line', label: 'Standard (0.90%)', data: d.ngCategory.std,
-                              borderColor: '#dc2626', backgroundColor: '#dc2626',
-                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { position: 'bottom' },
-                            tooltip: { callbacks: {
-                                title: (items) => `${d.ngCategory.cats[items[0].dataIndex]} - ${items[0].label}`,
-                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
-                                afterLabel: (c) => c.datasetIndex === 0
-                                    ? `NG Qty: ${Number(d.ngCategory.qty[c.dataIndex]).toLocaleString()}` : '',
-                            } },
-                        },
-                        scales: {
-                            x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 30 } },
-                            y: { beginAtZero: true, title: { display: true, text: 'NG ratio %' },
-                                 ticks: { callback: v => v + '%' } },
-                        },
-                    },
-                });
-
-                // ---- NG Ratio By Category Sum ----
-                make('cdNgCategorySum', {
-                    type: 'bar',
-                    data: {
-                        labels: d.ngCategorySum.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'NG ratio (%)', data: d.ngCategorySum.ratio, backgroundColor: '#3b82f6', order: 2 },
-                            { type: 'line', label: 'Standard (0.90%)', data: d.ngCategorySum.std,
-                              borderColor: '#dc2626', backgroundColor: '#dc2626',
-                              pointStyle: 'rect', pointRadius: 3, tension: 0, order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { position: 'bottom' },
-                            tooltip: { callbacks: {
-                                label: (c) => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)}%`,
-                                afterLabel: (c) => c.datasetIndex === 0
-                                    ? `NG Qty: ${Number(d.ngCategorySum.qty[c.dataIndex]).toLocaleString()}` : '',
-                            } },
-                        },
-                        scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'NG ratio %' },
-                                 ticks: { callback: v => v + '%' } },
-                        },
-                    },
-                });                
-
-                make('cdPcbGroup', {
-                    type: 'bar',
-                    data: {
-                        labels: d.pcbGroup.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'NG (pcs)',     data: d.pcbGroup.ng,       backgroundColor: '#f87171', yAxisID: 'y',  order: 2 },
-                            { type: 'line', label: 'NG ratio (%)',  data: d.pcbGroup.rate,     borderColor: '#7f1d1d', backgroundColor: '#7f1d1d', yAxisID: 'y1', tension: .3, order: 1 },
-                            { type: 'line', label: 'RWK ratio (%)', data: d.pcbGroup.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', tension: .3, order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y:  { beginAtZero: true, position: 'left', title: { display: true, text: 'pcs' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
-                        },
-                    },
-                });                
-
-                make('cdProcess', {
-                    type: 'bar',
-                    data: {
-                        labels: d.process.labels,
-                        datasets: [
-                            { type: 'bar',  label: 'NG (pcs)',      data: d.process.ng,       backgroundColor: '#f87171', yAxisID: 'y',  order: 2 },
-                            { type: 'line', label: 'NG rate (%)',   data: d.process.rate,     borderColor: '#7f1d1d', backgroundColor: '#7f1d1d', yAxisID: 'y1', order: 1 },
-                            { type: 'line', label: 'RWK rate (%)',  data: d.process.rwk_rate, borderColor: '#f59e0b', backgroundColor: '#f59e0b', yAxisID: 'y1', order: 1 },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        scales: {
-                            y:  { beginAtZero: true },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'NG / RWK %' } },
-                        },
-                    },
-                });
-
-                make('cdNgItems', {
-                    type: 'doughnut',
-                    data: {
-                        labels: d.ngItems.labels,
-                        datasets: [{ data: d.ngItems.values, backgroundColor: ['#ef4444', '#f97316', '#eab308', '#8b5cf6', '#06b6d4', '#64748b'] }],
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } },
-                });
-
-                make('cdCustomer', {
-                    type: 'bar',
-                    data: {
-                        labels: d.customer.labels,
-                        datasets: [
-                            { type: 'bar', label: 'Output (pcs)', data: d.customer.output, backgroundColor: '#6366f1', yAxisID: 'y' },
-                            { type: 'line', label: 'NG rate (%)', data: d.customer.rate, borderColor: '#dc2626', backgroundColor: '#dc2626', yAxisID: 'y1' },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        scales: {
-                            y:  { beginAtZero: true },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } },
-                        },
-                    },
-                });
-
             };
 
             return {
