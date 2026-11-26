@@ -33,3 +33,29 @@
     z-index: 6;
 }
 
+/* ===== Production Log: sticky table header ===== */
+/* Give the table its own scroll area so the header can stick */
+.fi-resource-production-logs .fi-ta-content {
+    max-height: calc(100vh - 16rem);   /* adjust to taste */
+    overflow: auto;
+}
+
+/* Pin every header cell to the top of that scroll area */
+.fi-resource-production-logs .fi-ta-content thead th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background-color: rgb(249 250 251);              /* gray-50 */
+    box-shadow: inset 0 -1px 0 rgb(229 231 235);     /* keeps the bottom border visible */
+}
+
+.dark .fi-resource-production-logs .fi-ta-content thead th {
+    background-color: rgb(17 24 39);                 /* gray-900, must be solid, not transparent */
+    box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.1);
+}
+
+/* WO No / Part No header cells are sticky both left AND top,
+   so they must sit above the other header cells and the body cells */
+.fi-resource-production-logs .fi-ta-content thead th.sticky-col {
+    z-index: 30;
+}
